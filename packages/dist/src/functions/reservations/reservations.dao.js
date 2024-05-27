@@ -35,6 +35,23 @@ class ReservationsDao {
         const client = new client_dynamodb_1.DynamoDBClient(config);
         this.ddbDocClient = lib_dynamodb_1.DynamoDBDocumentClient.from(client, translateConfig);
     }
+    getMember(reservationCode, memberNo) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('reservations.dao getMember in' + JSON.stringify({ reservationCode, memberNo }));
+            const command = new lib_dynamodb_1.QueryCommand({
+                TableName: TBL_MEMBER,
+                KeyConditionExpression: 'reservationCode = :pk AND memberNo = :rk',
+                ExpressionAttributeValues: { ':pk': reservationCode, ':rk': memberNo }
+            });
+            const result = yield this.ddbDocClient.send(command).catch(error => {
+                console.log('reservations.dao getMember error:' + JSON.stringify(error));
+                throw error;
+            });
+            console.log('reservations.dao getMember out' + JSON.stringify(result.Items[0]));
+            return result.Items[0];
+        });
+    }
+    ;
     getMembers(reservationCode) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('reservations.dao getMembers in' + JSON.stringify({ reservationCode }));

@@ -21,6 +21,17 @@ export class ReservationsService {
     this.iotService = new IotService();
   }
 
+  public async refreshMember(memberItem: MemberItem): Promise<any> {
+    console.log('reservations.service refreshMember in: ' + JSON.stringify(memberItem));
+    
+    const crtMemberItem = await this.reservationsDao.getMember(memberItem.reservationCode, memberItem.memberNo);
+    crtMemberItem.faceEmbedding = memberItem.faceEmbedding;
+
+    await this.reservationsDao.updateMembers([crtMemberItem]);
+
+    console.log('reservations.service refreshMember out');
+  }
+
   public async syncReservation(delta): Promise<any> {
     console.log('reservations.service syncReservation in: ' + JSON.stringify(delta));
 
@@ -168,17 +179,6 @@ export class ReservationsService {
     // update local ddb members
     await this.reservationsDao.updateMembers(Array.from(desiredMembers.values()));
 
-/*
-    // get image and request embedding
-    const updatedMemberPromises = [];
-    desiredMembers.forEach((value, key) => {
-      updatedMemberPromises.push(this.downloadImageAsBase64(value));
-    });
-    const updatedMemberResponses = (await Promise.all(updatedMemberPromises)).flatMap(x => x);
-
-    // update local ddb members
-    await this.reservationsDao.updateMembers(updatedMemberResponses);
-*/
     // update shadow
     const reportedState = Object.assign({}, getShadowResult.state.delta);
 
@@ -256,30 +256,5 @@ export class ReservationsService {
     
   }
 
-  // private async downloadImageAsBase64(memberItem: MemberItem): Promise<any> {
 
-  //   console.log('reservations.service downloadImageAsBase64 in:' + JSON.stringify({memberItem}));
-
-  //   try {
-  //       // Download the image
-  //       const response = await axios({
-  //           url: memberItem.faceImgUrl,
-  //           method: 'GET',
-  //           responseType: 'arraybuffer',
-  //       });
-
-  //       // Convert the image data to a Buffer
-  //       const imageBuffer = Buffer.from(response.data, 'binary');
-
-  //       // Convert the Buffer to a Base64 encoded string
-  //       memberItem.faceImgBase64 = imageBuffer.toString('base64');
-
-  //       console.log('reservations.service downloadImageAsBase64 out:' + JSON.stringify({memberItem}));
-
-  //       return memberItem;
-  //   } catch (error) {
-  //       console.error('Error downloading or processing the image:', error);
-  //       throw error;
-  //   }
-  // }
 }

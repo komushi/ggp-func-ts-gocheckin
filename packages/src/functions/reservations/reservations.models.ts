@@ -22,7 +22,7 @@ export interface MemberItem {
     memberKeyItem: MemberKeyItem;
     faceImgUrl: string;
     faceImgBase64: string
-    faceEmbedding: string;
+    faceEmbedding: number[];
 }
 
 export interface ReservationItem {

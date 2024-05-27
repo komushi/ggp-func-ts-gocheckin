@@ -21,6 +21,15 @@ class ReservationsService {
         this.reservationsDao = new reservations_dao_1.ReservationsDao();
         this.iotService = new iot_service_1.IotService();
     }
+    refreshMember(memberItem) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('reservations.service refreshMember in: ' + JSON.stringify(memberItem));
+            const crtMemberItem = yield this.reservationsDao.getMember(memberItem.reservationCode, memberItem.memberNo);
+            crtMemberItem.faceEmbedding = memberItem.faceEmbedding;
+            yield this.reservationsDao.updateMembers([crtMemberItem]);
+            console.log('reservations.service refreshMember out');
+        });
+    }
     syncReservation(delta) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('reservations.service syncReservation in: ' + JSON.stringify(delta));
@@ -143,17 +152,6 @@ class ReservationsService {
             yield this.reservationsDao.updateReservation(getShadowResult.state.desired.reservation);
             // update local ddb members
             yield this.reservationsDao.updateMembers(Array.from(desiredMembers.values()));
-            /*
-                // get image and request embedding
-                const updatedMemberPromises = [];
-                desiredMembers.forEach((value, key) => {
-                  updatedMemberPromises.push(this.downloadImageAsBase64(value));
-                });
-                const updatedMemberResponses = (await Promise.all(updatedMemberPromises)).flatMap(x => x);
-            
-                // update local ddb members
-                await this.reservationsDao.updateMembers(updatedMemberResponses);
-            */
             // update shadow
             const reportedState = Object.assign({}, getShadowResult.state.delta);
             toDeleteMembers.forEach((_, key) => {

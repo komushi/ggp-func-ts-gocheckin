@@ -87,6 +87,8 @@ exports.function_handler = async function(event, context) {
 		});
 	} else if (context.clientContext.Custom.subject == `gocheckin/res_face_embeddings`) {
 		console.log('res_face_embeddings event: ' + JSON.stringify(event));
+
+		await reservationsService.refreshMember(event);
     }
 };
 
