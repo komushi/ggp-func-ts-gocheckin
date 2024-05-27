@@ -256,30 +256,30 @@ export class ReservationsService {
     
   }
 
-  private async downloadImageAsBase64(memberItem: MemberItem): Promise<any> {
+  // private async downloadImageAsBase64(memberItem: MemberItem): Promise<any> {
 
-    console.log('reservations.service downloadImageAsBase64 in:' + JSON.stringify({memberItem}));
+  //   console.log('reservations.service downloadImageAsBase64 in:' + JSON.stringify({memberItem}));
 
-    try {
-        // Download the image
-        const response = await axios({
-            url: memberItem.faceImgUrl,
-            method: 'GET',
-            responseType: 'arraybuffer',
-        });
+  //   try {
+  //       // Download the image
+  //       const response = await axios({
+  //           url: memberItem.faceImgUrl,
+  //           method: 'GET',
+  //           responseType: 'arraybuffer',
+  //       });
 
-        // Convert the image data to a Buffer
-        const imageBuffer = Buffer.from(response.data, 'binary');
+  //       // Convert the image data to a Buffer
+  //       const imageBuffer = Buffer.from(response.data, 'binary');
 
-        // Convert the Buffer to a Base64 encoded string
-        memberItem.faceImgBase64 = imageBuffer.toString('base64');
+  //       // Convert the Buffer to a Base64 encoded string
+  //       memberItem.faceImgBase64 = imageBuffer.toString('base64');
 
-        console.log('reservations.service downloadImageAsBase64 out:' + JSON.stringify({memberItem}));
+  //       console.log('reservations.service downloadImageAsBase64 out:' + JSON.stringify({memberItem}));
 
-        return memberItem;
-    } catch (error) {
-        console.error('Error downloading or processing the image:', error);
-        throw error;
-    }
-  }
+  //       return memberItem;
+  //   } catch (error) {
+  //       console.error('Error downloading or processing the image:', error);
+  //       throw error;
+  //   }
+  // }
 }

@@ -8,9 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReservationsService = void 0;
 const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
@@ -19,7 +16,6 @@ const ACTION_UPDATE = 'UPDATE';
 const ACTION_REMOVE = 'REMOVE';
 const reservations_dao_1 = require("./reservations.dao");
 const iot_service_1 = require("../iot/iot.service");
-const axios_1 = __importDefault(require("axios"));
 class ReservationsService {
     constructor() {
         this.reservationsDao = new reservations_dao_1.ReservationsDao();
@@ -217,29 +213,6 @@ class ReservationsService {
             });
             console.log('reservations.service removeReservation out:' + JSON.stringify({ reservationCode, listingId, lastRequestOn, clearRequest: true }));
             return { reservationCode, listingId, lastRequestOn, clearRequest: true };
-        });
-    }
-    downloadImageAsBase64(memberItem) {
-        return __awaiter(this, void 0, void 0, function* () {
-            console.log('reservations.service downloadImageAsBase64 in:' + JSON.stringify({ memberItem }));
-            try {
-                // Download the image
-                const response = yield (0, axios_1.default)({
-                    url: memberItem.faceImgUrl,
-                    method: 'GET',
-                    responseType: 'arraybuffer',
-                });
-                // Convert the image data to a Buffer
-                const imageBuffer = Buffer.from(response.data, 'binary');
-                // Convert the Buffer to a Base64 encoded string
-                memberItem.faceImgBase64 = imageBuffer.toString('base64');
-                console.log('reservations.service downloadImageAsBase64 out:' + JSON.stringify({ memberItem }));
-                return memberItem;
-            }
-            catch (error) {
-                console.error('Error downloading or processing the image:', error);
-                throw error;
-            }
         });
     }
 }
