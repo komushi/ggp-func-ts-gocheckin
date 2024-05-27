@@ -165,6 +165,10 @@ export class ReservationsService {
     // delete local ddb reservation
     await this.reservationsDao.updateReservation(getShadowResult.state.desired.reservation);
 
+    // update local ddb members
+    await this.reservationsDao.updateMembers(Array.from(desiredMembers.values()));
+
+/*
     // get image and request embedding
     const updatedMemberPromises = [];
     desiredMembers.forEach((value, key) => {
@@ -174,7 +178,7 @@ export class ReservationsService {
 
     // update local ddb members
     await this.reservationsDao.updateMembers(updatedMemberResponses);
-
+*/
     // update shadow
     const reportedState = Object.assign({}, getShadowResult.state.delta);
 
@@ -191,10 +195,9 @@ export class ReservationsService {
       reportedState: reportedState
     });
 
-    await Promise.allSettled(updatedMemberResponses.map(async (memberItem: MemberItem) => {
+    await Promise.allSettled(Array.from(desiredMembers.values()).map(async (memberItem: MemberItem) => {
       delete memberItem.memberKeyItem;
       delete memberItem.faceImgKey;
-      delete memberItem.faceImgUrl;
       delete memberItem.fullName;
 
       await this.iotService.publish({

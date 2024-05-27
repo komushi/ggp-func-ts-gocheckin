@@ -145,14 +145,19 @@ class ReservationsService {
             yield this.reservationsDao.deleteMembers(Array.from(toDeleteMembers.values()));
             // delete local ddb reservation
             yield this.reservationsDao.updateReservation(getShadowResult.state.desired.reservation);
-            // get image and request embedding
-            const updatedMemberPromises = [];
-            desiredMembers.forEach((value, key) => {
-                updatedMemberPromises.push(this.downloadImageAsBase64(value));
-            });
-            const updatedMemberResponses = (yield Promise.all(updatedMemberPromises)).flatMap(x => x);
             // update local ddb members
-            yield this.reservationsDao.updateMembers(updatedMemberResponses);
+            yield this.reservationsDao.updateMembers(Array.from(desiredMembers.values()));
+            /*
+                // get image and request embedding
+                const updatedMemberPromises = [];
+                desiredMembers.forEach((value, key) => {
+                  updatedMemberPromises.push(this.downloadImageAsBase64(value));
+                });
+                const updatedMemberResponses = (await Promise.all(updatedMemberPromises)).flatMap(x => x);
+            
+                // update local ddb members
+                await this.reservationsDao.updateMembers(updatedMemberResponses);
+            */
             // update shadow
             const reportedState = Object.assign({}, getShadowResult.state.delta);
             toDeleteMembers.forEach((_, key) => {
@@ -166,10 +171,9 @@ class ReservationsService {
                 shadowName: reservationCode,
                 reportedState: reportedState
             });
-            yield Promise.allSettled(updatedMemberResponses.map((memberItem) => __awaiter(this, void 0, void 0, function* () {
+            yield Promise.allSettled(Array.from(desiredMembers.values()).map((memberItem) => __awaiter(this, void 0, void 0, function* () {
                 delete memberItem.memberKeyItem;
                 delete memberItem.faceImgKey;
-                delete memberItem.faceImgUrl;
                 delete memberItem.fullName;
                 yield this.iotService.publish({
                     topic: `gocheckin/req_face_embeddings`,
