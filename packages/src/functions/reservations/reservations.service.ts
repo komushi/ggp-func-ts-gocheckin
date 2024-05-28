@@ -9,8 +9,6 @@ import { ReservationsDao } from './reservations.dao';
 import { MemberItem } from './reservations.models';
 import { IotService } from '../iot/iot.service';
 
-import axios from 'axios';
-
 export class ReservationsService {
 
   private reservationsDao: ReservationsDao;
