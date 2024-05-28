@@ -9,6 +9,8 @@ import { ReservationsDao } from './reservations.dao';
 import { MemberItem } from './reservations.models';
 import { IotService } from '../iot/iot.service';
 
+import axios from 'axios';
+
 export class ReservationsService {
 
   private reservationsDao: ReservationsDao;
@@ -193,16 +195,20 @@ export class ReservationsService {
       reportedState: reportedState
     });
 
-    await Promise.allSettled(Array.from(desiredMembers.values()).map(async (memberItem: MemberItem) => {
+    const responsesEmbedding = await Promise.all(Array.from(desiredMembers.values()).map(async (memberItem: MemberItem) => {
       delete memberItem.memberKeyItem;
       delete memberItem.faceImgKey;
       delete memberItem.fullName;
 
-      await this.iotService.publish({
-        topic: `gocheckin/req_face_embeddings`,
-        payload: JSON.stringify(memberItem)
-      });
+      // await this.iotService.publish({
+      //   topic: `gocheckin/req_face_embeddings`,
+      //   payload: JSON.stringify(memberItem)
+      // });
+      const response = await axios.post("http://localhost:8888/recognise", memberItem);
+      return response.data;
     }));
+
+    console.log('reservations.service responsesEmbedding:' + JSON.stringify(responsesEmbedding));
 
     console.log('reservations.service addReservation out:' + JSON.stringify({reservationCode, listingId, lastRequestOn}));
 

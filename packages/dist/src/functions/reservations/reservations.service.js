@@ -8,6 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReservationsService = void 0;
 const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
@@ -16,6 +19,7 @@ const ACTION_UPDATE = 'UPDATE';
 const ACTION_REMOVE = 'REMOVE';
 const reservations_dao_1 = require("./reservations.dao");
 const iot_service_1 = require("../iot/iot.service");
+const axios_1 = __importDefault(require("axios"));
 class ReservationsService {
     constructor() {
         this.reservationsDao = new reservations_dao_1.ReservationsDao();
@@ -165,15 +169,18 @@ class ReservationsService {
                 shadowName: reservationCode,
                 reportedState: reportedState
             });
-            yield Promise.allSettled(Array.from(desiredMembers.values()).map((memberItem) => __awaiter(this, void 0, void 0, function* () {
+            const responsesEmbedding = yield Promise.all(Array.from(desiredMembers.values()).map((memberItem) => __awaiter(this, void 0, void 0, function* () {
                 delete memberItem.memberKeyItem;
                 delete memberItem.faceImgKey;
                 delete memberItem.fullName;
-                yield this.iotService.publish({
-                    topic: `gocheckin/req_face_embeddings`,
-                    payload: JSON.stringify(memberItem)
-                });
+                // await this.iotService.publish({
+                //   topic: `gocheckin/req_face_embeddings`,
+                //   payload: JSON.stringify(memberItem)
+                // });
+                const response = yield axios_1.default.post("http://localhost:8888/recognise", memberItem);
+                return response.data;
             })));
+            console.log('reservations.service responsesEmbedding:' + JSON.stringify(responsesEmbedding));
             console.log('reservations.service addReservation out:' + JSON.stringify({ reservationCode, listingId, lastRequestOn }));
             return { reservationCode, listingId, lastRequestOn };
         });
