@@ -205,7 +205,7 @@ export class ReservationsService {
       //   payload: JSON.stringify(memberItem)
       // });
       const response = await axios.post("http://localhost:8888/recognise", memberItem);
-      return response.data;
+      return response;
     }));
 
     console.log('reservations.service responsesEmbedding:' + JSON.stringify(responsesEmbedding));

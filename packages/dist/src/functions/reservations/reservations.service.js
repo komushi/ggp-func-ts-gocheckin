@@ -178,7 +178,7 @@ class ReservationsService {
                 //   payload: JSON.stringify(memberItem)
                 // });
                 const response = yield axios_1.default.post("http://localhost:8888/recognise", memberItem);
-                return response.data;
+                return response;
             })));
             console.log('reservations.service responsesEmbedding:' + JSON.stringify(responsesEmbedding));
             console.log('reservations.service addReservation out:' + JSON.stringify({ reservationCode, listingId, lastRequestOn }));
