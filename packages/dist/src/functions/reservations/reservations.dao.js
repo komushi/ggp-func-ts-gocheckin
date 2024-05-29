@@ -35,11 +35,12 @@ class ReservationsDao {
         const client = new client_dynamodb_1.DynamoDBClient(config);
         this.ddbDocClient = lib_dynamodb_1.DynamoDBDocumentClient.from(client, translateConfig);
     }
-    getMember(reservationCode, memberNo) {
+    getMember(reservationCode, memberNo, attributes) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('reservations.dao getMember in' + JSON.stringify({ reservationCode, memberNo }));
+            console.log('reservations.dao getMember in' + JSON.stringify({ reservationCode, memberNo, attributes }));
             const command = new lib_dynamodb_1.QueryCommand({
                 TableName: TBL_MEMBER,
+                ProjectionExpression: attributes === null || attributes === void 0 ? void 0 : attributes.join(),
                 KeyConditionExpression: 'reservationCode = :pk AND memberNo = :rk',
                 ExpressionAttributeValues: { ':pk': reservationCode, ':rk': memberNo }
             });
@@ -52,11 +53,12 @@ class ReservationsDao {
         });
     }
     ;
-    getMembers(reservationCode) {
+    getMembers(reservationCode, attributes) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('reservations.dao getMembers in' + JSON.stringify({ reservationCode }));
             const command = new lib_dynamodb_1.QueryCommand({
                 TableName: TBL_MEMBER,
+                ProjectionExpression: attributes === null || attributes === void 0 ? void 0 : attributes.join(),
                 KeyConditionExpression: 'reservationCode = :pk',
                 ExpressionAttributeValues: { ':pk': reservationCode }
             });

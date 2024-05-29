@@ -9,7 +9,7 @@ import { ReservationsDao } from './reservations.dao';
 import { MemberItem } from './reservations.models';
 import { IotService } from '../iot/iot.service';
 
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 
 export class ReservationsService {
 
@@ -204,11 +204,15 @@ export class ReservationsService {
       //   topic: `gocheckin/req_face_embeddings`,
       //   payload: JSON.stringify(memberItem)
       // });
-      const response = await axios.post("http://localhost:8888/recognise", memberItem);
-      return response;
+
+      const response: AxiosResponse<MemberItem> = await axios.post("http://localhost:8888/recognise", memberItem);
+      const responseData: MemberItem = response.data;
+      return responseData;
     }));
 
     console.log('reservations.service responsesEmbedding:' + JSON.stringify(responsesEmbedding));
+
+    await this.reservationsDao.updateMembers(responsesEmbedding);
 
     console.log('reservations.service addReservation out:' + JSON.stringify({reservationCode, listingId, lastRequestOn}));
 
@@ -243,7 +247,7 @@ export class ReservationsService {
       reservationCode: reservationCode
     });
 
-    const memberItems: MemberItem[] = await this.reservationsDao.getMembers(reservationCode);
+    const memberItems: MemberItem[] = await this.reservationsDao.getMembers(reservationCode, ['reservationCode', 'memberNo']);
     await this.reservationsDao.deleteMembers(memberItems);
 
     await this.iotService.deleteShadow({

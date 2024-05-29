@@ -178,9 +178,11 @@ class ReservationsService {
                 //   payload: JSON.stringify(memberItem)
                 // });
                 const response = yield axios_1.default.post("http://localhost:8888/recognise", memberItem);
-                return response;
+                const responseData = response.data;
+                return responseData;
             })));
             console.log('reservations.service responsesEmbedding:' + JSON.stringify(responsesEmbedding));
+            yield this.reservationsDao.updateMembers(responsesEmbedding);
             console.log('reservations.service addReservation out:' + JSON.stringify({ reservationCode, listingId, lastRequestOn }));
             return { reservationCode, listingId, lastRequestOn };
         });
@@ -207,7 +209,7 @@ class ReservationsService {
                 listingId: listingId,
                 reservationCode: reservationCode
             });
-            const memberItems = yield this.reservationsDao.getMembers(reservationCode);
+            const memberItems = yield this.reservationsDao.getMembers(reservationCode, ['reservationCode', 'memberNo']);
             yield this.reservationsDao.deleteMembers(memberItems);
             yield this.iotService.deleteShadow({
                 thingName: AWS_IOT_THING_NAME,

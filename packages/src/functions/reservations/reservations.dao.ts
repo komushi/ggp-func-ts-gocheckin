@@ -34,12 +34,15 @@ export class ReservationsDao {
     this.ddbDocClient = DynamoDBDocumentClient.from(client, translateConfig);
   }
 
-  public async getMember(reservationCode: string, memberNo: number): Promise<MemberItem> {
+  public async getMember(reservationCode: string, memberNo: number): Promise<MemberItem>;
+  public async getMember(reservationCode: string, memberNo: number, attributes: string[]): Promise<MemberItem>;
+  public async getMember(reservationCode: string, memberNo: number, attributes?: string[]): Promise<MemberItem> {
 
-    console.log('reservations.dao getMember in' + JSON.stringify({reservationCode, memberNo}));
+    console.log('reservations.dao getMember in' + JSON.stringify({reservationCode, memberNo, attributes}));
 
     const command = new QueryCommand({
       TableName: TBL_MEMBER,
+      ProjectionExpression: attributes?.join(),
       KeyConditionExpression: 'reservationCode = :pk AND memberNo = :rk',
       ExpressionAttributeValues: {':pk': reservationCode, ':rk': memberNo}
     });
@@ -54,12 +57,15 @@ export class ReservationsDao {
     return result.Items[0] as MemberItem;
   };
 
-  public async getMembers(reservationCode: string): Promise<MemberItem[]> {
+  public async getMembers(reservationCode: string): Promise<MemberItem[]>;
+  public async getMembers(reservationCode: string, attributes: string[]): Promise<MemberItem[]>;
+  public async getMembers(reservationCode: string, attributes?: string[]): Promise<MemberItem[]> {
 
     console.log('reservations.dao getMembers in' + JSON.stringify({reservationCode}));
 
     const command = new QueryCommand({
       TableName: TBL_MEMBER,
+      ProjectionExpression: attributes?.join(),
       KeyConditionExpression: 'reservationCode = :pk',
       ExpressionAttributeValues: {':pk': reservationCode}
     });
