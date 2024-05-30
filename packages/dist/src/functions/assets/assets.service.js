@@ -19,6 +19,7 @@ const node_onvif_events_1 = require("node-onvif-events");
 const axios_1 = __importDefault(require("axios"));
 class AssetsService {
     constructor() {
+        this.lastCallTime = null;
         this.assetsDao = new assets_dao_1.AssetsDao();
         this.uid = new short_unique_id_1.default();
     }
@@ -78,17 +79,24 @@ class AssetsService {
                 detector.listen((motion) => __awaiter(this, void 0, void 0, function* () {
                     if (motion) {
                         console.log('>> Motion Detected on ' + options.hostname);
-                        const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: motion });
-                        const responseData = response.data;
-                        console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
-                        return responseData;
+                        const currentTime = Date.now();
+                        if (this.lastCallTime === null || (currentTime - this.lastCallTime) > 20000) {
+                            const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: motion });
+                            const responseData = response.data;
+                            console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
+                            this.lastCallTime = currentTime;
+                            return responseData;
+                        }
                     }
                     else {
                         console.log('>> Motion Stopped on ' + options.hostname);
-                        const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: motion });
-                        const responseData = response.data;
-                        console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
-                        return responseData;
+                        const currentTime = Date.now();
+                        if (this.lastCallTime !== null && (currentTime - this.lastCallTime) > 20000) {
+                            const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: motion });
+                            const responseData = response.data;
+                            console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
+                            return responseData;
+                        }
                     }
                 }));
             })));

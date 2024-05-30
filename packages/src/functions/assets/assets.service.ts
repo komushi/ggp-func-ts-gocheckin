@@ -10,6 +10,7 @@ export class AssetsService {
 
   private assetsDao: AssetsDao;
   private uid;
+  private lastCallTime: number | null = null;
   
   public constructor() {
     this.assetsDao = new AssetsDao();
@@ -91,22 +92,33 @@ export class AssetsService {
         if (motion) {
           console.log('>> Motion Detected on ' + options.hostname);
 
-          const response: AxiosResponse = await axios.post("http://localhost:8888/detect", { motion: motion });
-          const responseData = response.data;
+          const currentTime = Date.now();
 
-          console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
+          if (this.lastCallTime === null || (currentTime - this.lastCallTime) > 20000) {
+            const response: AxiosResponse = await axios.post("http://localhost:8888/detect", { motion: motion });
+            const responseData = response.data;
 
-          return responseData;
+            console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
+
+            this.lastCallTime = currentTime;
+
+            return responseData;
+          }
+
 
         } else {
           console.log('>> Motion Stopped on ' + options.hostname);
 
-          const response: AxiosResponse = await axios.post("http://localhost:8888/detect", { motion: motion });
-          const responseData = response.data;
+          const currentTime = Date.now();
 
-          console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
+          if (this.lastCallTime !== null && (currentTime - this.lastCallTime) > 20000) {
+            const response: AxiosResponse = await axios.post("http://localhost:8888/detect", { motion: motion });
+            const responseData = response.data;
 
-          return responseData;
+            console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
+
+            return responseData;
+          }
 
         }
       });
