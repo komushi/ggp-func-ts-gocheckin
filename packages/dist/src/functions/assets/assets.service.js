@@ -16,6 +16,7 @@ exports.AssetsService = void 0;
 const assets_dao_1 = require("./assets.dao");
 const short_unique_id_1 = __importDefault(require("short-unique-id"));
 const node_onvif_events_1 = require("node-onvif-events");
+const axios_1 = __importDefault(require("axios"));
 class AssetsService {
     constructor() {
         this.assetsDao = new assets_dao_1.AssetsDao();
@@ -73,16 +74,23 @@ class AssetsService {
                 };
                 console.log('assets.service startOnvif options:' + JSON.stringify(options));
                 const detector = yield node_onvif_events_1.MotionDetector.create(options.id, options);
-                console.log('assets.service startOnvif detector:' + JSON.stringify(detector));
-                console.log(new Date(), `>> Motion Detection Listening on ${options.hostname}`);
-                detector.listen((motion) => {
+                console.log('>> Motion Detection Listening on ' + options.hostname);
+                detector.listen((motion) => __awaiter(this, void 0, void 0, function* () {
                     if (motion) {
-                        console.log(new Date(), `>> Motion Detected on ${options.hostname}`);
+                        console.log('>> Motion Detected on ' + options.hostname);
+                        const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: motion });
+                        const responseData = response.data;
+                        console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
+                        return responseData;
                     }
                     else {
-                        console.log(new Date(), `>> Motion Stopped on ${options.hostname}`);
+                        console.log('>> Motion Stopped on ' + options.hostname);
+                        const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: motion });
+                        const responseData = response.data;
+                        console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
+                        return responseData;
                     }
-                });
+                }));
             })));
             console.log('assets.service startOnvif out');
             return;

@@ -4,6 +4,8 @@ import { AssetsDao } from './assets.dao';
 import ShortUniqueId from 'short-unique-id';
 import { MotionDetector, Options } from 'node-onvif-events';
 
+import axios, { AxiosResponse } from 'axios';
+
 export class AssetsService {
 
   private assetsDao: AssetsDao;
@@ -84,14 +86,28 @@ export class AssetsService {
 
       const detector = await MotionDetector.create(options.id, options);
 
-      console.log('assets.service startOnvif detector:' + JSON.stringify(detector));
-
-      console.log(new Date(), `>> Motion Detection Listening on ${options.hostname}`);
-      detector.listen((motion) => {
+      console.log('>> Motion Detection Listening on ' + options.hostname);
+      detector.listen(async (motion) => {
         if (motion) {
-          console.log(new Date(), `>> Motion Detected on ${options.hostname}`);
+          console.log('>> Motion Detected on ' + options.hostname);
+
+          const response: AxiosResponse = await axios.post("http://localhost:8888/detect", { motion: motion });
+          const responseData = response.data;
+
+          console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
+
+          return responseData;
+
         } else {
-          console.log(new Date(), `>> Motion Stopped on ${options.hostname}`);
+          console.log('>> Motion Stopped on ' + options.hostname);
+
+          const response: AxiosResponse = await axios.post("http://localhost:8888/detect", { motion: motion });
+          const responseData = response.data;
+
+          console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
+
+          return responseData;
+
         }
       });
     }));
