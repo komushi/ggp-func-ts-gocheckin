@@ -117,6 +117,9 @@ setTimeout(async () => {
 		console.log('intializeEnvVar after STAGE:' + process.env.STAGE);
 		console.log('intializeEnvVar after PROPERTY_CODE:' + process.env.PROPERTY_CODE);
 
+        const assetsService = new AssetsService();
+        await assetsService.startOnvif(process.env.HOST_ID);
+
     } catch (err) {
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
         console.error(err.name);

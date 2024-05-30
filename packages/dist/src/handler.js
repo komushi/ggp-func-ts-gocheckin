@@ -108,6 +108,8 @@ setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
         console.log('intializeEnvVar after HOST_ID:' + process.env.HOST_ID);
         console.log('intializeEnvVar after STAGE:' + process.env.STAGE);
         console.log('intializeEnvVar after PROPERTY_CODE:' + process.env.PROPERTY_CODE);
+        const assetsService = new assets_service_1.AssetsService();
+        yield assetsService.startOnvif(process.env.HOST_ID);
     }
     catch (err) {
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
