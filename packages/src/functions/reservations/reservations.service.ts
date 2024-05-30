@@ -40,6 +40,16 @@ export class ReservationsService {
         thingName: AWS_IOT_THING_NAME
     });
 
+    if (!getShadowResult.state.desired.reservations) {
+      console.log('reservations.service syncReservation out: no desired reservations');
+      return;
+    }
+
+    if (!delta.state.reservations) {
+      console.log('reservations.service syncReservation out: no delta reservations');
+      return;
+    }
+
     const syncResults = await Promise.allSettled(
       Object.entries(getShadowResult.state.desired.reservations as ClassicShadowReservations).filter(([reservationCode]) => {
           return Object.keys(delta.state.reservations as ClassicShadowReservation).includes(reservationCode);
