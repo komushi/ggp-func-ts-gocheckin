@@ -148,11 +148,11 @@ export class AssetsDao {
     return;
   }
 
-  public async deleteCameras(hostId: string): Promise<any> {
+  public async getCameras(hostId: string): Promise<any> {
 
-    console.log('assets.dao deleteCameras in:' + hostId);
+    console.log('assets.dao getCameras in:' + hostId);
 
-    const queryResponse = await this.ddbDocClient.send(
+    const response = await this.ddbDocClient.send(
       new QueryCommand({
         TableName: TBL_ASSET,
         KeyConditionExpression: '#hkey = :hkey',
@@ -168,14 +168,24 @@ export class AssetsDao {
       })
     );
 
-    console.log('assets.dao deleteCameras query response:' + JSON.stringify(queryResponse));
+    console.log('assets.dao getCameras out:' + JSON.stringify(response.Items));
 
-    const deleteResponse = await Promise.all(queryResponse.Items.map(async (item) => {
+    return response.Items as CameraItem[];
+
+  }
+
+  public async deleteCameras(hostId: string): Promise<any> {
+
+    console.log('assets.dao deleteCameras in:' + hostId);
+
+    const cameraItems: CameraItem[] = await this.getCameras(hostId);
+
+    const deleteResponse = await Promise.all(cameraItems.map(async (cameraItem: CameraItem) => {
       const param = {
         TableName: TBL_ASSET,
         Key: {
-          hostId: item.hostId,
-          uuid: item.uuid
+          hostId: cameraItem.hostId,
+          uuid: cameraItem.uuid
         }
       };
 

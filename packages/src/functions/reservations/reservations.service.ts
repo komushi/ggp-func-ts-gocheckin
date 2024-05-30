@@ -54,78 +54,78 @@ export class ReservationsService {
       Object.entries(getShadowResult.state.desired.reservations as ClassicShadowReservations).filter(([reservationCode]) => {
           return Object.keys(delta.state.reservations as ClassicShadowReservation).includes(reservationCode);
         }).map(async ([reservationCode, {listingId, lastRequestOn, action}]) => {
-          if (action == ACTION_REMOVE) {
-            const syncResult = await this.removeReservation({
-              reservationCode,
-              listingId,
-              lastRequestOn
-            }).catch(err => {
-              console.log('removeReservation err:' + JSON.stringify(err));
-              return {
-                rejectReason: err.message
-              }
-            });
-
-            await this.iotService.publish({
-              topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_reset`,
-              payload: JSON.stringify({
-                listingId: listingId,
-                reservationCode: reservationCode,
-                lastResponse: lastRequestOn,
-                rejectReason: syncResult.rejectReason,
-                clearRequest: (syncResult.rejectReason ? false : syncResult.clearRequest)
-              })
-            });
-
-            if (syncResult.rejectReason) {
-              throw new Error(syncResult.rejectReason); 
+        if (action == ACTION_REMOVE) {
+          const syncResult = await this.removeReservation({
+            reservationCode,
+            listingId,
+            lastRequestOn
+          }).catch(err => {
+            console.log('removeReservation err:' + JSON.stringify(err));
+            return {
+              rejectReason: err.message
             }
+          });
 
-            return;
+          await this.iotService.publish({
+            topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_reset`,
+            payload: JSON.stringify({
+              listingId: listingId,
+              reservationCode: reservationCode,
+              lastResponse: lastRequestOn,
+              rejectReason: syncResult.rejectReason,
+              clearRequest: (syncResult.rejectReason ? false : syncResult.clearRequest)
+            })
+          });
 
-          } else if (action == ACTION_UPDATE) {
-            const syncResult = await this.addReservation({
-              reservationCode,
-              listingId,
-              lastRequestOn
-            }).catch(err => {
-
-              console.log('addReservation err:' + JSON.stringify(err));
-
-              return {
-                rejectReason: err.message
-              }
-            });
-
-            await this.iotService.publish({
-              topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_deployed`,
-              payload: JSON.stringify({
-                listingId: listingId,
-                reservationCode: reservationCode,
-                lastResponse: lastRequestOn,
-                rejectReason: syncResult.rejectReason
-              })
-            });
-
-            if (syncResult.rejectReason) {
-              throw new Error(syncResult.rejectReason); 
-            }
-
-            return;
-
-          } else {
-            await this.iotService.publish({
-              topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_deployed`,
-              payload: JSON.stringify({
-                listingId: listingId,
-                reservationCode: reservationCode,
-                lastResponse: lastRequestOn,
-                rejectReason: `Wrong action ${action}!`
-              })
-            });
-
-            throw new Error(`Wrong reservation action ${action}!`);
+          if (syncResult.rejectReason) {
+            throw new Error(syncResult.rejectReason); 
           }
+
+          return;
+
+        } else if (action == ACTION_UPDATE) {
+          const syncResult = await this.addReservation({
+            reservationCode,
+            listingId,
+            lastRequestOn
+          }).catch(err => {
+
+            console.log('addReservation err:' + JSON.stringify(err));
+
+            return {
+              rejectReason: err.message
+            }
+          });
+
+          await this.iotService.publish({
+            topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_deployed`,
+            payload: JSON.stringify({
+              listingId: listingId,
+              reservationCode: reservationCode,
+              lastResponse: lastRequestOn,
+              rejectReason: syncResult.rejectReason
+            })
+          });
+
+          if (syncResult.rejectReason) {
+            throw new Error(syncResult.rejectReason); 
+          }
+
+          return;
+
+        } else {
+          await this.iotService.publish({
+            topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_deployed`,
+            payload: JSON.stringify({
+              listingId: listingId,
+              reservationCode: reservationCode,
+              lastResponse: lastRequestOn,
+              rejectReason: `Wrong action ${action}!`
+            })
+          });
+
+          throw new Error(`Wrong reservation action ${action}!`);
+        }
     }));
 
     console.log('syncResults:' + JSON.stringify(syncResults));

@@ -30,11 +30,11 @@ exports.function_handler = async function(event, context) {
 			process.env.HOST_ID = getShadowResult.state.desired.hostId;
 			process.env.STAGE = getShadowResult.state.desired.stage;
 
-			await initializationService.intializeHost({
+			await initializationService.saveHost({
 				hostId: getShadowResult.state.desired.hostId,
 				stage: getShadowResult.state.desired.stage
 			}).catch(err => {
-				console.error('intializeHost error:' + err.message);
+				console.error('saveHost error:' + err.message);
 				throw err;
 			});
 		}
@@ -42,15 +42,15 @@ exports.function_handler = async function(event, context) {
 		if (getShadowResult.state.desired.property) {
 			process.env.PROPERTY_CODE = getShadowResult.state.desired.property.propertyCode;
 			
-			await assetsService.intializeProperty(getShadowResult.state.desired.hostId, getShadowResult.state.desired.property).catch(err => {
-				console.error('intializeProperty error:' + err.message);
+			await assetsService.saveProperty(getShadowResult.state.desired.hostId, getShadowResult.state.desired.property).catch(err => {
+				console.error('saveProperty error:' + err.message);
 				throw err;
 			});
 		}
 
 		if (getShadowResult.state.desired.cameras) {
-			await assetsService.intializeCameras(getShadowResult.state.desired.hostId, getShadowResult.state.desired.cameras).catch(err => {
-				console.error('intializeProperty error:' + err.message);
+			await assetsService.saveCameras(getShadowResult.state.desired.hostId, getShadowResult.state.desired.cameras).catch(err => {
+				console.error('saveProperty error:' + err.message);
 				throw err;
 			});
 		}
