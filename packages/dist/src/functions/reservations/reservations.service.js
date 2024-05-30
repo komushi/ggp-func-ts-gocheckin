@@ -25,15 +25,18 @@ class ReservationsService {
         this.reservationsDao = new reservations_dao_1.ReservationsDao();
         this.iotService = new iot_service_1.IotService();
     }
-    refreshMember(memberItem) {
-        return __awaiter(this, void 0, void 0, function* () {
-            console.log('reservations.service refreshMember in: ' + JSON.stringify(memberItem));
-            const crtMemberItem = yield this.reservationsDao.getMember(memberItem.reservationCode, memberItem.memberNo);
-            crtMemberItem.faceEmbedding = memberItem.faceEmbedding;
-            yield this.reservationsDao.updateMembers([crtMemberItem]);
-            console.log('reservations.service refreshMember out');
-        });
+    /* embedding request from mqtt disabled
+    public async refreshMember(memberItem: MemberItem): Promise<any> {
+      console.log('reservations.service refreshMember in: ' + JSON.stringify(memberItem));
+      
+      const crtMemberItem = await this.reservationsDao.getMember(memberItem.reservationCode, memberItem.memberNo);
+      crtMemberItem.faceEmbedding = memberItem.faceEmbedding;
+  
+      await this.reservationsDao.updateMembers([crtMemberItem]);
+  
+      console.log('reservations.service refreshMember out');
     }
+    */
     syncReservation(delta) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('reservations.service syncReservation in: ' + JSON.stringify(delta));
@@ -170,13 +173,16 @@ class ReservationsService {
                 reportedState: reportedState
             });
             const responsesEmbedding = yield Promise.all(Array.from(desiredMembers.values()).map((memberItem) => __awaiter(this, void 0, void 0, function* () {
+                /* embedding request from mqtt disabled
                 delete memberItem.memberKeyItem;
                 delete memberItem.faceImgKey;
                 delete memberItem.fullName;
-                // await this.iotService.publish({
-                //   topic: `gocheckin/req_face_embeddings`,
-                //   payload: JSON.stringify(memberItem)
-                // });
+          
+                await this.iotService.publish({
+                  topic: `gocheckin/req_face_embeddings`,
+                  payload: JSON.stringify(memberItem)
+                });
+                */
                 const response = yield axios_1.default.post("http://localhost:8888/recognise", memberItem);
                 const responseData = response.data;
                 return responseData;

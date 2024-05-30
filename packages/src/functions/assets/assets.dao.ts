@@ -1,6 +1,6 @@
 import { DynamoDBClientConfig, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, TransactWriteCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
-import { PropertyItem } from './assets.models';
+import { PropertyItem, CameraItem } from './assets.models';
 
 const TBL_ASSET = process.env.TBL_ASSET;
 
@@ -67,19 +67,13 @@ export class AssetsDao {
     }
   }
 
-  public async createProperty(hostId: string, property: PropertyItem): Promise<any> {
-    console.log('assets.dao createProperty in' + JSON.stringify({hostId, property}));
+  public async createProperty(propertyItem: PropertyItem): Promise<any> {
+    console.log('assets.dao createProperty in' + JSON.stringify(propertyItem));
 
     const params = [{
       Put: {
         TableName: TBL_ASSET,
-        Item: {
-          hostId: hostId,
-          uuid: property.uuid,
-          hostPropertyCode: `${hostId}-${property.propertyCode}`,
-          propertyCode: property.propertyCode,
-          category: 'PROPERTY'
-        }
+        Item: propertyItem
       }
     }];
 
@@ -133,6 +127,67 @@ export class AssetsDao {
 
     return;
 
-  };
+  }
 
+  public async createCamera(cameraItem: CameraItem): Promise<any> {
+    console.log('assets.dao createCamera in' + JSON.stringify(cameraItem));
+
+    const params = [{
+      Put: {
+        TableName: TBL_ASSET,
+        Item: cameraItem
+      }
+    }];
+
+    const response = await this.ddbDocClient.send(new TransactWriteCommand({TransactItems: params}));
+
+    console.log('assets.dao createCamera response:' + JSON.stringify(response));
+
+    console.log(`assets.dao createCamera out`);
+
+    return;
+  }
+
+  public async deleteCameras(hostId: string): Promise<any> {
+
+    console.log('assets.dao deleteCameras in:' + hostId);
+
+    const queryResponse = await this.ddbDocClient.send(
+      new QueryCommand({
+        TableName: TBL_ASSET,
+        KeyConditionExpression: '#hkey = :hkey',
+        FilterExpression: '#category = :category',
+        ExpressionAttributeNames : {
+            '#hkey' : 'hostId',
+            '#category': 'category'
+        },
+        ExpressionAttributeValues: {
+          ':hkey': hostId,
+          ':category': 'CAMERA'
+        }
+      })
+    );
+
+    console.log('assets.dao deleteCameras query response:' + JSON.stringify(queryResponse));
+
+    const deleteResponse = await Promise.all(queryResponse.Items.map(async (item) => {
+      const param = {
+        TableName: TBL_ASSET,
+        Key: {
+          hostId: item.hostId,
+          uuid: item.uuid
+        }
+      };
+
+      return await this.ddbDocClient.send(new DeleteCommand(param)); 
+
+    }));
+
+    console.log('assets.dao deleteCameras delete response:' + JSON.stringify(deleteResponse));
+
+    console.log('assets.dao deleteCameras out');
+
+    return;
+
+  }
 }

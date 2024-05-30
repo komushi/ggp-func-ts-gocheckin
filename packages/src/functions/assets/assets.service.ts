@@ -1,20 +1,47 @@
-import { PropertyItem } from './assets.models';
+import { PropertyItem, CameraItem } from './assets.models';
 import { AssetsDao } from './assets.dao';
+
+import ShortUniqueId from 'short-unique-id';
 
 export class AssetsService {
 
   private assetsDao: AssetsDao;
+  private uid;
   
   public constructor() {
     this.assetsDao = new AssetsDao();
+
+    this.uid = new ShortUniqueId();
   }
 
-  public async intializeProperty(hostId: string, property: PropertyItem): Promise<any> {
-    console.log('assets.service intializeProperty in' + JSON.stringify({hostId, property}));
+  public async intializeProperty(hostId: string, propertyItem: PropertyItem): Promise<any> {
+    console.log('assets.service intializeProperty in' + JSON.stringify({hostId, propertyItem}));
 
     await this.assetsDao.deleteProperties(hostId);
 
-    await this.assetsDao.createProperty(hostId, property);
+    propertyItem.hostId = hostId;
+    propertyItem.hostPropertyCode = `${hostId}-${propertyItem.propertyCode}`;
+    propertyItem.category = 'PROPERTY';
+
+    await this.assetsDao.createProperty(propertyItem);
+
+    console.log('assets.service intializeProperty out');
+
+    return;
+  }
+
+  public async intializeCameras(hostId: string, cameraItems: CameraItem[]): Promise<any> {
+    console.log('assets.service intializeProperty in' + JSON.stringify({hostId, cameraItems}));
+
+    await this.assetsDao.deleteCameras(hostId);
+
+    await Promise.all(cameraItems.map(async (cameraItem: CameraItem) => {
+      cameraItem.hostId = hostId;
+      cameraItem.uuid = this.uid.randomUUID(6);
+      cameraItem.category = 'CAMERA';
+
+      await this.assetsDao.createCamera(cameraItem);
+    }));
 
     console.log('assets.service intializeProperty out');
 

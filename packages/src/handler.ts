@@ -48,6 +48,13 @@ exports.function_handler = async function(event, context) {
 			});
 		}
 
+		if (getShadowResult.state.desired.cameras) {
+			await assetsService.intializeCameras(getShadowResult.state.desired.hostId, getShadowResult.state.desired.cameras).catch(err => {
+				console.error('intializeProperty error:' + err.message);
+				throw err;
+			});
+		}
+
 		let delta = event;
 
 	    if (!delta) {
@@ -85,11 +92,15 @@ exports.function_handler = async function(event, context) {
 		      equipmentId: event.equipmentId
 		    })
 		});
+	}
+
+	/* embedding request from mqtt disabled
 	} else if (context.clientContext.Custom.subject == `gocheckin/res_face_embeddings`) {
 		console.log('res_face_embeddings event: ' + JSON.stringify(event));
 
 		await reservationsService.refreshMember(event);
     }
+    */
 };
 
 setTimeout(async () => {

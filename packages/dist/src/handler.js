@@ -49,6 +49,12 @@ exports.function_handler = function (event, context) {
                     throw err;
                 });
             }
+            if (getShadowResult.state.desired.cameras) {
+                yield assetsService.intializeCameras(getShadowResult.state.desired.hostId, getShadowResult.state.desired.cameras).catch(err => {
+                    console.error('intializeProperty error:' + err.message);
+                    throw err;
+                });
+            }
             let delta = event;
             if (!delta) {
                 delta = { state: {} };
@@ -83,10 +89,13 @@ exports.function_handler = function (event, context) {
                 })
             });
         }
-        else if (context.clientContext.Custom.subject == `gocheckin/res_face_embeddings`) {
+        /* embedding request from mqtt disabled
+        } else if (context.clientContext.Custom.subject == `gocheckin/res_face_embeddings`) {
             console.log('res_face_embeddings event: ' + JSON.stringify(event));
-            yield reservationsService.refreshMember(event);
+    
+            await reservationsService.refreshMember(event);
         }
+        */
     });
 };
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
