@@ -10,7 +10,8 @@ export class AssetsService {
 
   private assetsDao: AssetsDao;
   private uid;
-  private lastCallTime: number | null = null;
+  private lastMotionChangeTime: number | null = null;
+  private lastCallRemoteTime: number | null = null;
   
   public constructor() {
     this.assetsDao = new AssetsDao();
@@ -89,18 +90,19 @@ export class AssetsService {
 
       console.log('>> Motion Detection Listening on ' + options.hostname);
       detector.listen(async (motion) => {
+        const currentTime = Date.now();
+
         if (motion) {
           console.log('>> Motion Detected on ' + options.hostname);
 
-          const currentTime = Date.now();
 
-          if (this.lastCallTime === null || (currentTime - this.lastCallTime) > 20000) {
+          if (this.lastCallRemoteTime === null || (currentTime - this.lastCallRemoteTime) > 20000) {
             const response: AxiosResponse = await axios.post("http://localhost:8888/detect", { motion: motion });
             const responseData = response.data;
 
             console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
 
-            this.lastCallTime = currentTime;
+            this.lastCallRemoteTime = currentTime;
 
             return responseData;
           }
@@ -109,17 +111,31 @@ export class AssetsService {
         } else {
           console.log('>> Motion Stopped on ' + options.hostname);
 
-          const currentTime = Date.now();
-
-          if (this.lastCallTime !== null && (currentTime - this.lastCallTime) > 20000) {
+          if (this.lastCallRemoteTime !== null && (currentTime - this.lastCallRemoteTime) > 20000) {
             const response: AxiosResponse = await axios.post("http://localhost:8888/detect", { motion: motion });
             const responseData = response.data;
 
             console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
 
+
+            this.lastMotionChangeTime = currentTime;
+
             return responseData;
           }
 
+        }
+
+        if (!motion && this.lastMotionChangeTime !== null) {
+            setTimeout(async () => {
+                if (this.lastMotionChangeTime !== null && currentTime - this.lastMotionChangeTime > 20000) {
+                  const response: AxiosResponse = await axios.post("http://localhost:8888/detect", { motion: motion });
+                  const responseData = response.data;
+
+                  this.lastMotionChangeTime = currentTime;
+
+                  return responseData;
+                }
+            }, 20000);
         }
       });
     }));

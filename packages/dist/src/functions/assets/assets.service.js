@@ -19,7 +19,8 @@ const node_onvif_events_1 = require("node-onvif-events");
 const axios_1 = __importDefault(require("axios"));
 class AssetsService {
     constructor() {
-        this.lastCallTime = null;
+        this.lastMotionChangeTime = null;
+        this.lastCallRemoteTime = null;
         this.assetsDao = new assets_dao_1.AssetsDao();
         this.uid = new short_unique_id_1.default();
     }
@@ -77,26 +78,36 @@ class AssetsService {
                 const detector = yield node_onvif_events_1.MotionDetector.create(options.id, options);
                 console.log('>> Motion Detection Listening on ' + options.hostname);
                 detector.listen((motion) => __awaiter(this, void 0, void 0, function* () {
+                    const currentTime = Date.now();
                     if (motion) {
                         console.log('>> Motion Detected on ' + options.hostname);
-                        const currentTime = Date.now();
-                        if (this.lastCallTime === null || (currentTime - this.lastCallTime) > 20000) {
+                        if (this.lastCallRemoteTime === null || (currentTime - this.lastCallRemoteTime) > 20000) {
                             const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: motion });
                             const responseData = response.data;
                             console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
-                            this.lastCallTime = currentTime;
+                            this.lastCallRemoteTime = currentTime;
                             return responseData;
                         }
                     }
                     else {
                         console.log('>> Motion Stopped on ' + options.hostname);
-                        const currentTime = Date.now();
-                        if (this.lastCallTime !== null && (currentTime - this.lastCallTime) > 20000) {
+                        if (this.lastCallRemoteTime !== null && (currentTime - this.lastCallRemoteTime) > 20000) {
                             const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: motion });
                             const responseData = response.data;
                             console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
+                            this.lastMotionChangeTime = currentTime;
                             return responseData;
                         }
+                    }
+                    if (!motion && this.lastMotionChangeTime !== null) {
+                        setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                            if (this.lastMotionChangeTime !== null && currentTime - this.lastMotionChangeTime > 20000) {
+                                const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: motion });
+                                const responseData = response.data;
+                                this.lastMotionChangeTime = currentTime;
+                                return responseData;
+                            }
+                        }), 20000);
                     }
                 }));
             })));
