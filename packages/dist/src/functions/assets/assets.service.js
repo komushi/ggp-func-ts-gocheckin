@@ -59,7 +59,11 @@ class AssetsService {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service startOnvif in' + JSON.stringify({ hostId }));
             const cameraItems = yield this.assetsDao.getCameras(hostId);
-            yield Promise.allSettled(cameraItems.map((cameraItem, index) => __awaiter(this, void 0, void 0, function* () {
+            yield Promise.all(cameraItems.map((cameraItem, index) => __awaiter(this, void 0, void 0, function* () {
+                console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
+                if (!cameraItem.onvif) {
+                    return;
+                }
                 const options = {
                     id: index,
                     hostname: cameraItem.ip,
@@ -67,7 +71,9 @@ class AssetsService {
                     password: cameraItem.password,
                     port: cameraItem.onvif.port, // Onvif device service port
                 };
+                console.log('assets.service startOnvif options:' + JSON.stringify(options));
                 const detector = yield node_onvif_events_1.MotionDetector.create(options.id, options);
+                console.log('assets.service startOnvif detector:' + JSON.stringify(detector));
                 console.log(new Date(), `>> Motion Detection Listening on ${options.hostname}`);
                 detector.listen((motion) => {
                     if (motion) {

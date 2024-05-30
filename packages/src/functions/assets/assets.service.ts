@@ -64,7 +64,14 @@ export class AssetsService {
 
     const cameraItems: CameraItem[] = await this.assetsDao.getCameras(hostId);
 
-    await Promise.allSettled(cameraItems.map(async (cameraItem: CameraItem, index: number) => {
+    await Promise.all(cameraItems.map(async (cameraItem: CameraItem, index: number) => {
+
+      console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
+
+      if (!cameraItem.onvif) {
+        return;
+      }
+
       const options: Options = {
         id: index,                      // Any number id
         hostname: cameraItem.ip,  // IP Address of device
@@ -73,7 +80,11 @@ export class AssetsService {
         port: cameraItem.onvif.port,                   // Onvif device service port
       };
 
+      console.log('assets.service startOnvif options:' + JSON.stringify(options));
+
       const detector = await MotionDetector.create(options.id, options);
+
+      console.log('assets.service startOnvif detector:' + JSON.stringify(detector));
 
       console.log(new Date(), `>> Motion Detection Listening on ${options.hostname}`);
       detector.listen((motion) => {
