@@ -19,8 +19,8 @@ const node_onvif_events_1 = require("node-onvif-events");
 const axios_1 = __importDefault(require("axios"));
 class AssetsService {
     constructor() {
-        this.lastMotionChangeTime = null;
-        this.lastCallRemoteTime = null;
+        this.lastMotionTime = null;
+        this.timer = null;
         this.assetsDao = new assets_dao_1.AssetsDao();
         this.uid = new short_unique_id_1.default();
     }
@@ -44,9 +44,9 @@ class AssetsService {
             return propertyItem;
         });
     }
-    saveCameras(hostId, cameraItems) {
+    refreshCameras(hostId, cameraItems) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service saveProperty in' + JSON.stringify({ hostId, cameraItems }));
+            console.log('assets.service refreshCameras in' + JSON.stringify({ hostId, cameraItems }));
             yield this.assetsDao.deleteCameras(hostId);
             yield Promise.all(cameraItems.map((cameraItem) => __awaiter(this, void 0, void 0, function* () {
                 cameraItem.hostId = hostId;
@@ -54,7 +54,25 @@ class AssetsService {
                 cameraItem.category = 'CAMERA';
                 yield this.assetsDao.createCamera(cameraItem);
             })));
-            console.log('assets.service saveProperty out');
+            console.log('assets.service refreshCameras out');
+            return;
+        });
+    }
+    refreshScanners(hostId, scannerItems) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service refreshScanners in' + JSON.stringify({ hostId, scannerItems }));
+            yield this.assetsDao.deleteScanners(hostId);
+            yield Promise.all(scannerItems.map((scannerItem) => __awaiter(this, void 0, void 0, function* () {
+                scannerItem.hostId = process.env.HOST_ID;
+                scannerItem.propertyCode = process.env.PROPERTY_CODE;
+                scannerItem.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
+                scannerItem.category = 'SCANNER';
+                scannerItem.coreName = process.env.AWS_IOT_THING_NAME;
+                scannerItem.uuid = this.uid.randomUUID(6);
+                scannerItem.lastUpdateOn = (new Date).toISOString();
+                yield this.assetsDao.createScanner(scannerItem);
+            })));
+            console.log('assets.service refreshScanners out');
             return;
         });
     }
@@ -78,36 +96,28 @@ class AssetsService {
                 const detector = yield node_onvif_events_1.MotionDetector.create(options.id, options);
                 console.log('>> Motion Detection Listening on ' + options.hostname);
                 detector.listen((motion) => __awaiter(this, void 0, void 0, function* () {
-                    const currentTime = Date.now();
+                    const now = Date.now();
                     if (motion) {
-                        console.log('>> Motion Detected on ' + options.hostname);
-                        if (this.lastCallRemoteTime === null || (currentTime - this.lastCallRemoteTime) > 20000) {
-                            const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: motion });
-                            const responseData = response.data;
-                            console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
-                            this.lastCallRemoteTime = currentTime;
-                            return responseData;
+                        if (this.lastMotionTime === null || (now - this.lastMotionTime) > 20000) {
+                            // Update the last motion time
+                            this.lastMotionTime = now;
+                            yield axios_1.default.post("http://localhost:8888/detect", { motion: true });
+                            // Clear the previous timer if it exists
+                            if (this.timer) {
+                                clearTimeout(this.timer);
+                            }
+                            // Set a new 20-second timer to call call_remote(false)
+                            this.timer = setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                                yield axios_1.default.post("http://localhost:8888/detect", { motion: false });
+                                this.lastMotionTime = null; // Reset the last motion time after calling false
+                            }), 20000);
                         }
                     }
                     else {
-                        console.log('>> Motion Stopped on ' + options.hostname);
-                        if (this.lastCallRemoteTime !== null && (currentTime - this.lastCallRemoteTime) > 20000) {
-                            const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: motion });
-                            const responseData = response.data;
-                            console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
-                            this.lastMotionChangeTime = currentTime;
-                            return responseData;
+                        // Check if the last timer has finished before calling call_remote(false)
+                        if (!this.timer) {
+                            yield axios_1.default.post("http://localhost:8888/detect", { motion: false });
                         }
-                    }
-                    if (!motion && this.lastMotionChangeTime !== null) {
-                        setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                            if (this.lastMotionChangeTime !== null && currentTime - this.lastMotionChangeTime > 20000) {
-                                const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: motion });
-                                const responseData = response.data;
-                                this.lastMotionChangeTime = currentTime;
-                                return responseData;
-                            }
-                        }), 20000);
                     }
                 }));
             })));

@@ -1,6 +1,6 @@
 import { DynamoDBClientConfig, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, TransactWriteCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
-import { PropertyItem, CameraItem } from './assets.models';
+import { PropertyItem, CameraItem, ScannerItem } from './assets.models';
 
 const TBL_ASSET = process.env.TBL_ASSET;
 
@@ -198,6 +198,50 @@ export class AssetsDao {
     console.log('assets.dao deleteCameras out');
 
     return;
+  }
 
+  public async createScanner(scannerItem: ScannerItem): Promise<any> {
+    console.log('assets.dao createScanner in' + JSON.stringify(scannerItem));
+
+    const params = [{
+      Put: {
+        TableName: TBL_ASSET,
+        Item: scannerItem
+      }
+    }];
+
+    const response = await this.ddbDocClient.send(new TransactWriteCommand({TransactItems: params}));
+
+    console.log('assets.dao createScanner response:' + JSON.stringify(response));
+
+    console.log(`assets.dao createScanner out`);
+
+    return;
+  }
+
+  public async deleteScanners(hostId: string): Promise<any> {
+
+    console.log('assets.dao deleteScanners in:' + hostId);
+
+    const scannerItems: ScannerItem[] = await this.getCameras(hostId);
+
+    const deleteResponse = await Promise.all(scannerItems.map(async (scannerItem: ScannerItem) => {
+      const param = {
+        TableName: TBL_ASSET,
+        Key: {
+          hostId: scannerItem.hostId,
+          uuid: scannerItem.uuid
+        }
+      };
+
+      return await this.ddbDocClient.send(new DeleteCommand(param)); 
+
+    }));
+
+    console.log('assets.dao deleteScanners delete response:' + JSON.stringify(deleteResponse));
+
+    console.log('assets.dao deleteScanners out');
+
+    return;
   }
 }

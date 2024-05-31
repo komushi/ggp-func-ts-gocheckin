@@ -49,8 +49,8 @@ exports.function_handler = async function(event, context) {
 		}
 
 		if (getShadowResult.state.desired.cameras) {
-			await assetsService.saveCameras(getShadowResult.state.desired.hostId, getShadowResult.state.desired.cameras).catch(err => {
-				console.error('saveProperty error:' + err.message);
+			await assetsService.refreshCameras(getShadowResult.state.desired.hostId, getShadowResult.state.desired.cameras).catch(err => {
+				console.error('refreshCameras error:' + err.message);
 				throw err;
 			});
 		}
@@ -75,20 +75,15 @@ exports.function_handler = async function(event, context) {
    	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
 
-   		event.hostId = process.env.HOST_ID;
-   		event.propertyCode = process.env.PROPERTY_CODE;
-   		event.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
-   		event.category = 'SCANNER';
-   		event.coreName = process.env.AWS_IOT_THING_NAME;
-   		event.lastUpdateOn = (new Date).toISOString();
-   		
-
-   		const items = [event];
+		const scannerItems = await assetsService.refreshScanners(process.env.HOST_ID, [event]).catch(err => {
+			console.error('refreshScanners error:' + err.message);
+			throw err;
+		});
 
 		await iotService.publish({
 			topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/scanner_detected`,
 		    payload: JSON.stringify({
-		      items: items,
+		      items: scannerItems,
 		      equipmentId: event.equipmentId
 		    })
 		});

@@ -1,4 +1,4 @@
-import { PropertyItem, CameraItem } from './assets.models';
+import { PropertyItem, CameraItem, ScannerItem } from './assets.models';
 import { AssetsDao } from './assets.dao';
 
 import ShortUniqueId from 'short-unique-id';
@@ -10,8 +10,8 @@ export class AssetsService {
 
   private assetsDao: AssetsDao;
   private uid;
-  private lastMotionChangeTime: number | null = null;
-  private lastCallRemoteTime: number | null = null;
+  private lastMotionTime: number | null = null;
+  private timer: NodeJS.Timeout | null = null;
   
   public constructor() {
     this.assetsDao = new AssetsDao();
@@ -45,8 +45,8 @@ export class AssetsService {
     return propertyItem;
   }
 
-  public async saveCameras(hostId: string, cameraItems: CameraItem[]): Promise<any> {
-    console.log('assets.service saveProperty in' + JSON.stringify({hostId, cameraItems}));
+  public async refreshCameras(hostId: string, cameraItems: CameraItem[]): Promise<any> {
+    console.log('assets.service refreshCameras in' + JSON.stringify({hostId, cameraItems}));
 
     await this.assetsDao.deleteCameras(hostId);
 
@@ -58,7 +58,30 @@ export class AssetsService {
       await this.assetsDao.createCamera(cameraItem);
     }));
 
-    console.log('assets.service saveProperty out');
+    console.log('assets.service refreshCameras out');
+
+    return;
+  }
+
+  public async refreshScanners(hostId: string, scannerItems: ScannerItem[]): Promise<any> {
+    console.log('assets.service refreshScanners in' + JSON.stringify({hostId, scannerItems}));
+
+    await this.assetsDao.deleteScanners(hostId);
+
+    await Promise.all(scannerItems.map(async (scannerItem: ScannerItem) => {
+
+      scannerItem.hostId = process.env.HOST_ID;
+      scannerItem.propertyCode = process.env.PROPERTY_CODE;
+      scannerItem.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
+      scannerItem.category = 'SCANNER';
+      scannerItem.coreName = process.env.AWS_IOT_THING_NAME;
+      scannerItem.uuid = this.uid.randomUUID(6);
+      scannerItem.lastUpdateOn = (new Date).toISOString();
+      
+      await this.assetsDao.createScanner(scannerItem);
+    }));
+
+    console.log('assets.service refreshScanners out');
 
     return;
   }
@@ -89,54 +112,33 @@ export class AssetsService {
       const detector = await MotionDetector.create(options.id, options);
 
       console.log('>> Motion Detection Listening on ' + options.hostname);
-      detector.listen(async (motion) => {
-        const currentTime = Date.now();
+      detector.listen(async (motion: boolean) => {
+        const now = Date.now();
 
         if (motion) {
-          console.log('>> Motion Detected on ' + options.hostname);
+          if (this.lastMotionTime === null || (now - this.lastMotionTime) > 20000) {
+            // Update the last motion time
+            this.lastMotionTime = now;
+            await axios.post("http://localhost:8888/detect", { motion: true });
 
+            // Clear the previous timer if it exists
+            if (this.timer) {
+              clearTimeout(this.timer);
+            }
 
-          if (this.lastCallRemoteTime === null || (currentTime - this.lastCallRemoteTime) > 20000) {
-            const response: AxiosResponse = await axios.post("http://localhost:8888/detect", { motion: motion });
-            const responseData = response.data;
-
-            console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
-
-            this.lastCallRemoteTime = currentTime;
-
-            return responseData;
-          }
-
-
-        } else {
-          console.log('>> Motion Stopped on ' + options.hostname);
-
-          if (this.lastCallRemoteTime !== null && (currentTime - this.lastCallRemoteTime) > 20000) {
-            const response: AxiosResponse = await axios.post("http://localhost:8888/detect", { motion: motion });
-            const responseData = response.data;
-
-            console.log('assets.service startOnvif responseData:' + JSON.stringify(responseData));
-
-
-            this.lastMotionChangeTime = currentTime;
-
-            return responseData;
-          }
-
-        }
-
-        if (!motion && this.lastMotionChangeTime !== null) {
-            setTimeout(async () => {
-                if (this.lastMotionChangeTime !== null && currentTime - this.lastMotionChangeTime > 20000) {
-                  const response: AxiosResponse = await axios.post("http://localhost:8888/detect", { motion: motion });
-                  const responseData = response.data;
-
-                  this.lastMotionChangeTime = currentTime;
-
-                  return responseData;
-                }
+            // Set a new 20-second timer to call call_remote(false)
+            this.timer = setTimeout(async () => {
+              await axios.post("http://localhost:8888/detect", { motion: false });
+              this.lastMotionTime = null; // Reset the last motion time after calling false
             }, 20000);
+          }
+        } else {
+          // Check if the last timer has finished before calling call_remote(false)
+          if (!this.timer) {
+            await axios.post("http://localhost:8888/detect", { motion: false });
+          }
         }
+  
       });
     }));
 

@@ -17,6 +17,22 @@ export interface CameraItem {
     onvif: ONVIF;
 }
 
+export interface ScannerItem {
+    uuid: string;
+    hostId: string;
+    propertyCode: string;
+    hostPropertyCode: string;
+    category: string;
+    equipmentId: string;
+    equipmentName: string;
+    coreName: string;
+    localIp: string;
+    longitude: string;
+    latitude: string;
+    roomCode: string;
+    lastUpdateOn: string;
+}
+
 interface RTSP {
     port: number;
     path: string;

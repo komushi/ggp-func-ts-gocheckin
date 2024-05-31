@@ -162,5 +162,39 @@ class AssetsDao {
             return;
         });
     }
+    createScanner(scannerItem) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.dao createScanner in' + JSON.stringify(scannerItem));
+            const params = [{
+                    Put: {
+                        TableName: TBL_ASSET,
+                        Item: scannerItem
+                    }
+                }];
+            const response = yield this.ddbDocClient.send(new lib_dynamodb_1.TransactWriteCommand({ TransactItems: params }));
+            console.log('assets.dao createScanner response:' + JSON.stringify(response));
+            console.log(`assets.dao createScanner out`);
+            return;
+        });
+    }
+    deleteScanners(hostId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.dao deleteScanners in:' + hostId);
+            const scannerItems = yield this.getCameras(hostId);
+            const deleteResponse = yield Promise.all(scannerItems.map((scannerItem) => __awaiter(this, void 0, void 0, function* () {
+                const param = {
+                    TableName: TBL_ASSET,
+                    Key: {
+                        hostId: scannerItem.hostId,
+                        uuid: scannerItem.uuid
+                    }
+                };
+                return yield this.ddbDocClient.send(new lib_dynamodb_1.DeleteCommand(param));
+            })));
+            console.log('assets.dao deleteScanners delete response:' + JSON.stringify(deleteResponse));
+            console.log('assets.dao deleteScanners out');
+            return;
+        });
+    }
 }
 exports.AssetsDao = AssetsDao;
