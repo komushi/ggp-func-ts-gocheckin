@@ -200,6 +200,32 @@ export class AssetsDao {
     return;
   }
 
+  public async getScanners(hostId: string): Promise<any> {
+
+    console.log('assets.dao getScanners in:' + hostId);
+
+    const response = await this.ddbDocClient.send(
+      new QueryCommand({
+        TableName: TBL_ASSET,
+        KeyConditionExpression: '#hkey = :hkey',
+        FilterExpression: '#category = :category',
+        ExpressionAttributeNames : {
+            '#hkey' : 'hostId',
+            '#category': 'category'
+        },
+        ExpressionAttributeValues: {
+          ':hkey': hostId,
+          ':category': 'SCANNER'
+        }
+      })
+    );
+
+    console.log('assets.dao getScanners out:' + JSON.stringify(response.Items));
+
+    return response.Items as ScannerItem[];
+
+  }
+
   public async createScanner(scannerItem: ScannerItem): Promise<any> {
     console.log('assets.dao createScanner in' + JSON.stringify(scannerItem));
 
@@ -223,7 +249,7 @@ export class AssetsDao {
 
     console.log('assets.dao deleteScanners in:' + hostId);
 
-    const scannerItems: ScannerItem[] = await this.getCameras(hostId);
+    const scannerItems: ScannerItem[] = await this.getScanners(hostId);
 
     const deleteResponse = await Promise.all(scannerItems.map(async (scannerItem: ScannerItem) => {
       const param = {

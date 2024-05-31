@@ -162,6 +162,26 @@ class AssetsDao {
             return;
         });
     }
+    getScanners(hostId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.dao getScanners in:' + hostId);
+            const response = yield this.ddbDocClient.send(new lib_dynamodb_1.QueryCommand({
+                TableName: TBL_ASSET,
+                KeyConditionExpression: '#hkey = :hkey',
+                FilterExpression: '#category = :category',
+                ExpressionAttributeNames: {
+                    '#hkey': 'hostId',
+                    '#category': 'category'
+                },
+                ExpressionAttributeValues: {
+                    ':hkey': hostId,
+                    ':category': 'SCANNER'
+                }
+            }));
+            console.log('assets.dao getScanners out:' + JSON.stringify(response.Items));
+            return response.Items;
+        });
+    }
     createScanner(scannerItem) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.dao createScanner in' + JSON.stringify(scannerItem));
@@ -180,7 +200,7 @@ class AssetsDao {
     deleteScanners(hostId) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.dao deleteScanners in:' + hostId);
-            const scannerItems = yield this.getCameras(hostId);
+            const scannerItems = yield this.getScanners(hostId);
             const deleteResponse = yield Promise.all(scannerItems.map((scannerItem) => __awaiter(this, void 0, void 0, function* () {
                 const param = {
                     TableName: TBL_ASSET,
