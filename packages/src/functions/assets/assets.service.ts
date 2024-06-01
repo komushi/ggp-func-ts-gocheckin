@@ -5,6 +5,7 @@ import ShortUniqueId from 'short-unique-id';
 import { MotionDetector, Options } from 'node-onvif-events';
 
 import axios, { AxiosResponse } from 'axios';
+import { inspect } from 'util';
 
 export class AssetsService {
 
@@ -98,8 +99,7 @@ export class AssetsService {
 
     const cameraItems: CameraItem[] = await this.assetsDao.getCameras(hostId);
 
-    await Promise.allSettled(cameraItems.map(async (cameraItem: CameraItem, index: number) => {
-
+    const responses = await Promise.allSettled(cameraItems.map(async (cameraItem: CameraItem, index: number) => {
       console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
 
       if (!cameraItem.onvif) {
@@ -148,6 +148,8 @@ export class AssetsService {
   
       });
     }));
+
+    console.log('assets.service startOnvif responses:' + JSON.stringify(inspect(responses)));
 
     console.log('assets.service startOnvif out');
 

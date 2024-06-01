@@ -17,6 +17,7 @@ const assets_dao_1 = require("./assets.dao");
 const short_unique_id_1 = __importDefault(require("short-unique-id"));
 const node_onvif_events_1 = require("node-onvif-events");
 const axios_1 = __importDefault(require("axios"));
+const util_1 = require("util");
 class AssetsService {
     constructor() {
         this.lastMotionTime = null;
@@ -89,7 +90,7 @@ class AssetsService {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service startOnvif in: ' + JSON.stringify({ hostId }));
             const cameraItems = yield this.assetsDao.getCameras(hostId);
-            yield Promise.allSettled(cameraItems.map((cameraItem, index) => __awaiter(this, void 0, void 0, function* () {
+            const responses = yield Promise.allSettled(cameraItems.map((cameraItem, index) => __awaiter(this, void 0, void 0, function* () {
                 console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
                 if (!cameraItem.onvif) {
                     return;
@@ -130,6 +131,7 @@ class AssetsService {
                     }
                 }));
             })));
+            console.log('assets.service startOnvif responses:' + JSON.stringify((0, util_1.inspect)(responses)));
             console.log('assets.service startOnvif out');
             return;
         });
