@@ -6,7 +6,7 @@ const TBL_MEMBER = process.env.TBL_MEMBER;
 const TBL_HOST = process.env.TBL_HOST;
 const TBL_ASSET = process.env.TBL_ASSET;
 const IDX_HOST_PROPERTYCODE = process.env.IDX_HOST_PROPERTYCODE;
-const IDX_ASSET_ID = process.env.IDX_ASSET_ID;
+const IDX_EQUIPMENT_ID = process.env.IDX_EQUIPMENT_ID;
 
 const config: DynamoDBClientConfig = {
   endpoint: process.env.DDB_ENDPOINT || 'http://localhost:8080',
@@ -138,15 +138,11 @@ export class InitializationDao {
           AttributeType: 'S'
         },
         {
-          AttributeName: 'assetId',
+          AttributeName: 'equipmentId',
           AttributeType: 'S'
         },
         {
           AttributeName: 'hostId',
-          AttributeType: 'S'
-        },
-        {
-          AttributeName: 'roomCode',
           AttributeType: 'S'
         }
       ],
@@ -156,15 +152,11 @@ export class InitializationDao {
       },
       GlobalSecondaryIndexes: [
         {
-          IndexName: IDX_ASSET_ID,
+          IndexName: IDX_EQUIPMENT_ID,
           KeySchema: [
             {
-              AttributeName: 'assetId',
+              AttributeName: 'equipmentId',
               KeyType: 'HASH'
-            },
-            {
-              AttributeName: 'roomCode',
-              KeyType: 'RANGE'
             }
           ],
           Projection: {

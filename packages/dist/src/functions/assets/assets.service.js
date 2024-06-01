@@ -26,7 +26,7 @@ class AssetsService {
     }
     saveProperty(hostId, propertyItem) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service saveProperty in' + JSON.stringify({ hostId, propertyItem }));
+            console.log('assets.service saveProperty in: ' + JSON.stringify({ hostId, propertyItem }));
             yield this.assetsDao.deleteProperties(hostId);
             propertyItem.hostId = hostId;
             propertyItem.hostPropertyCode = `${hostId}-${propertyItem.propertyCode}`;
@@ -46,7 +46,7 @@ class AssetsService {
     }
     refreshCameras(hostId, cameraItems) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service refreshCameras in' + JSON.stringify({ hostId, cameraItems }));
+            console.log('assets.service refreshCameras in: ' + JSON.stringify({ hostId, cameraItems }));
             yield this.assetsDao.deleteCameras(hostId);
             yield Promise.all(cameraItems.map((cameraItem) => __awaiter(this, void 0, void 0, function* () {
                 cameraItem.hostId = hostId;
@@ -58,11 +58,20 @@ class AssetsService {
             return;
         });
     }
-    refreshScanners(hostId, scannerItems) {
+    refreshScanner(scannerItem) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service refreshScanners in' + JSON.stringify({ hostId, scannerItems }));
-            yield this.assetsDao.deleteScanners(hostId);
-            yield Promise.all(scannerItems.map((scannerItem) => __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service refreshScanner in: ' + JSON.stringify(scannerItem));
+            const crtScanner = yield this.assetsDao.getScannerById(scannerItem.equipmentId);
+            if (crtScanner) {
+                scannerItem.lastUpdateOn = (new Date).toISOString();
+                scannerItem.uuid = crtScanner.uuid;
+                scannerItem.hostId = crtScanner.hostId;
+                scannerItem.propertyCode = crtScanner.propertyCode;
+                scannerItem.hostPropertyCode = crtScanner.hostPropertyCode;
+                scannerItem.category = crtScanner.category;
+                scannerItem.coreName = crtScanner.coreName;
+            }
+            else {
                 scannerItem.hostId = process.env.HOST_ID;
                 scannerItem.propertyCode = process.env.PROPERTY_CODE;
                 scannerItem.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
@@ -70,15 +79,15 @@ class AssetsService {
                 scannerItem.coreName = process.env.AWS_IOT_THING_NAME;
                 scannerItem.uuid = this.uid.randomUUID(6);
                 scannerItem.lastUpdateOn = (new Date).toISOString();
-                yield this.assetsDao.createScanner(scannerItem);
-            })));
-            console.log('assets.service refreshScanners out');
-            return;
+            }
+            yield this.assetsDao.createScanner(scannerItem);
+            console.log('assets.service refreshScanner out: ' + JSON.stringify(scannerItem));
+            return scannerItem;
         });
     }
     startOnvif(hostId) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service startOnvif in' + JSON.stringify({ hostId }));
+            console.log('assets.service startOnvif in: ' + JSON.stringify({ hostId }));
             const cameraItems = yield this.assetsDao.getCameras(hostId);
             yield Promise.all(cameraItems.map((cameraItem, index) => __awaiter(this, void 0, void 0, function* () {
                 console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));

@@ -13,6 +13,7 @@ exports.AssetsDao = void 0;
 const client_dynamodb_1 = require("@aws-sdk/client-dynamodb");
 const lib_dynamodb_1 = require("@aws-sdk/lib-dynamodb");
 const TBL_ASSET = process.env.TBL_ASSET;
+const IDX_EQUIPMENT_ID = process.env.IDX_EQUIPMENT_ID;
 const config = {
     endpoint: process.env.DDB_ENDPOINT || 'http://localhost:8080',
 };
@@ -162,6 +163,32 @@ class AssetsDao {
             return;
         });
     }
+    getScannerById(equipmentId, attributes) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(`assets.dao getScannerById in: ${JSON.stringify({ equipmentId, attributes })}`);
+            const data = yield this.ddbDocClient.send(new lib_dynamodb_1.QueryCommand({
+                TableName: TBL_ASSET,
+                IndexName: IDX_EQUIPMENT_ID,
+                ProjectionExpression: attributes === null || attributes === void 0 ? void 0 : attributes.join(),
+                KeyConditionExpression: '#hkey = :hkey',
+                ExpressionAttributeNames: {
+                    '#hkey': 'equipmentId'
+                },
+                ExpressionAttributeValues: {
+                    ':hkey': equipmentId
+                }
+            }));
+            if (((_a = data.Items) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+                console.log(`assets.dao getScannerById out: ${JSON.stringify(data.Items)}`);
+                return data.Items[0];
+            }
+            else {
+                console.log(`assets.dao getScannerById out: []`);
+                return;
+            }
+        });
+    }
     getScanners(hostId) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.dao getScanners in:' + hostId);
@@ -194,7 +221,7 @@ class AssetsDao {
             const response = yield this.ddbDocClient.send(new lib_dynamodb_1.TransactWriteCommand({ TransactItems: params }));
             console.log('assets.dao createScanner response:' + JSON.stringify(response));
             console.log(`assets.dao createScanner out`);
-            return;
+            return scannerItem;
         });
     }
     deleteScanners(hostId) {

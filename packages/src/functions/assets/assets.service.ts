@@ -20,7 +20,7 @@ export class AssetsService {
   }
 
   public async saveProperty(hostId: string, propertyItem: PropertyItem): Promise<any> {
-    console.log('assets.service saveProperty in' + JSON.stringify({hostId, propertyItem}));
+    console.log('assets.service saveProperty in: ' + JSON.stringify({hostId, propertyItem}));
 
     await this.assetsDao.deleteProperties(hostId);
 
@@ -46,7 +46,7 @@ export class AssetsService {
   }
 
   public async refreshCameras(hostId: string, cameraItems: CameraItem[]): Promise<any> {
-    console.log('assets.service refreshCameras in' + JSON.stringify({hostId, cameraItems}));
+    console.log('assets.service refreshCameras in: ' + JSON.stringify({hostId, cameraItems}));
 
     await this.assetsDao.deleteCameras(hostId);
 
@@ -63,13 +63,20 @@ export class AssetsService {
     return;
   }
 
-  public async refreshScanners(hostId: string, scannerItems: ScannerItem[]): Promise<any> {
-    console.log('assets.service refreshScanners in' + JSON.stringify({hostId, scannerItems}));
+  public async refreshScanner(scannerItem: ScannerItem): Promise<any> {
+    console.log('assets.service refreshScanner in: ' + JSON.stringify(scannerItem));
 
-    await this.assetsDao.deleteScanners(hostId);
+    const crtScanner:ScannerItem = await this.assetsDao.getScannerById(scannerItem.equipmentId);
 
-    await Promise.all(scannerItems.map(async (scannerItem: ScannerItem) => {
-
+    if (crtScanner) {
+      scannerItem.lastUpdateOn = (new Date).toISOString();
+      scannerItem.uuid = crtScanner.uuid;
+      scannerItem.hostId = crtScanner.hostId;
+      scannerItem.propertyCode = crtScanner.propertyCode;
+      scannerItem.hostPropertyCode = crtScanner.hostPropertyCode;
+      scannerItem.category = crtScanner.category;
+      scannerItem.coreName = crtScanner.coreName;
+    } else {
       scannerItem.hostId = process.env.HOST_ID;
       scannerItem.propertyCode = process.env.PROPERTY_CODE;
       scannerItem.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
@@ -77,17 +84,17 @@ export class AssetsService {
       scannerItem.coreName = process.env.AWS_IOT_THING_NAME;
       scannerItem.uuid = this.uid.randomUUID(6);
       scannerItem.lastUpdateOn = (new Date).toISOString();
+    }
       
-      await this.assetsDao.createScanner(scannerItem);
-    }));
+    await this.assetsDao.createScanner(scannerItem);
 
-    console.log('assets.service refreshScanners out');
+    console.log('assets.service refreshScanner out: ' + JSON.stringify(scannerItem));
 
-    return;
+    return scannerItem;
   }
 
   public async startOnvif(hostId: string): Promise<any> {
-    console.log('assets.service startOnvif in' + JSON.stringify({hostId}));
+    console.log('assets.service startOnvif in: ' + JSON.stringify({hostId}));
 
     const cameraItems: CameraItem[] = await this.assetsDao.getCameras(hostId);
 

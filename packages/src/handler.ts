@@ -75,17 +75,14 @@ exports.function_handler = async function(event, context) {
    	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
 
-		const scannerItems = await assetsService.refreshScanners(process.env.HOST_ID, [event]).catch(err => {
-			console.error('refreshScanners error:' + err.message);
+		const scannerItem = await assetsService.refreshScanner(event).catch(err => {
+			console.error('refreshScanner error:' + err.message);
 			throw err;
 		});
 
 		await iotService.publish({
 			topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/scanner_detected`,
-		    payload: JSON.stringify({
-		      items: scannerItems,
-		      equipmentId: event.equipmentId
-		    })
+		    payload: JSON.stringify(scannerItem)
 		});
 	}
 

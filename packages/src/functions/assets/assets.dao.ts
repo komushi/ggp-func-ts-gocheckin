@@ -1,8 +1,9 @@
 import { DynamoDBClientConfig, DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, TransactWriteCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, TransactWriteCommand, QueryCommand, DeleteCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { PropertyItem, CameraItem, ScannerItem } from './assets.models';
 
 const TBL_ASSET = process.env.TBL_ASSET;
+const IDX_EQUIPMENT_ID = process.env.IDX_EQUIPMENT_ID;
 
 const config: DynamoDBClientConfig = {
   endpoint: process.env.DDB_ENDPOINT || 'http://localhost:8080',
@@ -200,6 +201,40 @@ export class AssetsDao {
     return;
   }
 
+  public async getScannerById(equipmentId: string): Promise<any>;
+  public async getScannerById(equipmentId: string, attributes: string[]): Promise<any>;
+  public async getScannerById(equipmentId: string, attributes?: string[]): Promise<any> {
+
+    console.log(`assets.dao getScannerById in: ${JSON.stringify({equipmentId, attributes})}`);
+
+    const data = await this.ddbDocClient.send(
+      new QueryCommand({
+        TableName: TBL_ASSET,
+        IndexName: IDX_EQUIPMENT_ID,
+        ProjectionExpression: attributes?.join(),
+        KeyConditionExpression: '#hkey = :hkey',
+        ExpressionAttributeNames : {
+            '#hkey' : 'equipmentId'
+        },
+        ExpressionAttributeValues: {
+          ':hkey': equipmentId
+        }
+      })
+    );
+
+    if (data.Items?.length > 0) {
+      console.log(`assets.dao getScannerById out: ${JSON.stringify(data.Items)}`);
+
+      return data.Items[0] as ScannerItem;
+
+    } else {
+      console.log(`assets.dao getScannerById out: []`);
+
+      return;
+    }
+    
+  }
+
   public async getScanners(hostId: string): Promise<any> {
 
     console.log('assets.dao getScanners in:' + hostId);
@@ -242,7 +277,7 @@ export class AssetsDao {
 
     console.log(`assets.dao createScanner out`);
 
-    return;
+    return scannerItem;
   }
 
   public async deleteScanners(hostId: string): Promise<any> {

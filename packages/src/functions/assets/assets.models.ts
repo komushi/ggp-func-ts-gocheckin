@@ -29,7 +29,6 @@ export interface ScannerItem {
     localIp: string;
     longitude: string;
     latitude: string;
-    roomCode: string;
     lastUpdateOn: string;
 }
 
