@@ -89,7 +89,7 @@ class AssetsService {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service startOnvif in: ' + JSON.stringify({ hostId }));
             const cameraItems = yield this.assetsDao.getCameras(hostId);
-            yield Promise.all(cameraItems.map((cameraItem, index) => __awaiter(this, void 0, void 0, function* () {
+            yield Promise.allSettled(cameraItems.map((cameraItem, index) => __awaiter(this, void 0, void 0, function* () {
                 console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
                 if (!cameraItem.onvif) {
                     return;

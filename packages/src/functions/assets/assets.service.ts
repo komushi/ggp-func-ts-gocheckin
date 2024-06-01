@@ -98,7 +98,7 @@ export class AssetsService {
 
     const cameraItems: CameraItem[] = await this.assetsDao.getCameras(hostId);
 
-    await Promise.all(cameraItems.map(async (cameraItem: CameraItem, index: number) => {
+    await Promise.allSettled(cameraItems.map(async (cameraItem: CameraItem, index: number) => {
 
       console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
 
