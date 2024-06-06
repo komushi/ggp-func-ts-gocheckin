@@ -127,7 +127,12 @@ export class AssetsService {
 
         if (motion) {
           console.log('assets.service startOnvif detector.listen:' + JSON.stringify({motion}));
-          console.log('assets.service startOnvif detector.listen timer._destroyed' + this.timer['_destroyed']);
+          if (this.timer) {
+            console.log('assets.service startOnvif detector.listen timer._destroyed' + this.timer['_destroyed']);  
+          } else {
+            console.log('assets.service startOnvif detector.listen timer null');
+          }
+          
           clearTimeout(this.timer);
 
           if (!this.timer || this.timer['_destroyed']) {;
