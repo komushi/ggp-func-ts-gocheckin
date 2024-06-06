@@ -113,6 +113,7 @@ class AssetsService {
                     const now = Date.now();
                     if (motion) {
                         console.log('assets.service startOnvif detector.listen:' + JSON.stringify({ motion }));
+                        console.log('assets.service startOnvif detector.listen timer._destroyed' + this.timer['_destroyed']);
                         clearTimeout(this.timer);
                         if (!this.timer || this.timer['_destroyed']) {
                             ;
@@ -122,7 +123,7 @@ class AssetsService {
                         }
                         // Set a new 10-second timer to call call_remote(false)
                         this.timer = setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                            console.log('assets.service startOnvif detector.listen by timer axios.post detect:' + JSON.stringify({ motion }));
+                            console.log('assets.service startOnvif detector.listen stop detection by timer:' + JSON.stringify({ motion }));
                             yield axios_1.default.post("http://localhost:8888/detect", { motion: false });
                         }), 10000);
                     }
@@ -130,7 +131,7 @@ class AssetsService {
                         // Check if the last timer has finished before calling call_remote(false)
                         if ((now - this.lastMotionTime) >= 60000) {
                             clearTimeout(this.timer);
-                            console.log('assets.service startOnvif detector.listen axios.post detect:' + JSON.stringify({ motion }));
+                            console.log('assets.service startOnvif detector.listen stop detection by motion:' + JSON.stringify({ motion }));
                             yield axios_1.default.post("http://localhost:8888/detect", { motion: false });
                         }
                     }
