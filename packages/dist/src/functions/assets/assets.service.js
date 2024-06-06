@@ -90,11 +90,15 @@ class AssetsService {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service startOnvif in: ' + JSON.stringify({ hostId }));
             const cameraItems = yield this.assetsDao.getCameras(hostId);
-            const responses = yield Promise.allSettled(cameraItems.map((cameraItem, index) => __awaiter(this, void 0, void 0, function* () {
-                console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
-                if (!cameraItem.onvif) {
-                    return;
+            const responses = yield Promise.allSettled(cameraItems.filter((cameraItem) => {
+                if (cameraItem.onvif) {
+                    return true;
                 }
+                else {
+                    return false;
+                }
+            }).map((cameraItem, index) => __awaiter(this, void 0, void 0, function* () {
+                console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
                 const options = {
                     id: index,
                     hostname: cameraItem.ip,
@@ -108,28 +112,47 @@ class AssetsService {
                 detector.listen((motion) => __awaiter(this, void 0, void 0, function* () {
                     const now = Date.now();
                     if (motion) {
-                        if (this.lastMotionTime === null || (now - this.lastMotionTime) > 20000) {
-                            // Update the last motion time
+                        clearTimeout(this.timer);
+                        if (!this.timer || this.timer['_destroyed']) {
                             this.lastMotionTime = now;
-                            yield axios_1.default.post("http://localhost:8888/detect", { motion: true });
-                            // Clear the previous timer if it exists
-                            if (this.timer) {
-                                clearTimeout(this.timer);
-                            }
-                            // Set a new 20-second timer to call call_remote(false)
-                            this.timer = setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                                yield axios_1.default.post("http://localhost:8888/detect", { motion: false });
-                                this.lastMotionTime = null; // Reset the last motion time after calling false
-                            }), 20000);
                         }
+                        // Set a new 20-second timer to call call_remote(false)
+                        this.timer = setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                            yield axios_1.default.post("http://localhost:8888/detect", { motion: false });
+                        }), 10000);
                     }
                     else {
                         // Check if the last timer has finished before calling call_remote(false)
-                        if (!this.timer) {
+                        if ((now - this.lastMotionTime) > 60000) {
+                            clearTimeout(this.timer);
                             yield axios_1.default.post("http://localhost:8888/detect", { motion: false });
                         }
                     }
                 }));
+                // detector.listen(async (motion: boolean) => {
+                //   const now = Date.now();
+                //   if (motion) {
+                //     if (this.lastMotionTime === null || (now - this.lastMotionTime) > 20000) {
+                //       // Update the last motion time
+                //       this.lastMotionTime = now;
+                //       await axios.post("http://localhost:8888/detect", { motion: true });
+                //       // Clear the previous timer if it exists
+                //       if (this.timer) {
+                //         clearTimeout(this.timer);
+                //       }
+                //       // Set a new 20-second timer to call call_remote(false)
+                //       this.timer = setTimeout(async () => {
+                //         await axios.post("http://localhost:8888/detect", { motion: false });
+                //         this.lastMotionTime = null; // Reset the last motion time after calling false
+                //       }, 20000);
+                //     }
+                //   } else {
+                //     // Check if the last timer has finished before calling call_remote(false)
+                //     if (!this.timer) {
+                //       await axios.post("http://localhost:8888/detect", { motion: false });
+                //     }
+                //   }
+                // });
             })));
             console.log('assets.service startOnvif responses:' + JSON.stringify((0, util_1.inspect)(responses)));
             console.log('assets.service startOnvif out');
