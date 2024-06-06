@@ -117,7 +117,8 @@ class AssetsService {
                         if (!this.timer || this.timer['_destroyed']) {
                             ;
                             this.lastMotionTime = now;
-                            console.log('assets.service startOnvif detector.listen:' + this.lastMotionTime);
+                            console.log('assets.service startOnvif detector.listen axios.post detect:' + JSON.stringify({ motion }));
+                            yield axios_1.default.post("http://localhost:8888/detect", { motion: true });
                         }
                         // Set a new 10-second timer to call call_remote(false)
                         this.timer = setTimeout(() => __awaiter(this, void 0, void 0, function* () {
