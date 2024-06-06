@@ -136,7 +136,7 @@ export class AssetsService {
           
           if (!this.timer || this.timer['_destroyed']) {;
             this.lastMotionTime = now;
-            console.log('assets.service startOnvif detector.listen post start detect');
+            console.log('assets.service startOnvif post start detect');
             await axios.post("http://localhost:8888/detect", { motion: true });
           }
 
@@ -145,7 +145,7 @@ export class AssetsService {
           this.timer = setTimeout(async () => {
             console.log('assets.service startOnvif post stop detect by timer');
             await axios.post("http://localhost:8888/detect", { motion: false });
-          }, 10000);
+          }, 20000);
 
         } else {
           // Check if the last timer has finished before calling call_remote(false)
