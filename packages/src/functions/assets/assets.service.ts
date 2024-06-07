@@ -137,14 +137,14 @@ export class AssetsService {
           if (!this.timer || this.timer['_destroyed']) {;
             this.lastMotionTime = now;
             console.log('assets.service startOnvif post start detect');
-            await axios.post("http://localhost:8888/detect", { motion: true });
+            await axios.post("http://localhost:8888/detect", { motion: true, cameraItem });
           }
 
           // Set a new 10-second timer to call call_remote(false)
           clearTimeout(this.timer);
           this.timer = setTimeout(async () => {
             console.log('assets.service startOnvif post stop detect by timer');
-            await axios.post("http://localhost:8888/detect", { motion: false });
+            await axios.post("http://localhost:8888/detect", { motion: false, cameraItem });
           }, 20000);
 
         } else {
@@ -153,7 +153,7 @@ export class AssetsService {
             console.log('assets.service startOnvif post stop detect by motion=false');
 
             clearTimeout(this.timer);
-            await axios.post("http://localhost:8888/detect", { motion: false });
+            await axios.post("http://localhost:8888/detect", { motion: false, cameraItem });
           }
         }
   

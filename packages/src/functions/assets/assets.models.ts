@@ -35,6 +35,8 @@ export interface ScannerItem {
 interface RTSP {
     port: number;
     path: string;
+    codec: string;
+    framerate: number;
 }
 
 interface ONVIF {
