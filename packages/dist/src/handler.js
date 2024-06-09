@@ -94,14 +94,11 @@ exports.function_handler = function (event, context) {
 };
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log('intializeEnvVar before HOST_ID:' + process.env.HOST_ID);
-        console.log('intializeEnvVar before STAGE:' + process.env.STAGE);
-        console.log('intializeEnvVar before PROPERTY_CODE:' + process.env.PROPERTY_CODE);
         const initializationService = new initialization_service_1.InitializationService();
         yield initializationService.intializeEnvVar();
-        console.log('intializeEnvVar after HOST_ID:' + process.env.HOST_ID);
-        console.log('intializeEnvVar after STAGE:' + process.env.STAGE);
-        console.log('intializeEnvVar after PROPERTY_CODE:' + process.env.PROPERTY_CODE);
+        console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
+        console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
+        console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
         const assetsService = new assets_service_1.AssetsService();
         yield assetsService.startOnvif(process.env.HOST_ID);
     }
@@ -116,14 +113,11 @@ setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
 }), 10000);
 setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log('intializeEnvVar before HOST_ID:' + process.env.HOST_ID);
-        console.log('intializeEnvVar before STAGE:' + process.env.STAGE);
-        console.log('intializeEnvVar before PROPERTY_CODE:' + process.env.PROPERTY_CODE);
         const initializationService = new initialization_service_1.InitializationService();
         yield initializationService.intializeEnvVar();
-        console.log('intializeEnvVar after HOST_ID:' + process.env.HOST_ID);
-        console.log('intializeEnvVar after STAGE:' + process.env.STAGE);
-        console.log('intializeEnvVar after PROPERTY_CODE:' + process.env.PROPERTY_CODE);
+        console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
+        console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
+        console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
     }
     catch (err) {
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');

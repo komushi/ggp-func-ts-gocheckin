@@ -123,13 +123,15 @@ class AssetsService {
                             ;
                             this.lastMotionTime = now;
                             console.log('assets.service startOnvif request scanner to start scan at ' + cameraItem.ip);
-                            yield axios_1.default.post("http://localhost:8888/detect", { motion: true, cameraItem });
+                            const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: true, cameraItem });
+                            console.log(response.status, response.data);
                         }
                         // Set a new 10-second timer to call call_remote(false)
                         clearTimeout(this.timer);
                         this.timer = setTimeout(() => __awaiter(this, void 0, void 0, function* () {
                             console.log('assets.service startOnvif request scanner to stop scan at ' + cameraItem.ip + ' by timer');
-                            yield axios_1.default.post("http://localhost:8888/detect", { motion: false, cameraItem });
+                            const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: false, cameraItem });
+                            console.log(response.status, response.data);
                         }), 20000);
                     }
                     else {
@@ -137,7 +139,8 @@ class AssetsService {
                         if ((now - this.lastMotionTime) >= 60000) {
                             console.log('assets.service startOnvif request scanner to stop scan at ' + cameraItem.ip + ' after 60 seconds');
                             clearTimeout(this.timer);
-                            yield axios_1.default.post("http://localhost:8888/detect", { motion: false, cameraItem });
+                            const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: false, cameraItem });
+                            console.log(response.status, response.data);
                         }
                     }
                 }));

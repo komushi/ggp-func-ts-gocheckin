@@ -98,16 +98,12 @@ exports.function_handler = async function(event, context) {
 setTimeout(async () => {
     try {
 		
-		console.log('intializeEnvVar before HOST_ID:' + process.env.HOST_ID);
-		console.log('intializeEnvVar before STAGE:' + process.env.STAGE);
-		console.log('intializeEnvVar before PROPERTY_CODE:' + process.env.PROPERTY_CODE);
-
     	const initializationService = new InitializationService();
         await initializationService.intializeEnvVar();
 
-		console.log('intializeEnvVar after HOST_ID:' + process.env.HOST_ID);
-		console.log('intializeEnvVar after STAGE:' + process.env.STAGE);
-		console.log('intializeEnvVar after PROPERTY_CODE:' + process.env.PROPERTY_CODE);
+		console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
+		console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
+		console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
 
         const assetsService = new AssetsService();
         await assetsService.startOnvif(process.env.HOST_ID);
@@ -125,16 +121,12 @@ setTimeout(async () => {
 setInterval(async () => {
     try {
 		
-		console.log('intializeEnvVar before HOST_ID:' + process.env.HOST_ID);
-		console.log('intializeEnvVar before STAGE:' + process.env.STAGE);
-		console.log('intializeEnvVar before PROPERTY_CODE:' + process.env.PROPERTY_CODE);
-
     	const initializationService = new InitializationService();
         await initializationService.intializeEnvVar();
 
-		console.log('intializeEnvVar after HOST_ID:' + process.env.HOST_ID);
-		console.log('intializeEnvVar after STAGE:' + process.env.STAGE);
-		console.log('intializeEnvVar after PROPERTY_CODE:' + process.env.PROPERTY_CODE);
+		console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
+		console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
+		console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
 
     } catch (err) {
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
