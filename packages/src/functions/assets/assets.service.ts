@@ -125,7 +125,7 @@ export class AssetsService {
       detector.listen(async (motion: boolean) => {
         const now = Date.now();
 
-        console.log('assets.service startOnvif motion:' + motion + ' now: ' + now);
+        console.log('assets.service startOnvif motion:' + motion + ' at ' + cameraItem.ip);
 
         if (motion) {
           // if (this.timer) {

@@ -111,7 +111,7 @@ class AssetsService {
                 console.log('>> Motion Detection Listening on ' + options.hostname);
                 detector.listen((motion) => __awaiter(this, void 0, void 0, function* () {
                     const now = Date.now();
-                    console.log('assets.service startOnvif motion:' + motion + ' now: ' + now);
+                    console.log('assets.service startOnvif motion:' + motion + ' at ' + cameraItem.ip);
                     if (motion) {
                         // if (this.timer) {
                         //   console.log('assets.service startOnvif timer._destroyed:' + this.timer['_destroyed']);  
