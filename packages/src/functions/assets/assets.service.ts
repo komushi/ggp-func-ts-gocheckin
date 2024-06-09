@@ -125,15 +125,7 @@ export class AssetsService {
       detector.listen(async (motion: boolean) => {
         const now = Date.now();
 
-        console.log('assets.service startOnvif motion:' + motion + ' at ' + cameraItem.ip);
-
         if (motion) {
-          // if (this.timer) {
-          //   console.log('assets.service startOnvif timer._destroyed:' + this.timer['_destroyed']);  
-          // } else {
-          //   console.log('assets.service startOnvif timer null');
-          // }
-
           console.log('assets.service startOnvif motion detected at ' + cameraItem.ip);
           
           if (!this.timer || this.timer['_destroyed']) {;
@@ -152,16 +144,20 @@ export class AssetsService {
 
           }, 20000);
 
-        } else {
-          // Check if the last timer has finished before calling call_remote(false)
-          if ((now - this.lastMotionTime) >= 60000) {
-            console.log('assets.service startOnvif request scanner to stop scan at ' + cameraItem.ip + ' after 60 seconds');
+        } 
 
-            clearTimeout(this.timer);
-            const response = await axios.post("http://localhost:8888/detect", { motion: false, cameraItem });
-            console.log("status:" + response.status + " data:" + JSON.stringify(response.data));
-          }
-        }
+        // else {
+        //   console.log('assets.service startOnvif motion detection stopped at ' + cameraItem.ip);
+
+        //   // Check if the last timer has finished before calling call_remote(false)
+        //   if ((now - this.lastMotionTime) >= 60000) {
+        //     console.log('assets.service startOnvif request scanner to stop scan at ' + cameraItem.ip + ' after 60 seconds');
+
+        //     clearTimeout(this.timer);
+        //     const response = await axios.post("http://localhost:8888/detect", { motion: false, cameraItem });
+        //     console.log("status:" + response.status + " data:" + JSON.stringify(response.data));
+        //   }
+        // }
       });
 
     }));
