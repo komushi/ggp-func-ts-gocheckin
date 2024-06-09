@@ -11,8 +11,8 @@ export class AssetsService {
 
   private assetsDao: AssetsDao;
   private uid;
-  private lastMotionTime: number | null = null;
-  private timer: NodeJS.Timeout | null = null;
+  // private lastMotionTime: number | null = null;
+  // private timer: NodeJS.Timeout | null = null;
   
   public constructor() {
     this.assetsDao = new AssetsDao();
@@ -94,6 +94,7 @@ export class AssetsService {
     return scannerItem;
   }
 
+/*
   public async startOnvif(hostId: string): Promise<any> {
     console.log('assets.service startOnvif in: ' + JSON.stringify({hostId}));
 
@@ -144,20 +145,69 @@ export class AssetsService {
 
           }, 20000);
 
-        } 
+        } else {
+          console.log('assets.service startOnvif motion detection stopped at ' + cameraItem.ip);
 
-        // else {
-        //   console.log('assets.service startOnvif motion detection stopped at ' + cameraItem.ip);
+          // Check if the last timer has finished before calling call_remote(false)
+          if ((now - this.lastMotionTime) >= 60000) {
+            console.log('assets.service startOnvif request scanner to stop scan at ' + cameraItem.ip + ' after 60 seconds');
 
-        //   // Check if the last timer has finished before calling call_remote(false)
-        //   if ((now - this.lastMotionTime) >= 60000) {
-        //     console.log('assets.service startOnvif request scanner to stop scan at ' + cameraItem.ip + ' after 60 seconds');
+            clearTimeout(this.timer);
+            const response = await axios.post("http://localhost:8888/detect", { motion: false, cameraItem });
+            console.log("status:" + response.status + " data:" + JSON.stringify(response.data));
+          }
+        }
+      });
 
-        //     clearTimeout(this.timer);
-        //     const response = await axios.post("http://localhost:8888/detect", { motion: false, cameraItem });
-        //     console.log("status:" + response.status + " data:" + JSON.stringify(response.data));
-        //   }
-        // }
+    }));
+
+    console.log('assets.service startOnvif responses:' + JSON.stringify(inspect(responses)));
+
+    console.log('assets.service startOnvif out');
+
+    return;
+  }
+*/
+
+  public async startOnvif(hostId: string): Promise<any> {
+    console.log('assets.service startOnvif in: ' + JSON.stringify({hostId}));
+
+    const cameraItems: CameraItem[] = await this.assetsDao.getCameras(hostId);
+
+    const responses = await Promise.allSettled(cameraItems.filter((cameraItem: CameraItem) => {
+      if (cameraItem.onvif) {
+        return true;
+      } else {
+        return false;
+      }
+    }).map(async (cameraItem: CameraItem, index: number) => {
+      console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
+
+      const options: Options = {
+        id: index,                      // Any number id
+        hostname: cameraItem.ip,  // IP Address of device
+        username: cameraItem.username,          // User
+        password: cameraItem.password,       // Password
+        port: cameraItem.onvif.port,                   // Onvif device service port
+      };
+
+      console.log('assets.service startOnvif options:' + JSON.stringify(options));
+
+      const detector = await MotionDetector.create(options.id, options);
+
+      console.log('>> Motion Detection Listening on ' + options.hostname);
+
+      detector.listen(async (motion: boolean) => {
+        // const now = Date.now();
+
+        if (motion) {
+          // console.log('assets.service startOnvif motion detected at ' + cameraItem.ip);
+          // this.lastMotionTime = now;
+          console.log('assets.service startOnvif request scanner to start scan at ' + cameraItem.ip);
+          const response = await axios.post("http://localhost:8888/detect", { motion: true, cameraItem });
+          console.log("status:" + response.status + " data:" + JSON.stringify(response.data));
+
+        }
       });
 
     }));
