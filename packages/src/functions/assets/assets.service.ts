@@ -140,7 +140,7 @@ export class AssetsService {
             this.lastMotionTime = now;
             console.log('assets.service startOnvif request scanner to start scan at ' + cameraItem.ip);
             const response = await axios.post("http://localhost:8888/detect", { motion: true, cameraItem });
-            console.log("status:" + response.status + " data:" + response.data);
+            console.log("status:" + response.status + " data:" + JSON.stringify(response.data));
           }
 
           // Set a new 10-second timer to call call_remote(false)
@@ -148,7 +148,7 @@ export class AssetsService {
           this.timer = setTimeout(async () => {
             console.log('assets.service startOnvif request scanner to stop scan at ' + cameraItem.ip + ' by timer');
             const response = await axios.post("http://localhost:8888/detect", { motion: false, cameraItem });
-            console.log("status:" + response.status + " data:" + response.data);
+            console.log("status:" + response.status + " data:" + JSON.stringify(response.data));
 
           }, 20000);
 
@@ -159,7 +159,7 @@ export class AssetsService {
 
             clearTimeout(this.timer);
             const response = await axios.post("http://localhost:8888/detect", { motion: false, cameraItem });
-            console.log("status:" + response.status + " data:" + response.data);
+            console.log("status:" + response.status + " data:" + JSON.stringify(response.data));
           }
         }
       });
