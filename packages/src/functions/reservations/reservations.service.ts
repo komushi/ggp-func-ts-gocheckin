@@ -207,18 +207,6 @@ export class ReservationsService {
     });
 
     const responsesEmbedding = await Promise.all(Array.from(desiredMembers.values()).map(async (memberItem: MemberItem) => {
-
-      /* embedding request from mqtt disabled
-      delete memberItem.memberKeyItem;
-      delete memberItem.faceImgKey;
-      delete memberItem.fullName;
-
-      await this.iotService.publish({
-        topic: `gocheckin/req_face_embeddings`,
-        payload: JSON.stringify(memberItem)
-      });
-      */
-
       const response: AxiosResponse<MemberItem> = await axios.post("http://localhost:8888/recognise", memberItem);
       const responseData: MemberItem = response.data;
       return responseData;

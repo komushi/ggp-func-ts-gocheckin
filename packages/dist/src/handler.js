@@ -83,13 +83,6 @@ exports.function_handler = function (event, context) {
                 payload: JSON.stringify(scannerItem)
             });
         }
-        /* embedding request from mqtt disabled
-        } else if (context.clientContext.Custom.subject == `gocheckin/res_face_embeddings`) {
-            console.log('res_face_embeddings event: ' + JSON.stringify(event));
-    
-            await reservationsService.refreshMember(event);
-        }
-        */
     });
 };
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
