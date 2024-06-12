@@ -129,8 +129,14 @@ export class AssetsService {
           // console.log('assets.service startOnvif motion detected at ' + cameraItem.ip);
           // this.lastMotionTime = now;
           console.log('assets.service startOnvif request scanner to start scan at ' + cameraItem.ip);
-          const response = await axios.post("http://localhost:8888/detect", { motion: true, cameraItem });
-          console.log("status:" + response.status + " data:" + JSON.stringify(response.data));
+          const response = await axios.post(
+            "http://localhost:8888/detect", 
+            { motion: true, cameraItem })
+          .catch(err => {
+            console.log("request scanner err:" + JSON.stringify(err));
+            return { status: "", data: {}};
+          });
+          console.log("request scannerstatus:" + response.status + " data:" + JSON.stringify(response.data));
 
         }
       });
