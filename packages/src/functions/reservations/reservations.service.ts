@@ -72,6 +72,7 @@ export class ReservationsService {
               listingId: listingId,
               reservationCode: reservationCode,
               lastResponse: lastRequestOn,
+              lastRequestOn: lastRequestOn,
               rejectReason: syncResult.rejectReason,
               clearRequest: (syncResult.rejectReason ? false : syncResult.clearRequest)
             })
@@ -103,6 +104,7 @@ export class ReservationsService {
               listingId: listingId,
               reservationCode: reservationCode,
               lastResponse: lastRequestOn,
+              lastRequestOn: lastRequestOn,
               rejectReason: syncResult.rejectReason
             })
           });
@@ -120,6 +122,7 @@ export class ReservationsService {
               listingId: listingId,
               reservationCode: reservationCode,
               lastResponse: lastRequestOn,
+              lastRequestOn: lastRequestOn,
               rejectReason: `Wrong action ${action}!`
             })
           });
