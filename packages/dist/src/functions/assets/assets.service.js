@@ -86,10 +86,15 @@ class AssetsService {
             return scannerItem;
         });
     }
-    startOnvif(hostId) {
+    startOnvif({ hostId, identityId, propertyCode, thingName }) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service startOnvif in: ' + JSON.stringify({ hostId }));
+            console.log('assets.service startOnvif in: ' + JSON.stringify({ hostId, identityId, propertyCode, thingName }));
             const cameraItems = yield this.assetsDao.getCameras(hostId);
+            const hostInfo = {
+                hostId,
+                identityId,
+                propertyCode
+            };
             const responses = yield Promise.allSettled(cameraItems.filter((cameraItem) => {
                 if (cameraItem.onvif) {
                     return true;
@@ -115,7 +120,7 @@ class AssetsService {
                         // console.log('assets.service startOnvif motion detected at ' + cameraItem.ip);
                         // this.lastMotionTime = now;
                         console.log('assets.service startOnvif request scanner to start scan at ' + cameraItem.ip);
-                        const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: true, cameraItem })
+                        const response = yield axios_1.default.post("http://localhost:8888/detect", { motion: true, cameraItem, hostInfo })
                             .catch(err => {
                             console.log("request scanner err:" + JSON.stringify(err));
                             return { status: "", data: {} };

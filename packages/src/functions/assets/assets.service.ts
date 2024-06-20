@@ -77,7 +77,7 @@ export class AssetsService {
       scannerItem.hostPropertyCode = crtScanner.hostPropertyCode;
       scannerItem.category = crtScanner.category;
       scannerItem.coreName = crtScanner.coreName;
-    } else {
+    } else {                                                                                      
       scannerItem.hostId = process.env.HOST_ID;
       scannerItem.propertyCode = process.env.PROPERTY_CODE;
       scannerItem.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
@@ -94,10 +94,16 @@ export class AssetsService {
     return scannerItem;
   }
 
-  public async startOnvif(hostId: string): Promise<any> {
-    console.log('assets.service startOnvif in: ' + JSON.stringify({hostId}));
+  public async startOnvif({hostId, identityId, propertyCode, thingName}: {hostId: string, identityId: string, propertyCode: string, thingName: string}): Promise<any> {
+    console.log('assets.service startOnvif in: ' + JSON.stringify({hostId, identityId, propertyCode, thingName}));
 
     const cameraItems: CameraItem[] = await this.assetsDao.getCameras(hostId);
+
+    const hostInfo = {
+      hostId,
+      identityId,
+      propertyCode
+    }
 
     const responses = await Promise.allSettled(cameraItems.filter((cameraItem: CameraItem) => {
       if (cameraItem.onvif) {
@@ -131,7 +137,7 @@ export class AssetsService {
           console.log('assets.service startOnvif request scanner to start scan at ' + cameraItem.ip);
           const response = await axios.post(
             "http://localhost:8888/detect", 
-            { motion: true, cameraItem })
+            { motion: true, cameraItem, hostInfo })
           .catch(err => {
             console.log("request scanner err:" + JSON.stringify(err));
             return { status: "", data: {}};

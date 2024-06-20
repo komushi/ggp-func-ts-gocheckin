@@ -91,10 +91,16 @@ setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
         const initializationService = new initialization_service_1.InitializationService();
         yield initializationService.intializeEnvVar();
         console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
+        console.log('after intializeEnvVar IDENTTITY_ID:' + process.env.IDENTTITY_ID);
         console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
         console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
         const assetsService = new assets_service_1.AssetsService();
-        yield assetsService.startOnvif(process.env.HOST_ID);
+        yield assetsService.startOnvif({
+            hostId: process.env.HOST_ID,
+            identityId: process.env.IDENTTITY_ID,
+            propertyCode: process.env.PROPERTY_CODE,
+            thingName: process.env.AWS_IOT_THING_NAME
+        });
     }
     catch (err) {
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
@@ -110,6 +116,7 @@ setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
         const initializationService = new initialization_service_1.InitializationService();
         yield initializationService.intializeEnvVar();
         console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
+        console.log('after intializeEnvVar IDENTTITY_ID:' + process.env.IDENTTITY_ID);
         console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
         console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
     }

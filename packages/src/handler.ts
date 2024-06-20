@@ -96,11 +96,17 @@ setTimeout(async () => {
         await initializationService.intializeEnvVar();
 
 		console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
+		console.log('after intializeEnvVar IDENTTITY_ID:' + process.env.IDENTTITY_ID);
 		console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
 		console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
 
         const assetsService = new AssetsService();
-        await assetsService.startOnvif(process.env.HOST_ID);
+        await assetsService.startOnvif({
+			hostId: process.env.HOST_ID,
+			identityId: process.env.IDENTTITY_ID,
+			propertyCode: process.env.PROPERTY_CODE,
+			thingName: process.env.AWS_IOT_THING_NAME
+		});
 
     } catch (err) {
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
@@ -119,6 +125,7 @@ setInterval(async () => {
         await initializationService.intializeEnvVar();
 
 		console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
+		console.log('after intializeEnvVar IDENTTITY_ID:' + process.env.IDENTTITY_ID);
 		console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
 		console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
 
