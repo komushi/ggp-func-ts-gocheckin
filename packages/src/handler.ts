@@ -128,6 +128,7 @@ setInterval(async () => {
 		console.log('after intializeEnvVar IDENTTITY_ID:' + process.env.IDENTTITY_ID);
 		console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
 		console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
+		console.log('after intializeEnvVar CRED_PROVIDER_HOST:' + process.env.CRED_PROVIDER_HOST);
 
     } catch (err) {
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
