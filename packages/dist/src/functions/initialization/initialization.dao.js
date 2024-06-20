@@ -200,9 +200,9 @@ class InitializationDao {
         });
     }
     ;
-    updateHost({ hostId, identityId, stage }) {
+    updateHost({ hostId, identityId, stage, credProviderHost }) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('initialization.dao updateHost in:' + JSON.stringify({ hostId, identityId, stage }));
+            console.log('initialization.dao updateHost in:' + JSON.stringify({ hostId, identityId, stage, credProviderHost }));
             if (!hostId) {
                 console.log('initialization.dao updateHost out');
                 return;
@@ -210,7 +210,7 @@ class InitializationDao {
             const params = [{
                     Put: {
                         TableName: TBL_HOST,
-                        Item: { hostId, identityId, stage }
+                        Item: { hostId, identityId, stage, credProviderHost }
                     }
                 }];
             const command = new lib_dynamodb_1.TransactWriteCommand({

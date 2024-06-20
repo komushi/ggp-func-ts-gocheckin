@@ -1,6 +1,3 @@
-const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
-const STAGE = process.env.STAGE;
-
 import { InitializationService } from './functions/initialization/initialization.service';
 import { ReservationsService } from './functions/reservations/reservations.service';
 import { IotService } from './functions/iot/iot.service';
@@ -19,11 +16,11 @@ exports.function_handler = async function(event, context) {
 
 		await initializationService.createTables();
 
-    } else if (context.clientContext.Custom.subject == `$aws/things/${AWS_IOT_THING_NAME}/shadow/update/delta`) {
+    } else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
     	console.log('shadow event: ' + JSON.stringify(event));
 
 		const getShadowResult = await iotService.getShadow({
-		        thingName: AWS_IOT_THING_NAME
+		        thingName: process.env.AWS_IOT_THING_NAME
 		    });
 
 		if (getShadowResult.state.desired.hostId && getShadowResult.state.desired.stage) {
@@ -33,7 +30,8 @@ exports.function_handler = async function(event, context) {
 			await initializationService.saveHost({
 				hostId: getShadowResult.state.desired.host.hostId,
 				identityId: getShadowResult.state.desired.host.identityId,
-				stage: getShadowResult.state.desired.stage
+				stage: getShadowResult.state.desired.stage,
+				credProviderHost: getShadowResult.state.desired.host.credProviderHost
 			}).catch(err => {
 				console.error('saveHost error:' + err.message);
 				throw err;
@@ -66,7 +64,7 @@ exports.function_handler = async function(event, context) {
 
 	    	if (!delta.state.reservations) {
 			    await iotService.updateReportedShadow({
-			        thingName: AWS_IOT_THING_NAME,
+			        thingName: process.env.AWS_IOT_THING_NAME,
 			        reportedState: getShadowResult.state.desired
 			    });	    		
 	    	}
@@ -99,13 +97,15 @@ setTimeout(async () => {
 		console.log('after intializeEnvVar IDENTTITY_ID:' + process.env.IDENTTITY_ID);
 		console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
 		console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
+		console.log('after intializeEnvVar CRED_PROVIDER_HOST:' + process.env.CRED_PROVIDER_HOST);
+		
 
         const assetsService = new AssetsService();
         await assetsService.startOnvif({
 			hostId: process.env.HOST_ID,
 			identityId: process.env.IDENTTITY_ID,
 			propertyCode: process.env.PROPERTY_CODE,
-			thingName: process.env.AWS_IOT_THING_NAME
+			credProviderHost: process.env.CRED_PROVIDER_HOST
 		});
 
     } catch (err) {

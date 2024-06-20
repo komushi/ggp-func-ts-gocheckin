@@ -94,15 +94,16 @@ export class AssetsService {
     return scannerItem;
   }
 
-  public async startOnvif({hostId, identityId, propertyCode, thingName}: {hostId: string, identityId: string, propertyCode: string, thingName: string}): Promise<any> {
-    console.log('assets.service startOnvif in: ' + JSON.stringify({hostId, identityId, propertyCode, thingName}));
+  public async startOnvif({hostId, identityId, propertyCode, credProviderHost}: {hostId: string, identityId: string, propertyCode: string, credProviderHost: string}): Promise<any> {
+    console.log('assets.service startOnvif in: ' + JSON.stringify({hostId, identityId, propertyCode, credProviderHost}));
 
     const cameraItems: CameraItem[] = await this.assetsDao.getCameras(hostId);
 
     const hostInfo = {
       hostId,
       identityId,
-      propertyCode
+      propertyCode,
+      credProviderHost
     }
 
     const responses = await Promise.allSettled(cameraItems.filter((cameraItem: CameraItem) => {

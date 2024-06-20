@@ -86,14 +86,15 @@ class AssetsService {
             return scannerItem;
         });
     }
-    startOnvif({ hostId, identityId, propertyCode, thingName }) {
+    startOnvif({ hostId, identityId, propertyCode, credProviderHost }) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service startOnvif in: ' + JSON.stringify({ hostId, identityId, propertyCode, thingName }));
+            console.log('assets.service startOnvif in: ' + JSON.stringify({ hostId, identityId, propertyCode, credProviderHost }));
             const cameraItems = yield this.assetsDao.getCameras(hostId);
             const hostInfo = {
                 hostId,
                 identityId,
-                propertyCode
+                propertyCode,
+                credProviderHost
             };
             const responses = yield Promise.allSettled(cameraItems.filter((cameraItem) => {
                 if (cameraItem.onvif) {

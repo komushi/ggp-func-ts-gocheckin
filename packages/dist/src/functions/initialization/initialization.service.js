@@ -25,10 +25,10 @@ class InitializationService {
             return;
         });
     }
-    saveHost({ hostId, identityId, stage }) {
+    saveHost({ hostId, identityId, stage, credProviderHost }) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('initialization.service saveHost in:' + JSON.stringify({ hostId, identityId, stage }));
-            yield this.initializationDao.updateHost({ hostId, identityId, stage });
+            console.log('initialization.service saveHost in:' + JSON.stringify({ hostId, identityId, stage, credProviderHost }));
+            yield this.initializationDao.updateHost({ hostId, identityId, stage, credProviderHost });
             console.log('initialization.service saveHost out');
             return;
         });

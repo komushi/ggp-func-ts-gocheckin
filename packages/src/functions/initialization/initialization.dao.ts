@@ -213,9 +213,9 @@ export class InitializationDao {
 		return;
 	};
 
-  public async updateHost({hostId, identityId, stage}: {hostId: string, identityId: string, stage: string}): Promise<any> {
+  public async updateHost({hostId, identityId, stage, credProviderHost}: {hostId: string, identityId: string, stage: string, credProviderHost: string}): Promise<any> {
 
-    console.log('initialization.dao updateHost in:' + JSON.stringify({hostId, identityId, stage}));
+    console.log('initialization.dao updateHost in:' + JSON.stringify({hostId, identityId, stage, credProviderHost}));
 
     if (!hostId) {
       console.log('initialization.dao updateHost out');
@@ -225,7 +225,7 @@ export class InitializationDao {
     const params = [{
       Put: {
         TableName: TBL_HOST,
-        Item: { hostId, identityId, stage }
+        Item: { hostId, identityId, stage, credProviderHost }
       }
     }];
 
