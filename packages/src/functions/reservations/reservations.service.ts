@@ -210,7 +210,7 @@ export class ReservationsService {
     });
 
     const responsesEmbedding = await Promise.all(Array.from(desiredMembers.values()).map(async (memberItem: MemberItem) => {
-      const response: AxiosResponse<MemberItem> = await axios.post("http://localhost:8888/recognise", memberItem);
+      const response: AxiosResponse<MemberItem> = await axios.post("http://localhost:7777/recognise", memberItem);
       const responseData: MemberItem = response.data;
       return responseData;
     }));

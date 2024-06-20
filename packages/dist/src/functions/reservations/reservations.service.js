@@ -184,7 +184,7 @@ class ReservationsService {
                 reportedState: reportedState
             });
             const responsesEmbedding = yield Promise.all(Array.from(desiredMembers.values()).map((memberItem) => __awaiter(this, void 0, void 0, function* () {
-                const response = yield axios_1.default.post("http://localhost:8888/recognise", memberItem);
+                const response = yield axios_1.default.post("http://localhost:7777/recognise", memberItem);
                 const responseData = response.data;
                 return responseData;
             })));
