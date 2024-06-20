@@ -23,9 +23,9 @@ exports.function_handler = async function(event, context) {
 		        thingName: process.env.AWS_IOT_THING_NAME
 		    });
 
-		if (getShadowResult.state.desired.hostId && getShadowResult.state.desired.stage) {
-			process.env.HOST_ID = getShadowResult.state.desired.hostId;
-			process.env.STAGE = getShadowResult.state.desired.stage;
+		if (getShadowResult.state.desired.host && getShadowResult.state.desired.stage) {
+			process.env.HOST_ID = getShadowResult.state.desired.host.hostId;
+			process.env.STAGE = getShadowResult.state.desired.host.stage;
 
 			await initializationService.saveHost({
 				hostId: getShadowResult.state.desired.host.hostId,

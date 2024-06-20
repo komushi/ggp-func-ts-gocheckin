@@ -41,6 +41,7 @@ class InitializationService {
                 process.env.HOST_ID = result.hostId;
                 process.env.STAGE = result.stage;
                 process.env.IDENTTITY_ID = result.identityId;
+                process.env.CRED_PROVIDER_HOST = result.credProviderHost;
             }
             if (!process.env.PROPERTY_CODE) {
                 if (process.env.HOST_ID) {

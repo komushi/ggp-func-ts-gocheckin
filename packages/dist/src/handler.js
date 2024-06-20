@@ -29,9 +29,9 @@ exports.function_handler = function (event, context) {
             const getShadowResult = yield iotService.getShadow({
                 thingName: process.env.AWS_IOT_THING_NAME
             });
-            if (getShadowResult.state.desired.hostId && getShadowResult.state.desired.stage) {
-                process.env.HOST_ID = getShadowResult.state.desired.hostId;
-                process.env.STAGE = getShadowResult.state.desired.stage;
+            if (getShadowResult.state.desired.host && getShadowResult.state.desired.stage) {
+                process.env.HOST_ID = getShadowResult.state.desired.host.hostId;
+                process.env.STAGE = getShadowResult.state.desired.host.stage;
                 yield initializationService.saveHost({
                     hostId: getShadowResult.state.desired.host.hostId,
                     identityId: getShadowResult.state.desired.host.identityId,
