@@ -36,7 +36,7 @@ class InitializationService {
     intializeEnvVar() {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('initialization.service intializeEnvVar in');
-            if (!process.env.HOST_ID || !process.env.STAGE) {
+            if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST) {
                 const result = yield this.initializationDao.getHost();
                 process.env.HOST_ID = result.hostId;
                 process.env.STAGE = result.stage;

@@ -37,7 +37,7 @@ export class InitializationService {
 
     	console.log('initialization.service intializeEnvVar in');
 
-	    if (!process.env.HOST_ID || !process.env.STAGE) {
+	    if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST) {
 	        const result = await this.initializationDao.getHost();
 	        process.env.HOST_ID = result.hostId;
 	        process.env.STAGE = result.stage;

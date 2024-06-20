@@ -41,14 +41,14 @@ exports.function_handler = async function(event, context) {
 		if (getShadowResult.state.desired.property) {
 			process.env.PROPERTY_CODE = getShadowResult.state.desired.property.propertyCode;
 			
-			await assetsService.saveProperty(getShadowResult.state.desired.hostId, getShadowResult.state.desired.property).catch(err => {
+			await assetsService.saveProperty(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.property).catch(err => {
 				console.error('saveProperty error:' + err.message);
 				throw err;
 			});
 		}
 
 		if (getShadowResult.state.desired.cameras) {
-			await assetsService.refreshCameras(getShadowResult.state.desired.hostId, getShadowResult.state.desired.cameras).catch(err => {
+			await assetsService.refreshCameras(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.cameras).catch(err => {
 				console.error('refreshCameras error:' + err.message);
 				throw err;
 			});

@@ -44,13 +44,13 @@ exports.function_handler = function (event, context) {
             }
             if (getShadowResult.state.desired.property) {
                 process.env.PROPERTY_CODE = getShadowResult.state.desired.property.propertyCode;
-                yield assetsService.saveProperty(getShadowResult.state.desired.hostId, getShadowResult.state.desired.property).catch(err => {
+                yield assetsService.saveProperty(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.property).catch(err => {
                     console.error('saveProperty error:' + err.message);
                     throw err;
                 });
             }
             if (getShadowResult.state.desired.cameras) {
-                yield assetsService.refreshCameras(getShadowResult.state.desired.hostId, getShadowResult.state.desired.cameras).catch(err => {
+                yield assetsService.refreshCameras(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.cameras).catch(err => {
                     console.error('refreshCameras error:' + err.message);
                     throw err;
                 });
