@@ -22,11 +22,11 @@ export class InitializationService {
 	}
 
 
-  	public async saveHost({hostId, stage}: {hostId: string, stage: string}): Promise<any> {
+  	public async saveHost({hostId, identityId, stage}: {hostId: string, identityId: string, stage: string}): Promise<any> {
 
-    	console.log('initialization.service saveHost in:' + JSON.stringify({hostId, stage}));
+    	console.log('initialization.service saveHost in:' + JSON.stringify({hostId, identityId, stage}));
 
-    	await this.initializationDao.updateHost({hostId, stage});
+    	await this.initializationDao.updateHost({hostId, identityId, stage});
 
     	console.log('initialization.service saveHost out');
 

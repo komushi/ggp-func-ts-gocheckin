@@ -35,7 +35,8 @@ exports.function_handler = function (event, context) {
                 process.env.HOST_ID = getShadowResult.state.desired.hostId;
                 process.env.STAGE = getShadowResult.state.desired.stage;
                 yield initializationService.saveHost({
-                    hostId: getShadowResult.state.desired.hostId,
+                    hostId: getShadowResult.state.desired.host.hostId,
+                    identityId: getShadowResult.state.desired.host.identityId,
                     stage: getShadowResult.state.desired.stage
                 }).catch(err => {
                     console.error('saveHost error:' + err.message);
