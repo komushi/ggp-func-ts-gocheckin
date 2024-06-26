@@ -81,7 +81,7 @@ export class AssetsService {
 
     const discoveredCameras = await Onvif.startProbe();
 
-    await Promise.all(discoveredCameras.map(async (discoveredCamera) => {
+    await Promise.allSettled(discoveredCameras.map(async (discoveredCamera) => {
       const uuid = discoveredCamera.urn.split(":").slice(-1)[0] ;
       const parsedUrl = new URL(discoveredCamera.xaddrs[0]);
 
@@ -105,7 +105,7 @@ export class AssetsService {
           framerate: 10
         },
         onvif: {
-          port: parseInt(parsedUrl.port)
+          port: parseInt(parsedUrl.port) || 80
         },
         lastUpdateOn: (new Date).toISOString()
       }
