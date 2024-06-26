@@ -13,26 +13,30 @@ const initialization_service_1 = require("./functions/initialization/initializat
 const reservations_service_1 = require("./functions/reservations/reservations.service");
 const iot_service_1 = require("./functions/iot/iot.service");
 const assets_service_1 = require("./functions/assets/assets.service");
+const initializationService = new initialization_service_1.InitializationService();
+const iotService = new iot_service_1.IotService();
+const assetsService = new assets_service_1.AssetsService();
+const reservationsService = new reservations_service_1.ReservationsService();
 exports.function_handler = function (event, context) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log('context: ' + JSON.stringify(context));
-        const initializationService = new initialization_service_1.InitializationService();
-        const iotService = new iot_service_1.IotService();
-        const assetsService = new assets_service_1.AssetsService();
-        const reservationsService = new reservations_service_1.ReservationsService();
         if (context.clientContext.Custom.subject.indexOf('init_db') > -1) {
             console.log('init_db event: ' + JSON.stringify(event));
             yield initializationService.createTables();
         }
         else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
             console.log('shadow event: ' + JSON.stringify(event));
-            const getShadowResult = yield iotService.getShadow({
-                thingName: process.env.AWS_IOT_THING_NAME
-            });
+            yield processShadow(event);
+            /*
+            const getShadowResult = await iotService.getShadow({
+                    thingName: process.env.AWS_IOT_THING_NAME
+                });
+    
             if (getShadowResult.state.desired.host && getShadowResult.state.desired.stage) {
                 process.env.HOST_ID = getShadowResult.state.desired.host.hostId;
                 process.env.STAGE = getShadowResult.state.desired.host.stage;
-                yield initializationService.saveHost({
+    
+                await initializationService.saveHost({
                     hostId: getShadowResult.state.desired.host.hostId,
                     identityId: getShadowResult.state.desired.host.identityId,
                     stage: getShadowResult.state.desired.stage,
@@ -42,39 +46,87 @@ exports.function_handler = function (event, context) {
                     throw err;
                 });
             }
+    
             if (getShadowResult.state.desired.property) {
                 process.env.PROPERTY_CODE = getShadowResult.state.desired.property.propertyCode;
-                yield assetsService.saveProperty(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.property).catch(err => {
+                
+                await assetsService.saveProperty(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.property).catch(err => {
                     console.error('saveProperty error:' + err.message);
                     throw err;
                 });
             }
+    
             if (getShadowResult.state.desired.cameras) {
-                yield assetsService.refreshCameras(getShadowResult.state.desired.cameras).catch(err => {
+                await assetsService.refreshCameras(getShadowResult.state.desired.cameras).catch(err => {
                     console.error('refreshCameras error:' + err.message);
                     throw err;
                 });
             }
+    
             let delta = event;
+    
             if (!delta) {
                 delta = { state: {} };
                 if (getShadowResult.state.delta) {
                     delta.state = getShadowResult.state.delta;
                 }
+    
                 if (!delta.state.reservations) {
-                    yield iotService.updateReportedShadow({
+                    await iotService.updateReportedShadow({
                         thingName: process.env.AWS_IOT_THING_NAME,
                         reportedState: getShadowResult.state.desired
                     });
                 }
+            } else {
+                await reservationsService.syncReservation(delta);
             }
-            else {
-                yield reservationsService.syncReservation(delta);
-            }
+            */
         }
         else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
             console.log('scanner_detected event: ' + JSON.stringify(event));
             yield assetsService.refreshScanner(event);
+        }
+    });
+};
+const processShadow = function (event) {
+    return __awaiter(this, void 0, void 0, function* () {
+        console.log('processShadow in event: ' + JSON.stringify(event));
+        const getShadowResult = yield iotService.getShadow({
+            thingName: process.env.AWS_IOT_THING_NAME
+        });
+        if (getShadowResult.state.desired.host && getShadowResult.state.desired.stage) {
+            process.env.HOST_ID = getShadowResult.state.desired.host.hostId;
+            process.env.STAGE = getShadowResult.state.desired.host.stage;
+            yield initializationService.saveHost({
+                hostId: getShadowResult.state.desired.host.hostId,
+                identityId: getShadowResult.state.desired.host.identityId,
+                stage: getShadowResult.state.desired.stage,
+                credProviderHost: getShadowResult.state.desired.host.credProviderHost
+            }).catch(err => {
+                console.error('saveHost error:' + err.message);
+                throw err;
+            });
+        }
+        if (getShadowResult.state.desired.property) {
+            process.env.PROPERTY_CODE = getShadowResult.state.desired.property.propertyCode;
+            yield assetsService.saveProperty(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.property).catch(err => {
+                console.error('saveProperty error:' + err.message);
+                throw err;
+            });
+        }
+        if (getShadowResult.state.desired.cameras) {
+            yield assetsService.refreshCameras(getShadowResult.state.desired.cameras).catch(err => {
+                console.error('refreshCameras error:' + err.message);
+                throw err;
+            });
+        }
+        delete getShadowResult.state.desired.reservations;
+        yield iotService.updateReportedShadow({
+            thingName: process.env.AWS_IOT_THING_NAME,
+            reportedState: getShadowResult.state.desired
+        });
+        if (event) {
+            yield reservationsService.syncReservation(event);
         }
     });
 };
@@ -104,7 +156,7 @@ setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
         console.trace();
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
     }
-}), 10000);
+}), 5000);
 setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const initializationService = new initialization_service_1.InitializationService();
@@ -114,6 +166,7 @@ setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
         console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
         console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
         console.log('after intializeEnvVar CRED_PROVIDER_HOST:' + process.env.CRED_PROVIDER_HOST);
+        yield processShadow(null);
     }
     catch (err) {
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
@@ -123,4 +176,4 @@ setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
         console.trace();
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
     }
-}), 300000);
+}), 120000);

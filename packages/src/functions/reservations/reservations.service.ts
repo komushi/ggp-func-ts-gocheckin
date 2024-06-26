@@ -45,10 +45,10 @@ export class ReservationsService {
       return;
     }
 
-    if (!delta.state.reservations) {
-      console.log('reservations.service syncReservation out: no delta reservations');
-      return;
-    }
+    // if (!delta.state.reservations) {
+    //   console.log('reservations.service syncReservation out: no delta reservations');
+    //   return;
+    // }
 
     const syncResults = await Promise.allSettled(
       Object.entries(getShadowResult.state.desired.reservations as ClassicShadowReservations).filter(([reservationCode]) => {
@@ -138,7 +138,8 @@ export class ReservationsService {
     })) {
       await this.iotService.updateReportedShadow({
         thingName: AWS_IOT_THING_NAME,
-        reportedState: getShadowResult.state.desired
+        // reportedState: getShadowResult.state.desired
+        reportedState: { reservations: getShadowResult.state.desired.reservations }
       });     
     }
 
