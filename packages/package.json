@@ -19,6 +19,7 @@
     "@aws-sdk/types": "3.200.0",
     "aws-greengrass-core-sdk": "^1.7.0",
     "axios": "^1.7.2",
+    "node-onvif": "^0.1.7",
     "node-onvif-events": "^2.0.5",
     "short-unique-id": "^5.2.0"
   },

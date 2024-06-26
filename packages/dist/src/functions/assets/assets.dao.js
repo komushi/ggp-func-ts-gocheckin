@@ -109,6 +109,21 @@ class AssetsDao {
             return;
         });
     }
+    getCamera(hostId, uuid, attributes) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(`assets.dao getCamera in: ${JSON.stringify({ hostId, uuid, attributes })}`);
+            const data = yield this.ddbDocClient.send(new lib_dynamodb_1.GetCommand({
+                TableName: TBL_ASSET,
+                AttributesToGet: attributes,
+                Key: {
+                    hostId,
+                    uuid
+                }
+            }));
+            console.log(`assets.dao getCamera out: ${JSON.stringify(data.Item)}`);
+            return data.Item;
+        });
+    }
     createCamera(cameraItem) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.dao createCamera in' + JSON.stringify(cameraItem));

@@ -9,12 +9,17 @@ export interface PropertyItem {
 export interface CameraItem {
     hostId: string;
     uuid: string;
+    propertyCode: string;
+    hostPropertyCode: string;
     category: string;
-    ip: string;
+    equipmentId: string;
+    equipmentName: string;
+    localIp: string;
     username: string;
     password: string;
     rtsp: RTSP;
     onvif: ONVIF;
+    lastUpdateOn: string;
 }
 
 export interface ScannerItem {

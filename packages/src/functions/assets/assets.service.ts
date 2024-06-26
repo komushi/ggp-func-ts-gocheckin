@@ -1,8 +1,10 @@
 import { PropertyItem, CameraItem, ScannerItem } from './assets.models';
 import { AssetsDao } from './assets.dao';
+import { IotService } from '../iot/iot.service';
 
 import ShortUniqueId from 'short-unique-id';
 import { MotionDetector, Options } from 'node-onvif-events';
+import Onvif from 'node-onvif';
 
 import axios, { AxiosResponse } from 'axios';
 import { inspect } from 'util';
@@ -11,11 +13,13 @@ export class AssetsService {
 
   private assetsDao: AssetsDao;
   private uid;
+  private iotService: IotService;
   // private lastMotionTime: number | null = null;
   // private timer: NodeJS.Timeout | null = null;
   
   public constructor() {
     this.assetsDao = new AssetsDao();
+    this.iotService = new IotService();
 
     this.uid = new ShortUniqueId();
   }
@@ -46,20 +50,93 @@ export class AssetsService {
     return propertyItem;
   }
 
-  public async refreshCameras(hostId: string, cameraItems: CameraItem[]): Promise<any> {
-    console.log('assets.service refreshCameras in: ' + JSON.stringify({hostId, cameraItems}));
-
-    await this.assetsDao.deleteCameras(hostId);
+  public async refreshCameras(cameraItems: CameraItem[]): Promise<any> {
+    console.log('assets.service refreshCameras in: ' + JSON.stringify(cameraItems));
 
     await Promise.all(cameraItems.map(async (cameraItem: CameraItem) => {
-      cameraItem.hostId = hostId;
-      cameraItem.uuid = this.uid.randomUUID(6);
-      cameraItem.category = 'CAMERA';
+      
+      const existingCamera: CameraItem = await this.assetsDao.getCamera(cameraItem.hostId, cameraItem.uuid);
 
-      await this.assetsDao.createCamera(cameraItem);
+      if (existingCamera) {
+        if (existingCamera.lastUpdateOn !== cameraItem.lastUpdateOn) {
+          existingCamera.username = cameraItem.username;
+          existingCamera.password = cameraItem.password;
+          existingCamera.rtsp = cameraItem.rtsp;
+          existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
+
+          await this.assetsDao.createCamera(existingCamera);
+        }
+      } else {
+        await this.assetsDao.createCamera(cameraItem);
+      }
     }));
 
     console.log('assets.service refreshCameras out');
+
+    return;
+  }
+
+  public async discoverCameras(hostId: string): Promise<any> {
+    console.log('assets.service discoverCameras in: ' + JSON.stringify({hostId}));
+
+    const discoveredCameras = await Onvif.startProbe();
+
+    await Promise.all(discoveredCameras.map(async (discoveredCamera) => {
+      const uuid = discoveredCamera.urn.split(":").slice(-1)[0] ;
+      const parsedUrl = new URL(discoveredCamera.xaddrs[0]);
+
+      const existingCamera: CameraItem = await this.assetsDao.getCamera(hostId, uuid);
+
+      let cameraItem: CameraItem = {
+        hostId,
+        uuid,
+        propertyCode: process.env.PROPERTY_CODE,
+        hostPropertyCode: `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`,
+        category: 'CAMERA',
+        equipmentId: uuid,
+        equipmentName: discoveredCamera.name,
+        localIp: parsedUrl.hostname,
+        username: '',
+        password: '',
+        rtsp: {
+          port: 554,
+          path: '',
+          codec: 'h264',
+          framerate: 10
+        },
+        onvif: {
+          port: parseInt(parsedUrl.port)
+        },
+        lastUpdateOn: (new Date).toISOString()
+      }
+
+      if (existingCamera) {
+        const newIp = cameraItem.localIp;
+        cameraItem = existingCamera;
+        if (newIp !== existingCamera.localIp) {
+          cameraItem.localIp = newIp;
+          cameraItem.lastUpdateOn = (new Date).toISOString();
+
+          await this.iotService.publish({
+            topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
+              payload: JSON.stringify(cameraItem)
+          });
+        }
+
+        await this.assetsDao.createCamera(cameraItem);
+      } else {
+
+        await this.assetsDao.createCamera(cameraItem);
+  
+        await this.iotService.publish({
+          topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
+            payload: JSON.stringify(cameraItem)
+        });
+      }
+
+    }));
+
+    console.log('assets.service discoverCameras out');
 
     return;
   }
@@ -89,9 +166,14 @@ export class AssetsService {
       
     await this.assetsDao.createScanner(scannerItem);
 
-    console.log('assets.service refreshScanner out: ' + JSON.stringify(scannerItem));
+		await this.iotService.publish({
+			topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/scanner_detected`,
+		    payload: JSON.stringify(scannerItem)
+		});
 
-    return scannerItem;
+    console.log('assets.service refreshScanner out');
+
+    return;
   }
 
   public async startOnvif({hostId, identityId, propertyCode, credProviderHost}: {hostId: string, identityId: string, propertyCode: string, credProviderHost: string}): Promise<any> {
@@ -107,7 +189,7 @@ export class AssetsService {
     }
 
     const responses = await Promise.allSettled(cameraItems.filter((cameraItem: CameraItem) => {
-      if (cameraItem.onvif) {
+      if (cameraItem.onvif && cameraItem.localIp && cameraItem.username && cameraItem.password && cameraItem.onvif.port) {
         return true;
       } else {
         return false;
@@ -117,7 +199,7 @@ export class AssetsService {
 
       const options: Options = {
         id: index,                      // Any number id
-        hostname: cameraItem.ip,  // IP Address of device
+        hostname: cameraItem.localIp,  // IP Address of device
         username: cameraItem.username,          // User
         password: cameraItem.password,       // Password
         port: cameraItem.onvif.port,                   // Onvif device service port
@@ -133,9 +215,9 @@ export class AssetsService {
         // const now = Date.now();
 
         if (motion) {
-          // console.log('assets.service startOnvif motion detected at ' + cameraItem.ip);
+          // console.log('assets.service startOnvif motion detected at ' + cameraItem.localIp);
           // this.lastMotionTime = now;
-          console.log('assets.service startOnvif request scanner to start scan at ' + cameraItem.ip);
+          console.log('assets.service startOnvif request scanner to start scan at ' + cameraItem.localIp);
           const response = await axios.post(
             "http://localhost:7777/detect", 
             { motion: true, cameraItem, hostInfo })

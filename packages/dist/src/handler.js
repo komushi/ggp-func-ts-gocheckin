@@ -50,7 +50,7 @@ exports.function_handler = function (event, context) {
                 });
             }
             if (getShadowResult.state.desired.cameras) {
-                yield assetsService.refreshCameras(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.cameras).catch(err => {
+                yield assetsService.refreshCameras(getShadowResult.state.desired.cameras).catch(err => {
                     console.error('refreshCameras error:' + err.message);
                     throw err;
                 });
@@ -74,14 +74,7 @@ exports.function_handler = function (event, context) {
         }
         else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
             console.log('scanner_detected event: ' + JSON.stringify(event));
-            const scannerItem = yield assetsService.refreshScanner(event).catch(err => {
-                console.error('refreshScanner error:' + err.message);
-                throw err;
-            });
-            yield iotService.publish({
-                topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/scanner_detected`,
-                payload: JSON.stringify(scannerItem)
-            });
+            yield assetsService.refreshScanner(event);
         }
     });
 };
@@ -95,6 +88,7 @@ setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
         console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
         console.log('after intializeEnvVar CRED_PROVIDER_HOST:' + process.env.CRED_PROVIDER_HOST);
         const assetsService = new assets_service_1.AssetsService();
+        yield assetsService.discoverCameras(process.env.HOST_ID);
         yield assetsService.startOnvif({
             hostId: process.env.HOST_ID,
             identityId: process.env.IDENTTITY_ID,

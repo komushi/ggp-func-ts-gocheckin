@@ -48,7 +48,7 @@ exports.function_handler = async function(event, context) {
 		}
 
 		if (getShadowResult.state.desired.cameras) {
-			await assetsService.refreshCameras(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.cameras).catch(err => {
+			await assetsService.refreshCameras(getShadowResult.state.desired.cameras).catch(err => {
 				console.error('refreshCameras error:' + err.message);
 				throw err;
 			});
@@ -74,15 +74,7 @@ exports.function_handler = async function(event, context) {
    	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
 
-		const scannerItem = await assetsService.refreshScanner(event).catch(err => {
-			console.error('refreshScanner error:' + err.message);
-			throw err;
-		});
-
-		await iotService.publish({
-			topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/scanner_detected`,
-		    payload: JSON.stringify(scannerItem)
-		});
+		await assetsService.refreshScanner(event);
 	}
 
 };
@@ -101,6 +93,8 @@ setTimeout(async () => {
 		
 
         const assetsService = new AssetsService();
+		await assetsService.discoverCameras(process.env.HOST_ID);
+
         await assetsService.startOnvif({
 			hostId: process.env.HOST_ID,
 			identityId: process.env.IDENTTITY_ID,

@@ -130,6 +130,30 @@ export class AssetsDao {
 
   }
 
+  public async getCamera(hostId: string, uuid: string): Promise<any>;
+  public async getCamera(hostId: string, uuid: string, attributes: string[]): Promise<any>;
+  public async getCamera(hostId: string, uuid: string, attributes?: string[]): Promise<any> {
+
+    console.log(`assets.dao getCamera in: ${JSON.stringify({hostId, uuid, attributes})}`);
+
+    const data = await this.ddbDocClient.send(
+      new GetCommand({
+				TableName: TBL_ASSET,
+				AttributesToGet: attributes,
+				Key: {
+          hostId,
+          uuid
+        }
+			})
+    );
+
+    console.log(`assets.dao getCamera out: ${JSON.stringify(data.Item)}`);
+
+    return data.Item as CameraItem;
+
+    
+  }
+
   public async createCamera(cameraItem: CameraItem): Promise<any> {
     console.log('assets.dao createCamera in' + JSON.stringify(cameraItem));
 
