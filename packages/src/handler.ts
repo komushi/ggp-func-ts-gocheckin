@@ -188,4 +188,4 @@ setInterval(async () => {
         console.trace();
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
     } 
-}, 120000);
+}, 360000);

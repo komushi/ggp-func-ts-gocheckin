@@ -176,4 +176,4 @@ setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
         console.trace();
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
     }
-}), 120000);
+}), 360000);
