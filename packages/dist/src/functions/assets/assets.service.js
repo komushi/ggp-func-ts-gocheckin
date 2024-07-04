@@ -51,6 +51,9 @@ class AssetsService {
     refreshCameras(cameraItems) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service refreshCameras in: ' + JSON.stringify(cameraItems));
+            if (cameraItems.length == 0) {
+                yield this.assetsDao.deleteCameras(process.env.HOST_ID);
+            }
             yield Promise.all(cameraItems.map((cameraItem) => __awaiter(this, void 0, void 0, function* () {
                 const existingCamera = yield this.assetsDao.getCamera(cameraItem.hostId, cameraItem.uuid);
                 if (existingCamera) {

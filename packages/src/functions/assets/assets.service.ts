@@ -53,6 +53,10 @@ export class AssetsService {
   public async refreshCameras(cameraItems: CameraItem[]): Promise<any> {
     console.log('assets.service refreshCameras in: ' + JSON.stringify(cameraItems));
 
+    if (cameraItems.length == 0) {
+      await this.assetsDao.deleteCameras(process.env.HOST_ID);
+    }
+
     await Promise.all(cameraItems.map(async (cameraItem: CameraItem) => {
       
       const existingCamera: CameraItem = await this.assetsDao.getCamera(cameraItem.hostId, cameraItem.uuid);
