@@ -12,6 +12,7 @@ export interface CameraItem {
     propertyCode: string;
     hostPropertyCode: string;
     category: string;
+    coreName: string;
     equipmentId: string;
     equipmentName: string;
     localIp: string;

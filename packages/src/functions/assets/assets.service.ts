@@ -93,6 +93,7 @@ export class AssetsService {
         propertyCode: process.env.PROPERTY_CODE,
         hostPropertyCode: `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`,
         category: 'CAMERA',
+        coreName: process.env.AWS_IOT_THING_NAME,
         equipmentId: uuid,
         equipmentName: discoveredCamera.name,
         localIp: parsedUrl.hostname,
