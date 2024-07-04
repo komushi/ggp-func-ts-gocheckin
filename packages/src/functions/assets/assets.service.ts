@@ -1,4 +1,4 @@
-import { PropertyItem, CameraItem, ScannerItem } from './assets.models';
+import { PropertyItem, CameraItem, ScannerItem, ShadowCameras } from './assets.models';
 import { AssetsDao } from './assets.dao';
 import { IotService } from '../iot/iot.service';
 
@@ -50,8 +50,14 @@ export class AssetsService {
     return propertyItem;
   }
 
-  public async refreshCameras(cameraItems: CameraItem[]): Promise<any> {
-    console.log('assets.service refreshCameras in: ' + JSON.stringify(cameraItems));
+  public async refreshCameras(shadowCameraItems: ShadowCameras): Promise<any> {
+    console.log('assets.service refreshCameras in: ' + JSON.stringify(shadowCameraItems));
+
+    const cameraItems: CameraItem[] = Object.entries(shadowCameraItems).map(([uuid, cameraItem]: [string, CameraItem]) => {
+      return cameraItem;
+    });
+
+    console.log('assets.service refreshCameras cameraItems: ' + JSON.stringify(cameraItems));
 
     if (cameraItems.length == 0) {
       await this.assetsDao.deleteCameras(process.env.HOST_ID);

@@ -23,6 +23,11 @@ export interface CameraItem {
     lastUpdateOn: string;
 }
 
+
+export interface ShadowCameras {
+    [uuid: string]: CameraItem;
+};
+
 export interface ScannerItem {
     uuid: string;
     hostId: string;

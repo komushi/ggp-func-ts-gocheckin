@@ -48,9 +48,13 @@ class AssetsService {
             return propertyItem;
         });
     }
-    refreshCameras(cameraItems) {
+    refreshCameras(shadowCameraItems) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service refreshCameras in: ' + JSON.stringify(cameraItems));
+            console.log('assets.service refreshCameras in: ' + JSON.stringify(shadowCameraItems));
+            const cameraItems = Object.entries(shadowCameraItems).map(([uuid, cameraItem]) => {
+                return cameraItem;
+            });
+            console.log('assets.service refreshCameras cameraItems: ' + JSON.stringify(cameraItems));
             if (cameraItems.length == 0) {
                 yield this.assetsDao.deleteCameras(process.env.HOST_ID);
             }
