@@ -123,10 +123,12 @@ export class AssetsService {
 
       if (existingCamera) {
         const newIp = cameraItem.localIp;
+        const newCoreName = cameraItem.coreName;
         cameraItem = existingCamera;
-        if (newIp !== existingCamera.localIp) {
+        if (newIp !== existingCamera.localIp || newCoreName !== existingCamera.coreName) {
           cameraItem.localIp = newIp;
           cameraItem.lastUpdateOn = (new Date).toISOString();
+          cameraItem.coreName = newCoreName;
 
           await this.iotService.publish({
             topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
