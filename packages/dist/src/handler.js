@@ -34,7 +34,7 @@ exports.function_handler = function (event, context) {
     
             if (getShadowResult.state.desired.host && getShadowResult.state.desired.stage) {
                 process.env.HOST_ID = getShadowResult.state.desired.host.hostId;
-                process.env.STAGE = getShadowResult.state.desired.host.stage;
+                process.env.STAGE = getShadowResult.state.desired.stage;
     
                 await initializationService.saveHost({
                     hostId: getShadowResult.state.desired.host.hostId,
@@ -96,7 +96,7 @@ const processShadow = function (event) {
         });
         if (getShadowResult.state.desired.host && getShadowResult.state.desired.stage) {
             process.env.HOST_ID = getShadowResult.state.desired.host.hostId;
-            process.env.STAGE = getShadowResult.state.desired.host.stage;
+            process.env.STAGE = getShadowResult.state.desired.stage;
             yield initializationService.saveHost({
                 hostId: getShadowResult.state.desired.host.hostId,
                 identityId: getShadowResult.state.desired.host.identityId,
