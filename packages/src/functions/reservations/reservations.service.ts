@@ -264,6 +264,13 @@ export class ReservationsService {
       return;
     });
 
+    // force scanner to call fetch_members
+    const responsesEmbedding = await Promise.allSettled([''].map(async () => {
+      await axios.post("http://localhost:7777/recognise");
+    }));
+
+    console.log('reservations.service removeReservation responsesEmbedding:' + JSON.stringify(responsesEmbedding));
+
     console.log('reservations.service removeReservation out:' + JSON.stringify({reservationCode, listingId, lastRequestOn, clearRequest: true}));
 
     return {reservationCode, listingId, lastRequestOn, clearRequest: true};

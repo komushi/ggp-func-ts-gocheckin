@@ -226,6 +226,11 @@ class ReservationsService {
                 console.log('removeReservation deleteShadow err:' + JSON.stringify(err));
                 return;
             });
+            // force scanner to call fetch_members
+            const responsesEmbedding = yield Promise.allSettled([''].map(() => __awaiter(this, void 0, void 0, function* () {
+                yield axios_1.default.post("http://localhost:7777/recognise");
+            })));
+            console.log('reservations.service removeReservation responsesEmbedding:' + JSON.stringify(responsesEmbedding));
             console.log('reservations.service removeReservation out:' + JSON.stringify({ reservationCode, listingId, lastRequestOn, clearRequest: true }));
             return { reservationCode, listingId, lastRequestOn, clearRequest: true };
         });
