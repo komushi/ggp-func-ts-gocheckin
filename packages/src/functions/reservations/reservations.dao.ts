@@ -82,7 +82,8 @@ export class ReservationsDao {
 
   public async updateMembers(memberItems: MemberItem[]): Promise<any> {
 
-    console.log('reservations.dao updateMembers in' + JSON.stringify(memberItems));
+    // console.log('reservations.dao updateMembers in' + JSON.stringify(memberItems));
+    console.log('reservations.dao updateMembers in memberItems.length:' + memberItems.length);
 
     const params = memberItems.map(record => {
       return {
@@ -110,7 +111,7 @@ export class ReservationsDao {
   
   public async deleteMembers(memberItems: MemberItem[]): Promise<any> {
 
-    console.log('reservations.dao deleteMembers in' + JSON.stringify(memberItems));
+    console.log('reservations.dao deleteMembers in memberItems.length:' + memberItems.length);
 
     const params = memberItems.map(record => {
       return {

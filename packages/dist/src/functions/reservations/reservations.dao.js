@@ -73,7 +73,8 @@ class ReservationsDao {
     ;
     updateMembers(memberItems) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('reservations.dao updateMembers in' + JSON.stringify(memberItems));
+            // console.log('reservations.dao updateMembers in' + JSON.stringify(memberItems));
+            console.log('reservations.dao updateMembers in memberItems.length:' + memberItems.length);
             const params = memberItems.map(record => {
                 return {
                     Put: {
@@ -96,7 +97,7 @@ class ReservationsDao {
     ;
     deleteMembers(memberItems) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('reservations.dao deleteMembers in' + JSON.stringify(memberItems));
+            console.log('reservations.dao deleteMembers in memberItems.length:' + memberItems.length);
             const params = memberItems.map(record => {
                 return {
                     TableName: TBL_MEMBER,

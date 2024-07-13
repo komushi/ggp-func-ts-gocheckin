@@ -159,6 +159,7 @@ class ReservationsService {
                     desiredMembers = new Map(Object.entries(getShadowResult.state.desired.members));
                 }
             }
+            console.warn('reservations.service desiredMembers1.length:' + desiredMembers.keys.length);
             let toDeleteMembers = new Map();
             reportedMembers.forEach((value, key) => {
                 if (!desiredMembers.has(key)) {
@@ -184,12 +185,14 @@ class ReservationsService {
                 shadowName: reservationCode,
                 reportedState: reportedState
             });
+            console.warn('reservations.service desiredMembers2.length:' + desiredMembers.keys.length);
             const responsesEmbedding = yield Promise.all(Array.from(desiredMembers.values()).map((memberItem) => __awaiter(this, void 0, void 0, function* () {
+                console.warn('reservations.service before recognise:' + JSON.stringify({ reservationCode: memberItem.reservationCode, memberNo: memberItem.memberNo }));
                 const response = yield axios_1.default.post("http://localhost:7777/recognise", memberItem);
                 const responseData = response.data;
                 return responseData;
             })));
-            // console.log('reservations.service responsesEmbedding:' + JSON.stringify(responsesEmbedding));
+            console.log('reservations.service responsesEmbedding.length:' + responsesEmbedding.length);
             yield this.reservationsDao.updateMembers(responsesEmbedding);
             console.log('reservations.service addReservation out:' + JSON.stringify({ reservationCode, listingId, lastRequestOn }));
             return { reservationCode, listingId, lastRequestOn };
