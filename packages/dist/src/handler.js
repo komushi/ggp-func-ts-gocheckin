@@ -35,9 +35,8 @@ exports.function_handler = function (event, context) {
         else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
             console.log('scanner_detected event: ' + JSON.stringify(event));
             yield assetsService.refreshScanner(event);
-        }
-        else {
-            console.log('unkown event: ' + JSON.stringify(event));
+            // } else {
+            // 	console.log('unkown event: ' + JSON.stringify(event));
         }
     });
 };

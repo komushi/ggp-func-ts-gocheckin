@@ -30,8 +30,8 @@ exports.function_handler = async function(event, context) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
 
 		await assetsService.refreshScanner(event);
-	} else {
-		console.log('unkown event: ' + JSON.stringify(event));
+	// } else {
+	// 	console.log('unkown event: ' + JSON.stringify(event));
 	}
 
 };
