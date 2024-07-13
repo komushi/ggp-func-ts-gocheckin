@@ -43,14 +43,15 @@ class ReservationsService {
             const getShadowResult = yield this.iotService.getShadow({
                 thingName: AWS_IOT_THING_NAME
             });
+            console.log('reservations.service syncReservation getShadowResult: ' + JSON.stringify(getShadowResult));
             if (!getShadowResult.state.desired.reservations) {
                 console.log('reservations.service syncReservation out: no desired reservations');
                 return;
             }
-            // if (!delta.state.reservations) {
-            //   console.log('reservations.service syncReservation out: no delta reservations');
-            //   return;
-            // }
+            if (!delta.state.reservations) {
+                console.log('reservations.service syncReservation out: no delta reservations');
+                return;
+            }
             const syncResults = yield Promise.allSettled(Object.entries(getShadowResult.state.desired.reservations).filter(([reservationCode]) => {
                 return Object.keys(delta.state.reservations).includes(reservationCode);
             }).map(([reservationCode, { listingId, lastRequestOn, action }]) => __awaiter(this, void 0, void 0, function* () {
