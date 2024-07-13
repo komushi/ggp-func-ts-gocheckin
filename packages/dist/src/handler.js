@@ -72,11 +72,13 @@ const processShadow = function (event) {
                 throw err;
             });
         }
-        delete getShadowResult.state.desired.reservations;
-        yield iotService.updateReportedShadow({
-            thingName: process.env.AWS_IOT_THING_NAME,
-            reportedState: getShadowResult.state.desired
-        });
+        if (!event.state.reservations) {
+            delete getShadowResult.state.desired.reservations;
+            yield iotService.updateReportedShadow({
+                thingName: process.env.AWS_IOT_THING_NAME,
+                reportedState: getShadowResult.state.desired
+            });
+        }
         if (event) {
             yield reservationsService.syncReservation(event);
         }

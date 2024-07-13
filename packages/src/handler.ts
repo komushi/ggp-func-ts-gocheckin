@@ -73,13 +73,15 @@ const processShadow = async function(event) {
 			throw err;
 		});
 	}
+	
+	if (!event.state.reservations) {
+		delete getShadowResult.state.desired.reservations;
 
-	delete getShadowResult.state.desired.reservations;
-
-	await iotService.updateReportedShadow({
-		thingName: process.env.AWS_IOT_THING_NAME,
-		reportedState: getShadowResult.state.desired
-	});
+		await iotService.updateReportedShadow({
+			thingName: process.env.AWS_IOT_THING_NAME,
+			reportedState: getShadowResult.state.desired
+		});
+	}
 
 	if (event) {
 		await reservationsService.syncReservation(event);

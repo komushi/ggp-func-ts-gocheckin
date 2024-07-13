@@ -43,7 +43,7 @@ class ReservationsService {
             const getShadowResult = yield this.iotService.getShadow({
                 thingName: AWS_IOT_THING_NAME
             });
-            console.log('reservations.service syncReservation getShadowResult: ' + JSON.stringify(getShadowResult));
+            // console.log('reservations.service syncReservation getShadowResult: ' + JSON.stringify(getShadowResult));
             if (!getShadowResult.state.desired.reservations) {
                 console.log('reservations.service syncReservation out: no desired reservations');
                 return;
@@ -128,8 +128,8 @@ class ReservationsService {
             })) {
                 yield this.iotService.updateReportedShadow({
                     thingName: AWS_IOT_THING_NAME,
-                    // reportedState: getShadowResult.state.desired
-                    reportedState: { reservations: getShadowResult.state.desired.reservations }
+                    reportedState: getShadowResult.state.desired
+                    // reportedState: { reservations: getShadowResult.state.desired.reservations }
                 });
             }
             console.log('reservations.service syncReservation out');
