@@ -17,6 +17,7 @@ const initializationService = new initialization_service_1.InitializationService
 const iotService = new iot_service_1.IotService();
 const assetsService = new assets_service_1.AssetsService();
 const reservationsService = new reservations_service_1.ReservationsService();
+const pattern = /^\$aws\/things\/neoseed_Core\/shadow\/name\/[^\/]+\/update\/delta$/;
 exports.function_handler = function (event, context) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log('context: ' + JSON.stringify(context));
@@ -25,7 +26,7 @@ exports.function_handler = function (event, context) {
             yield initializationService.createTables();
         }
         else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
-            console.log('shadow event: ' + JSON.stringify(event));
+            console.log('shadow event delta1: ' + JSON.stringify(event));
             yield processShadow(event);
             /*
             const getShadowResult = await iotService.getShadow({
@@ -81,6 +82,9 @@ exports.function_handler = function (event, context) {
                 await reservationsService.syncReservation(delta);
             }
             */
+        }
+        else if (pattern.test(context.clientContext.Custom.subject)) {
+            console.log('shadow event delta2: ' + JSON.stringify(event));
         }
         else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
             console.log('scanner_detected event: ' + JSON.stringify(event));
