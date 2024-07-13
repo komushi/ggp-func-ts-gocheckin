@@ -8,7 +8,8 @@ const iotService = new IotService();
 const assetsService = new AssetsService();
 const reservationsService = new ReservationsService();
 
-const pattern = /^\$aws\/things\/neoseed_Core\/shadow\/name\/[^\/]+\/update\/delta$/;
+const pattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/[^/]+/update/delta$`);
+ 
 
 exports.function_handler = async function(event, context) {
     console.log('context: ' + JSON.stringify(context));
@@ -23,66 +24,14 @@ exports.function_handler = async function(event, context) {
 
 		await processShadow(event);
 
-		/*
-		const getShadowResult = await iotService.getShadow({
-		        thingName: process.env.AWS_IOT_THING_NAME
-		    });
-
-		if (getShadowResult.state.desired.host && getShadowResult.state.desired.stage) {
-			process.env.HOST_ID = getShadowResult.state.desired.host.hostId;
-			process.env.STAGE = getShadowResult.state.desired.stage;
-
-			await initializationService.saveHost({
-				hostId: getShadowResult.state.desired.host.hostId,
-				identityId: getShadowResult.state.desired.host.identityId,
-				stage: getShadowResult.state.desired.stage,
-				credProviderHost: getShadowResult.state.desired.host.credProviderHost
-			}).catch(err => {
-				console.error('saveHost error:' + err.message);
-				throw err;
-			});
-		}
-
-		if (getShadowResult.state.desired.property) {
-			process.env.PROPERTY_CODE = getShadowResult.state.desired.property.propertyCode;
-			
-			await assetsService.saveProperty(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.property).catch(err => {
-				console.error('saveProperty error:' + err.message);
-				throw err;
-			});
-		}
-
-		if (getShadowResult.state.desired.cameras) {
-			await assetsService.refreshCameras(getShadowResult.state.desired.cameras).catch(err => {
-				console.error('refreshCameras error:' + err.message);
-				throw err;
-			});
-		}
-
-		let delta = event;
-
-	    if (!delta) {
-	    	delta = { state: {} };
-	    	if (getShadowResult.state.delta) {
-	    		delta.state = getShadowResult.state.delta;	
-	    	}
-
-	    	if (!delta.state.reservations) {
-			    await iotService.updateReportedShadow({
-			        thingName: process.env.AWS_IOT_THING_NAME,
-			        reportedState: getShadowResult.state.desired
-			    });	    		
-	    	}
-	    } else {
-	    	await reservationsService.syncReservation(delta);
-	    }
-		*/
 	} else if (pattern.test(context.clientContext.Custom.subject)) {
 		console.log('shadow event delta2: ' + JSON.stringify(event));
 	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
 
 		await assetsService.refreshScanner(event);
+	} else {
+		console.log('unkown event: ' + JSON.stringify(event));
 	}
 
 };
@@ -170,6 +119,7 @@ setTimeout(async () => {
     } 
 }, 5000);
 
+/*
 setInterval(async () => {
     try {
 		
@@ -193,3 +143,4 @@ setInterval(async () => {
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
     } 
 }, 360000);
+*/
