@@ -189,7 +189,7 @@ class ReservationsService {
                 const responseData = response.data;
                 return responseData;
             })));
-            console.log('reservations.service responsesEmbedding:' + JSON.stringify(responsesEmbedding));
+            // console.log('reservations.service responsesEmbedding:' + JSON.stringify(responsesEmbedding));
             yield this.reservationsDao.updateMembers(responsesEmbedding);
             console.log('reservations.service addReservation out:' + JSON.stringify({ reservationCode, listingId, lastRequestOn }));
             return { reservationCode, listingId, lastRequestOn };
@@ -230,7 +230,7 @@ class ReservationsService {
             const responsesEmbedding = yield Promise.allSettled([''].map(() => __awaiter(this, void 0, void 0, function* () {
                 yield axios_1.default.post("http://localhost:7777/recognise");
             })));
-            console.log('reservations.service removeReservation responsesEmbedding:' + JSON.stringify(responsesEmbedding));
+            // console.log('reservations.service removeReservation responsesEmbedding:' + JSON.stringify(responsesEmbedding));
             console.log('reservations.service removeReservation out:' + JSON.stringify({ reservationCode, listingId, lastRequestOn, clearRequest: true }));
             return { reservationCode, listingId, lastRequestOn, clearRequest: true };
         });

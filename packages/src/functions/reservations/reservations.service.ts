@@ -216,7 +216,7 @@ export class ReservationsService {
       return responseData;
     }));
 
-    console.log('reservations.service responsesEmbedding:' + JSON.stringify(responsesEmbedding));
+    // console.log('reservations.service responsesEmbedding:' + JSON.stringify(responsesEmbedding));
 
     await this.reservationsDao.updateMembers(responsesEmbedding);
 
@@ -269,7 +269,7 @@ export class ReservationsService {
       await axios.post("http://localhost:7777/recognise");
     }));
 
-    console.log('reservations.service removeReservation responsesEmbedding:' + JSON.stringify(responsesEmbedding));
+    // console.log('reservations.service removeReservation responsesEmbedding:' + JSON.stringify(responsesEmbedding));
 
     console.log('reservations.service removeReservation out:' + JSON.stringify({reservationCode, listingId, lastRequestOn, clearRequest: true}));
 

@@ -55,7 +55,7 @@ export class IotService {
       result = JSON.parse(payloadString);
     }
 
-    console.log('iot.service getShadow out: result: ' + JSON.stringify(result));
+    console.log('iot.service getShadow out: result size: ' + Buffer.byteLength(JSON.stringify(result)));
 
     return result;
 
@@ -92,7 +92,7 @@ export class IotService {
       result = JSON.parse(payloadString);
     }
 
-    console.log('iot.service updateReportedShadow out: result:' + JSON.stringify({result}));
+    console.log('iot.service updateReportedShadow out: result size:' + Buffer.byteLength(JSON.stringify(result)));
 
     return result;
   };
@@ -121,7 +121,7 @@ export class IotService {
       result = JSON.parse(payloadString);
     }
 
-    console.log('iot-api.deleteShadow out: result:' + JSON.stringify(result));
+    console.log('iot-api.deleteShadow out: result size:' + Buffer.byteLength(JSON.stringify(result)));
 
     return result;
 
