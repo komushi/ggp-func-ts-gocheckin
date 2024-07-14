@@ -68,16 +68,6 @@ export class ReservationsService {
       return;
     }
 
-    // Update the classic shadow
-    const reportedStateMain = {
-      reservations: {}
-    };
-    reportedStateMain.reservations[reservationCode] = classicShadowReservation;
-    await this.iotService.updateReportedShadow({
-      thingName: AWS_IOT_THING_NAME,
-      reportedState: reportedStateMain
-    });    
-
     console.log('reservations.service processShadowDeleted out');
 
     return;

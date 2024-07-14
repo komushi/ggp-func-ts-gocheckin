@@ -32,7 +32,7 @@ exports.function_handler = function (event, context) {
         }
         else if (deletePattern.test(context.clientContext.Custom.subject)) {
             console.log('named shadow event delete: ' + JSON.stringify(event));
-            const reservationCode = context.clientContext.Custom.subject.match(deletePattern);
+            const reservationCode = context.clientContext.Custom.subject.match(deletePattern)[1];
             yield reservationsService.processShadowDeleted(reservationCode);
         }
         else if (deltaPattern.test(context.clientContext.Custom.subject)) {

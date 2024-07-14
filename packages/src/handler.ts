@@ -27,7 +27,7 @@ exports.function_handler = async function(event, context) {
 	} else if (deletePattern.test(context.clientContext.Custom.subject)) {
 		console.log('named shadow event delete: ' + JSON.stringify(event));
 
-		const reservationCode = context.clientContext.Custom.subject.match(deletePattern);
+		const reservationCode = context.clientContext.Custom.subject.match(deletePattern)[1];
 
 		await reservationsService.processShadowDeleted(reservationCode);
 

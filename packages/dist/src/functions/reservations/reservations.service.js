@@ -67,15 +67,6 @@ class ReservationsService {
                 console.log('reservations.service processShadowDeleted out: Wrong reservation action:' + classicShadowReservation.action);
                 return;
             }
-            // Update the classic shadow
-            const reportedStateMain = {
-                reservations: {}
-            };
-            reportedStateMain.reservations[reservationCode] = classicShadowReservation;
-            yield this.iotService.updateReportedShadow({
-                thingName: AWS_IOT_THING_NAME,
-                reportedState: reportedStateMain
-            });
             console.log('reservations.service processShadowDeleted out');
             return;
         });
