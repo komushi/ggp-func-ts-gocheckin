@@ -30,8 +30,8 @@ export class ReservationsService {
 
     let classicShadowReservation: ClassicShadowReservation = null;
 
-    if (getShadowResult.state.delta.reservations) {
-      const classicShadowReservations: ClassicShadowReservations = getShadowResult.state.delta;
+    if (getShadowResult.state.desired.reservations) {
+      const classicShadowReservations: ClassicShadowReservations = getShadowResult.state.desired.reservations;
       classicShadowReservation = classicShadowReservations[delta.reservation.reservationCode];
 
       if (classicShadowReservation) {

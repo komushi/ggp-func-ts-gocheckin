@@ -77,7 +77,7 @@ const processClassicShadow = async function(event) {
 		});
 	}
 
-	delete getShadowResult.state.desired.reservations;
+	// delete getShadowResult.state.desired.reservations;
 
 	await iotService.updateReportedShadow({
 		thingName: process.env.AWS_IOT_THING_NAME,

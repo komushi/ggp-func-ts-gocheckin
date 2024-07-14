@@ -32,8 +32,8 @@ class ReservationsService {
                 thingName: AWS_IOT_THING_NAME
             });
             let classicShadowReservation = null;
-            if (getShadowResult.state.delta.reservations) {
-                const classicShadowReservations = getShadowResult.state.delta;
+            if (getShadowResult.state.desired.reservations) {
+                const classicShadowReservations = getShadowResult.state.desired.reservations;
                 classicShadowReservation = classicShadowReservations[delta.reservation.reservationCode];
                 if (classicShadowReservation) {
                     if (classicShadowReservation.lastRequestOn != delta.lastRequestOn) {
