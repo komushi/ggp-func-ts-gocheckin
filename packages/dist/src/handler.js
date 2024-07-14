@@ -26,12 +26,12 @@ exports.function_handler = function (event, context) {
             yield initializationService.createTables();
         }
         else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
-            console.log('classic shadow event delta: ' + JSON.stringify(event));
+            // console.log('classic shadow event delta: ' + JSON.stringify(event));
             yield processClassicShadow(event);
         }
         else if (pattern.test(context.clientContext.Custom.subject)) {
-            console.log('named shadow event delta: ' + JSON.stringify(event));
-            yield reservationsService.syncReservation(event);
+            // console.log('named shadow event delta: ' + JSON.stringify(event));
+            yield reservationsService.syncReservation(event.state);
         }
         else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
             console.log('scanner_detected event: ' + JSON.stringify(event));

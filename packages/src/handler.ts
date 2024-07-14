@@ -20,14 +20,14 @@ exports.function_handler = async function(event, context) {
 		await initializationService.createTables();
 
     } else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
-    	console.log('classic shadow event delta: ' + JSON.stringify(event));
+    	// console.log('classic shadow event delta: ' + JSON.stringify(event));
 
 		await processClassicShadow(event);
 
 	} else if (pattern.test(context.clientContext.Custom.subject)) {
-		console.log('named shadow event delta: ' + JSON.stringify(event));
+		// console.log('named shadow event delta: ' + JSON.stringify(event));
 
-		await reservationsService.syncReservation(event);
+		await reservationsService.syncReservation(event.state);
 
 	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
