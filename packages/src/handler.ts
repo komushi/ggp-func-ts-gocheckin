@@ -8,8 +8,8 @@ const iotService = new IotService();
 const assetsService = new AssetsService();
 const reservationsService = new ReservationsService();
 
-const deltaPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/[^/]+/update/delta$`);
-const deletePattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/[^/]+/delete/accepted$`);
+const deltaPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/update/delta$`);
+const deletePattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/delete/accepted$`);
 
 exports.function_handler = async function(event, context) {
     console.log('context: ' + JSON.stringify(context));
@@ -26,10 +26,16 @@ exports.function_handler = async function(event, context) {
 
 	} else if (deletePattern.test(context.clientContext.Custom.subject)) {
 		console.log('named shadow event delete: ' + JSON.stringify(event));
+
+		const reservationCode = context.clientContext.Custom.subject.match(deletePattern);
+
+		await reservationsService.processShadowDeleted(reservationCode);
+
+
 	} else if (deltaPattern.test(context.clientContext.Custom.subject)) {
 		// console.log('named shadow event delta: ' + JSON.stringify(event));
 
-		await reservationsService.syncReservation(event.state);
+		await reservationsService.processShadowDelta(event.state);
 
 	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
