@@ -8,8 +8,8 @@ const iotService = new IotService();
 const assetsService = new AssetsService();
 const reservationsService = new ReservationsService();
 
-const pattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/[^/]+/update/delta$`);
- 
+const deltaPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/[^/]+/update/delta$`);
+const deletePattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/[^/]+/delete/accepted$`);
 
 exports.function_handler = async function(event, context) {
     console.log('context: ' + JSON.stringify(context));
@@ -24,7 +24,9 @@ exports.function_handler = async function(event, context) {
 
 		await processClassicShadow(event);
 
-	} else if (pattern.test(context.clientContext.Custom.subject)) {
+	} else if (deletePattern.test(context.clientContext.Custom.subject)) {
+		console.log('named shadow event delete: ' + JSON.stringify(event));
+	} else if (deltaPattern.test(context.clientContext.Custom.subject)) {
 		// console.log('named shadow event delta: ' + JSON.stringify(event));
 
 		await reservationsService.syncReservation(event.state);
