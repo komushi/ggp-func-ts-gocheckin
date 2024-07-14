@@ -20,12 +20,15 @@ exports.function_handler = async function(event, context) {
 		await initializationService.createTables();
 
     } else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
-    	console.log('shadow event delta1: ' + JSON.stringify(event));
+    	console.log('classic shadow event delta: ' + JSON.stringify(event));
 
-		await processShadow(event);
+		await processClassicShadow(event);
 
 	} else if (pattern.test(context.clientContext.Custom.subject)) {
-		console.log('shadow event delta2: ' + JSON.stringify(event));
+		console.log('named shadow event delta: ' + JSON.stringify(event));
+
+		await reservationsService.syncReservation(event);
+
 	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
 
@@ -36,8 +39,8 @@ exports.function_handler = async function(event, context) {
 
 };
 
-const processShadow = async function(event) {
-	console.log('processShadow in event: ' + JSON.stringify(event));
+const processClassicShadow = async function(event) {
+	console.log('processClassicShadow in event: ' + JSON.stringify(event));
 
 	const getShadowResult = await iotService.getShadow({
 		thingName: process.env.AWS_IOT_THING_NAME
@@ -73,19 +76,15 @@ const processShadow = async function(event) {
 			throw err;
 		});
 	}
-	
-	if (!event.state.reservations) {
-		delete getShadowResult.state.desired.reservations;
 
-		await iotService.updateReportedShadow({
-			thingName: process.env.AWS_IOT_THING_NAME,
-			reportedState: getShadowResult.state.desired
-		});
-	}
+	delete getShadowResult.state.desired.reservations;
 
-	if (event) {
-		await reservationsService.syncReservation(event);
-	}
+	await iotService.updateReportedShadow({
+		thingName: process.env.AWS_IOT_THING_NAME,
+		reportedState: getShadowResult.state.desired
+	});
+
+	console.log('processClassicShadow out');
 };
 
 setTimeout(async () => {
@@ -133,8 +132,6 @@ setInterval(async () => {
 		console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
 		console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
 		console.log('after intializeEnvVar CRED_PROVIDER_HOST:' + process.env.CRED_PROVIDER_HOST);
-
-		await processShadow(null);
 
     } catch (err) {
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');

@@ -6,7 +6,7 @@ const ACTION_REMOVE = 'REMOVE';
 
 import { ClassicShadowReservations, ClassicShadowReservation } from './reservations.models';
 import { ReservationsDao } from './reservations.dao';
-import { MemberItem } from './reservations.models';
+import { MemberItemList, MemberItem, ReservationItem, NamedShadowReservation } from './reservations.models';
 import { IotService } from '../iot/iot.service';
 
 import axios, { AxiosResponse } from 'axios';
@@ -20,19 +20,167 @@ export class ReservationsService {
     this.reservationsDao = new ReservationsDao();
     this.iotService = new IotService();
   }
-  /* embedding request from mqtt disabled
-  public async refreshMember(memberItem: MemberItem): Promise<any> {
-    console.log('reservations.service refreshMember in: ' + JSON.stringify(memberItem));
-    
-    const crtMemberItem = await this.reservationsDao.getMember(memberItem.reservationCode, memberItem.memberNo);
-    crtMemberItem.faceEmbedding = memberItem.faceEmbedding;
 
-    await this.reservationsDao.updateMembers([crtMemberItem]);
+  public async syncReservation(delta: NamedShadowReservation): Promise<any> {
+    console.log('reservations.service syncReservation in: ' + JSON.stringify(delta));
 
-    console.log('reservations.service refreshMember out');
+    const getShadowResult = await this.iotService.getShadow({
+        thingName: AWS_IOT_THING_NAME
+    });
+
+    let classicShadowReservation: ClassicShadowReservation = null;
+
+    if (getShadowResult.state.delta.reservations) {
+      const classicShadowReservations: ClassicShadowReservations = getShadowResult.state.delta;
+      classicShadowReservation = classicShadowReservations[delta.reservation.reservationCode];
+
+      if (classicShadowReservation) {
+        if (classicShadowReservation.lastRequestOn != delta.lastRequestOn) {
+          console.log('reservations.service syncReservation out: Request of SyncReservation datetime validation error!');
+          return;
+        }
+      } else {
+        console.log('reservations.service syncReservation out: Request of SyncReservation Classic shadow validation error!');
+        return;
+      }
+    } else {
+      console.log('reservations.service syncReservation out: Request of SyncReservation Classic shadow validation error!');
+      return;
+    }
+
+    if (classicShadowReservation.action == ACTION_REMOVE) {
+
+      const syncResult = await this.clearReservation(delta).catch(err => {
+        console.log('reservations.service syncReservation clearReservation err:' + JSON.stringify(err));
+        return {
+          rejectReason: err.message
+        }
+      });
+
+      await this.iotService.publish({
+        topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_reset`,
+        payload: JSON.stringify({
+          listingId: classicShadowReservation.listingId,
+          reservationCode: delta.reservation.reservationCode,
+          lastResponse: classicShadowReservation.lastRequestOn,
+          lastRequestOn: classicShadowReservation.lastRequestOn,
+          rejectReason: syncResult.rejectReason,
+          clearRequest: (syncResult.rejectReason ? false : syncResult.clearRequest)
+        })
+      });
+
+    } else if (classicShadowReservation.action == ACTION_UPDATE) {
+
+      const syncResult = await this.refreshReservation(delta).catch(err => {
+
+        console.log('reservations.service syncReservation refreshReservation err:' + JSON.stringify(err));
+
+        return {
+          rejectReason: err.message
+        }
+      });
+
+      await this.iotService.publish({
+        topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_deployed`,
+        payload: JSON.stringify({
+          listingId: classicShadowReservation.listingId,
+          reservationCode: delta.reservation.reservationCode,
+          lastResponse: classicShadowReservation.lastRequestOn,
+          lastRequestOn: classicShadowReservation.lastRequestOn,
+          rejectReason: syncResult.rejectReason
+        })
+      });
+
+      // Update the named shadow
+      await this.iotService.updateReportedShadow({
+        thingName: AWS_IOT_THING_NAME,
+        shadowName: delta.reservation.reservationCode,
+        reportedState: delta
+      });
+
+    } else {
+      console.log('reservations.service syncReservation out: Wrong reservation action:' + classicShadowReservation.action);
+      return;
+    }
+
+    // Update the classic shadow
+    const reportedStateMain = {
+      reservations: {}
+    };
+    reportedStateMain.reservations[delta.reservation.reservationCode] = classicShadowReservation;
+    await this.iotService.updateReportedShadow({
+      thingName: AWS_IOT_THING_NAME,
+      reportedState: reportedStateMain
+    });    
+
+    console.log('reservations.service syncReservation out');
+
+    return;
   }
-  */
 
+  private async refreshReservation(delta: NamedShadowReservation): Promise<any> {
+
+    console.log('reservations.service refreshReservation in: ' + JSON.stringify(delta));
+
+    // delete local ddb members
+    const memberItems: MemberItem[] = await this.reservationsDao.getMembers(delta.reservation.reservationCode, ['reservationCode', 'memberNo']);
+    await this.reservationsDao.deleteMembers(memberItems);
+
+    // update local ddb members
+    await this.reservationsDao.updateMembers(Object.values(delta.members));
+
+    // update local ddb reservation
+    await this.reservationsDao.updateReservation(delta.reservation);
+
+    const responsesEmbedding = await Promise.all(Array.from(Object.values(delta.members)).map(async (memberItem: MemberItem) => {
+      console.warn('reservations.service before recognise:' + JSON.stringify({reservationCode: memberItem.reservationCode, memberNo: memberItem.memberNo}));
+      const response: AxiosResponse<MemberItem> = await axios.post("http://localhost:7777/recognise", memberItem);
+      const responseData: MemberItem = response.data;
+      return responseData;
+    }));
+
+    // update local ddb members
+    await this.reservationsDao.updateMembers(responsesEmbedding);
+
+    console.log('reservations.service refreshReservation out');
+
+    return;
+  }
+
+  private async clearReservation(delta: NamedShadowReservation): Promise<any> {
+
+    console.log('reservations.service clearReservation in: ' + JSON.stringify(delta));
+
+
+    // delete local ddb reservation
+    await this.reservationsDao.deleteReservation({
+      listingId: delta.reservation.listingId,
+      reservationCode: delta.reservation.reservationCode
+    });
+
+    // delete local db member
+    const memberItems: MemberItem[] = await this.reservationsDao.getMembers(delta.reservation.reservationCode, ['reservationCode', 'memberNo']);
+    await this.reservationsDao.deleteMembers(memberItems);
+
+    await this.iotService.deleteShadow({
+      thingName: AWS_IOT_THING_NAME,
+      shadowName: delta.reservation.reservationCode     
+    }).catch(err => {
+      console.log('removeReservation deleteShadow err:' + JSON.stringify(err));
+      return;
+    });
+
+    // force scanner to call fetch_members
+    await Promise.allSettled([''].map(async () => {
+      await axios.post("http://localhost:7777/recognise");
+    }));
+
+    console.log('reservations.service clearReservation out');
+
+    return;
+    
+  }
+/*
   public async syncReservation(delta): Promise<any> {
     console.log('reservations.service syncReservation in: ' + JSON.stringify(delta));
 
@@ -149,6 +297,7 @@ export class ReservationsService {
 
     return;
   }
+
 
   private async addReservation({reservationCode, listingId, lastRequestOn}: {reservationCode: string, listingId: string, lastRequestOn: string}): Promise<any> {
 
@@ -282,6 +431,18 @@ export class ReservationsService {
     return {reservationCode, listingId, lastRequestOn, clearRequest: true};
     
   }
+*/
 
+  /* embedding request from mqtt disabled
+  public async refreshMember(memberItem: MemberItem): Promise<any> {
+    console.log('reservations.service refreshMember in: ' + JSON.stringify(memberItem));
+    
+    const crtMemberItem = await this.reservationsDao.getMember(memberItem.reservationCode, memberItem.memberNo);
+    crtMemberItem.faceEmbedding = memberItem.faceEmbedding;
 
+    await this.reservationsDao.updateMembers([crtMemberItem]);
+
+    console.log('reservations.service refreshMember out');
+  }
+  */
 }

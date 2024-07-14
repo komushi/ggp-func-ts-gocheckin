@@ -26,11 +26,12 @@ exports.function_handler = function (event, context) {
             yield initializationService.createTables();
         }
         else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
-            console.log('shadow event delta1: ' + JSON.stringify(event));
-            yield processShadow(event);
+            console.log('classic shadow event delta: ' + JSON.stringify(event));
+            yield processClassicShadow(event);
         }
         else if (pattern.test(context.clientContext.Custom.subject)) {
-            console.log('shadow event delta2: ' + JSON.stringify(event));
+            console.log('named shadow event delta: ' + JSON.stringify(event));
+            yield reservationsService.syncReservation(event);
         }
         else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
             console.log('scanner_detected event: ' + JSON.stringify(event));
@@ -40,9 +41,9 @@ exports.function_handler = function (event, context) {
         }
     });
 };
-const processShadow = function (event) {
+const processClassicShadow = function (event) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('processShadow in event: ' + JSON.stringify(event));
+        console.log('processClassicShadow in event: ' + JSON.stringify(event));
         const getShadowResult = yield iotService.getShadow({
             thingName: process.env.AWS_IOT_THING_NAME
         });
@@ -72,16 +73,12 @@ const processShadow = function (event) {
                 throw err;
             });
         }
-        if (!event.state.reservations) {
-            delete getShadowResult.state.desired.reservations;
-            yield iotService.updateReportedShadow({
-                thingName: process.env.AWS_IOT_THING_NAME,
-                reportedState: getShadowResult.state.desired
-            });
-        }
-        if (event) {
-            yield reservationsService.syncReservation(event);
-        }
+        delete getShadowResult.state.desired.reservations;
+        yield iotService.updateReportedShadow({
+            thingName: process.env.AWS_IOT_THING_NAME,
+            reportedState: getShadowResult.state.desired
+        });
+        console.log('processClassicShadow out');
     });
 };
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
@@ -123,8 +120,6 @@ setInterval(async () => {
         console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
         console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
         console.log('after intializeEnvVar CRED_PROVIDER_HOST:' + process.env.CRED_PROVIDER_HOST);
-
-        await processShadow(null);
 
     } catch (err) {
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');

@@ -8,20 +8,21 @@ export interface ClassicShadowReservations {
     [reservationCode: string]: ClassicShadowReservation;
 };
 
-// TODO remove memberKeyItem
-// export interface MemberKeyItem {
-//     roomCode: string;
-//     keyInfo: string;
-//     equipmentId: string;
-// }
+export interface NamedShadowReservation {
+    reservation: ReservationItem;
+    members: MemberItemList;
+    lastRequestOn: string;
+};
 
-// TODO remove memberKeyItem
+export interface MemberItemList {
+    [memberItemKey: string]: MemberItem;
+};
+
 export interface MemberItem {
     reservationCode: string;
     memberNo: number;
     faceImgKey: string;
     fullName: string;
-    // memberKeyItem: MemberKeyItem;
     faceImgUrl: string;
     faceImgBase64: string
     faceEmbedding: number[];
