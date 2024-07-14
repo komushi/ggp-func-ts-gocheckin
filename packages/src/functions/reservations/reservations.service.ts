@@ -144,7 +144,7 @@ export class ReservationsService {
 
     console.log('reservations.service refreshReservation out');
 
-    return;
+    return {};
   }
 
   private async clearReservation(delta: NamedShadowReservation): Promise<any> {
@@ -177,7 +177,7 @@ export class ReservationsService {
 
     console.log('reservations.service clearReservation out');
 
-    return;
+    return { clearRequest: true };
     
   }
 /*

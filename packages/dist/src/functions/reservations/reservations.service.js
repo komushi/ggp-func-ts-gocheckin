@@ -129,7 +129,7 @@ class ReservationsService {
             // update local ddb members
             yield this.reservationsDao.updateMembers(responsesEmbedding);
             console.log('reservations.service refreshReservation out');
-            return;
+            return {};
         });
     }
     clearReservation(delta) {
@@ -155,7 +155,7 @@ class ReservationsService {
                 yield axios_1.default.post("http://localhost:7777/recognise");
             })));
             console.log('reservations.service clearReservation out');
-            return;
+            return { clearRequest: true };
         });
     }
 }
