@@ -91,14 +91,12 @@ export class AssetsService {
       const existingCamera: CameraItem = await this.assetsDao.getCamera(cameraItem.hostId, cameraItem.uuid);
 
       if (existingCamera) {
-        if (existingCamera.lastUpdateOn !== cameraItem.lastUpdateOn) {
-          existingCamera.username = cameraItem.username;
-          existingCamera.password = cameraItem.password;
-          existingCamera.rtsp = cameraItem.rtsp;
-          existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
+        existingCamera.username = cameraItem.username;
+        existingCamera.password = cameraItem.password;
+        existingCamera.rtsp = cameraItem.rtsp;
+        existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
 
-          await this.assetsDao.updateCamera(existingCamera);
-        }
+        await this.assetsDao.updateCamera(existingCamera);
       } else {
         await this.assetsDao.updateCamera(cameraItem);
       }

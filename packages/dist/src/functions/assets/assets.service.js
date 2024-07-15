@@ -81,13 +81,11 @@ class AssetsService {
             yield Promise.all(deltaCameraItems.map((cameraItem) => __awaiter(this, void 0, void 0, function* () {
                 const existingCamera = yield this.assetsDao.getCamera(cameraItem.hostId, cameraItem.uuid);
                 if (existingCamera) {
-                    if (existingCamera.lastUpdateOn !== cameraItem.lastUpdateOn) {
-                        existingCamera.username = cameraItem.username;
-                        existingCamera.password = cameraItem.password;
-                        existingCamera.rtsp = cameraItem.rtsp;
-                        existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
-                        yield this.assetsDao.updateCamera(existingCamera);
-                    }
+                    existingCamera.username = cameraItem.username;
+                    existingCamera.password = cameraItem.password;
+                    existingCamera.rtsp = cameraItem.rtsp;
+                    existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
+                    yield this.assetsDao.updateCamera(existingCamera);
                 }
                 else {
                     yield this.assetsDao.updateCamera(cameraItem);
