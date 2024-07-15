@@ -6,7 +6,7 @@ const ACTION_REMOVE = 'REMOVE';
 
 import { ClassicShadowReservations, ClassicShadowReservation } from './reservations.models';
 import { ReservationsDao } from './reservations.dao';
-import { MemberItemList, MemberItem, ReservationItem, NamedShadowReservation } from './reservations.models';
+import { MemberItem, NamedShadowReservation } from './reservations.models';
 import { IotService } from '../iot/iot.service';
 
 import axios, { AxiosResponse } from 'axios';
@@ -21,128 +21,91 @@ export class ReservationsService {
     this.iotService = new IotService();
   }
 
-  public async processShadowDeleted(reservationCode: string): Promise<any> {
-    console.log('reservations.service processShadowDeleted in: ' + JSON.stringify({reservationCode}));
+  public async processShadow(deltaShadowReservations: ClassicShadowReservations, desiredShadowReservations: ClassicShadowReservations): Promise<any> {
+    console.log('reservations.service processShadow in: ' + JSON.stringify({deltaShadowReservations, desiredShadowReservations}));
 
-    const getShadowResult = await this.iotService.getShadow({
-        thingName: AWS_IOT_THING_NAME
+    Object.keys(deltaShadowReservations).map(async (reservationsCode: string) => {
+      const classicShadowReservation: ClassicShadowReservation = desiredShadowReservations[reservationsCode];
+      if (classicShadowReservation) {
+        if (classicShadowReservation.action == ACTION_REMOVE) {
+          await this.processShadowDeleted(classicShadowReservation, reservationsCode);
+        } else if (classicShadowReservation.action == ACTION_UPDATE) {
+          await this.processShadowDelta(classicShadowReservation, reservationsCode);
+        } else {
+
+        }
+      }
+    })
+
+  }
+
+  private async processShadowDeleted(classicShadowReservation: ClassicShadowReservation, reservationCode: string): Promise<any> {
+    console.log('reservations.service processShadowDeleted in: ' + JSON.stringify({classicShadowReservation, reservationCode}));
+
+    const syncResult = await this.clearReservation(reservationCode, classicShadowReservation.listingId).catch(err => {
+      console.log('reservations.service processShadowDeleted clearReservation err:' + JSON.stringify(err));
+      return {
+        rejectReason: err.message
+      }
     });
 
-    let classicShadowReservation: ClassicShadowReservation = null;
-
-    if (getShadowResult.state.desired.reservations) {
-      const classicShadowReservations: ClassicShadowReservations = getShadowResult.state.desired.reservations;
-      classicShadowReservation = classicShadowReservations[reservationCode];
-
-      if (!classicShadowReservation) {
-        console.log('reservations.service processShadowDeleted out: Request of SyncReservation Classic shadow validation error!');
-        return;
-      }
-    } else {
-      console.log('reservations.service processShadowDeleted out: Request of SyncReservation Classic shadow validation error!');
-      return;
-    }
-
-    if (classicShadowReservation.action == ACTION_REMOVE) {
-
-      const syncResult = await this.clearReservation(reservationCode, classicShadowReservation.listingId).catch(err => {
-        console.log('reservations.service processShadowDeleted clearReservation err:' + JSON.stringify(err));
-        return {
-          rejectReason: err.message
-        }
-      });
-
-      await this.iotService.publish({
-        topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_reset`,
-        payload: JSON.stringify({
-          listingId: classicShadowReservation.listingId,
-          reservationCode: reservationCode,
-          lastResponse: classicShadowReservation.lastRequestOn,
-          lastRequestOn: classicShadowReservation.lastRequestOn,
-          rejectReason: syncResult.rejectReason,
-          clearRequest: (syncResult.rejectReason ? false : syncResult.clearRequest)
-        })
-      });
-    } else {
-      console.log('reservations.service processShadowDeleted out: Wrong reservation action:' + classicShadowReservation.action);
-      return;
-    }
+    await this.iotService.publish({
+      topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_reset`,
+      payload: JSON.stringify({
+        listingId: classicShadowReservation.listingId,
+        reservationCode: reservationCode,
+        lastResponse: classicShadowReservation.lastRequestOn,
+        lastRequestOn: classicShadowReservation.lastRequestOn,
+        rejectReason: syncResult.rejectReason,
+        clearRequest: (syncResult.rejectReason ? false : syncResult.clearRequest)
+      })
+    });
 
     console.log('reservations.service processShadowDeleted out');
 
     return;
   }
 
-  public async processShadowDelta(delta: NamedShadowReservation): Promise<any> {
-    console.log('reservations.service processShadowDelta in: ' + JSON.stringify(delta));
+  private async processShadowDelta(classicShadowReservation: ClassicShadowReservation, reservationCode: string): Promise<any> {
+    console.log('reservations.service processShadowDelta in: ' + JSON.stringify({classicShadowReservation, reservationCode}));
 
     const getShadowResult = await this.iotService.getShadow({
-        thingName: AWS_IOT_THING_NAME
+      thingName: AWS_IOT_THING_NAME,
+      shadowName: reservationCode
     });
 
-    let classicShadowReservation: ClassicShadowReservation = null;
+    const delta: NamedShadowReservation = getShadowResult.state.desired;
 
-    if (getShadowResult.state.desired.reservations) {
-      const classicShadowReservations: ClassicShadowReservations = getShadowResult.state.desired.reservations;
-      classicShadowReservation = classicShadowReservations[delta.reservation.reservationCode];
+    if (classicShadowReservation.lastRequestOn != delta.lastRequestOn) {
+      return;
+    }
 
-      if (classicShadowReservation) {
-        if (classicShadowReservation.lastRequestOn != delta.lastRequestOn) {
-          console.log('reservations.service processShadowDelta out: Request of SyncReservation datetime validation error!');
-          return;
-        }
-      } else {
-        console.log('reservations.service processShadowDelta out: Request of SyncReservation Classic shadow validation error!');
-        return;
+    const syncResult = await this.refreshReservation(delta).catch(err => {
+
+      console.log('reservations.service processShadowDelta refreshReservation err:' + JSON.stringify(err));
+
+      return {
+        rejectReason: err.message
       }
-    } else {
-      console.log('reservations.service processShadowDelta out: Request of SyncReservation Classic shadow validation error!');
-      return;
-    }
+    });
 
-    if (classicShadowReservation.action == ACTION_UPDATE) {
+    await this.iotService.publish({
+      topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_deployed`,
+      payload: JSON.stringify({
+        listingId: classicShadowReservation.listingId,
+        reservationCode: reservationCode,
+        lastResponse: classicShadowReservation.lastRequestOn,
+        lastRequestOn: classicShadowReservation.lastRequestOn,
+        rejectReason: syncResult.rejectReason
+      })
+    });
 
-      const syncResult = await this.refreshReservation(delta).catch(err => {
-
-        console.log('reservations.service processShadowDelta refreshReservation err:' + JSON.stringify(err));
-
-        return {
-          rejectReason: err.message
-        }
-      });
-
-      await this.iotService.publish({
-        topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_deployed`,
-        payload: JSON.stringify({
-          listingId: classicShadowReservation.listingId,
-          reservationCode: delta.reservation.reservationCode,
-          lastResponse: classicShadowReservation.lastRequestOn,
-          lastRequestOn: classicShadowReservation.lastRequestOn,
-          rejectReason: syncResult.rejectReason
-        })
-      });
-
-      // Update the named shadow
-      await this.iotService.updateReportedShadow({
-        thingName: AWS_IOT_THING_NAME,
-        shadowName: delta.reservation.reservationCode,
-        reportedState: delta
-      });
-
-    } else {
-      console.log('reservations.service processShadowDelta out: Wrong reservation action:' + classicShadowReservation.action);
-      return;
-    }
-
-    // Update the classic shadow
-    const reportedStateMain = {
-      reservations: {}
-    };
-    reportedStateMain.reservations[delta.reservation.reservationCode] = classicShadowReservation;
+    // Update the named shadow
     await this.iotService.updateReportedShadow({
       thingName: AWS_IOT_THING_NAME,
-      reportedState: reportedStateMain
-    });    
+      shadowName: reservationCode,
+      reportedState: delta
+    });
 
     console.log('reservations.service processShadowDelta out');
 

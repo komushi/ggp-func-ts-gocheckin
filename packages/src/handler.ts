@@ -8,8 +8,8 @@ const iotService = new IotService();
 const assetsService = new AssetsService();
 const reservationsService = new ReservationsService();
 
-const deltaPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/update/delta$`);
-const deletePattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/delete/accepted$`);
+// const deltaPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/update/delta$`);
+// const deletePattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/delete/accepted$`);
 const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
 const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
 
@@ -31,17 +31,17 @@ exports.function_handler = async function(event, context) {
 
 		await processClassicShadow(event);
 
-	} else if (deletePattern.test(context.clientContext.Custom.subject)) {
-		console.log('named shadow event delete: ' + JSON.stringify(event));
+	// } else if (deletePattern.test(context.clientContext.Custom.subject)) {
+	// 	console.log('named shadow event delete: ' + JSON.stringify(event));
 
-		const reservationCode = context.clientContext.Custom.subject.match(deletePattern)[1];
+	// 	const reservationCode = context.clientContext.Custom.subject.match(deletePattern)[1];
 
-		await reservationsService.processShadowDeleted(reservationCode);
+	// 	await reservationsService.processShadowDeleted(reservationCode);
 
-	} else if (deltaPattern.test(context.clientContext.Custom.subject)) {
-		// console.log('named shadow event delta: ' + JSON.stringify(event));
+	// } else if (deltaPattern.test(context.clientContext.Custom.subject)) {
+	// 	console.log('named shadow event delta: ' + JSON.stringify(event));
 
-		await reservationsService.processShadowDelta(event.state);
+	// 	await reservationsService.processShadowDelta(event.state);
 
 	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
@@ -98,6 +98,15 @@ const processClassicShadow = async function(event) {
 		}
 	}
 
+	if (event.state.reservations) {
+		if (getShadowResult.state.desired.reservations) {
+			await reservationsService.processShadow(event.state.reservations, getShadowResult.state.desired.reservations).catch(err => {
+				console.error('processShadow error:' + err.message);
+				throw err;
+			});
+		}
+	}
+
 	await iotService.updateReportedShadow({
 		thingName: process.env.AWS_IOT_THING_NAME,
 		reportedState: getShadowResult.state.desired
@@ -135,7 +144,7 @@ setTimeout(async () => {
         console.trace();
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
     } 
-}, 5000);
+}, 15000);
 
 /*
 setInterval(async () => {
