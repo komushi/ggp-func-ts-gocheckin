@@ -19,8 +19,8 @@ const assetsService = new assets_service_1.AssetsService();
 const reservationsService = new reservations_service_1.ReservationsService();
 const deltaPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/update/delta$`);
 const deletePattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/delete/accepted$`);
-const initPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/init_db$`);
-const discoverCamerasPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
+const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
+const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
 exports.function_handler = function (event, context) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log('context: ' + JSON.stringify(context));

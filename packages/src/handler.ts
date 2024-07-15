@@ -10,8 +10,8 @@ const reservationsService = new ReservationsService();
 
 const deltaPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/update/delta$`);
 const deletePattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/delete/accepted$`);
-const initPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/init_db$`);
-const discoverCamerasPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
+const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
+const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
 
 exports.function_handler = async function(event, context) {
     console.log('context: ' + JSON.stringify(context));
