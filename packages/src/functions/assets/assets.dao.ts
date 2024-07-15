@@ -1,7 +1,8 @@
 import { DynamoDBClientConfig, DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, TransactWriteCommand, QueryCommand, DeleteCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, TransactWriteCommand, ScanCommand, QueryCommand, DeleteCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { PropertyItem, CameraItem, ScannerItem } from './assets.models';
 
+const TBL_HOST = process.env.TBL_HOST;
 const TBL_ASSET = process.env.TBL_ASSET;
 const IDX_EQUIPMENT_ID = process.env.IDX_EQUIPMENT_ID;
 
@@ -329,4 +330,64 @@ export class AssetsDao {
 
     return;
   }
+
+
+  public async updateHost({hostId, identityId, stage, credProviderHost}: {hostId: string, identityId: string, stage: string, credProviderHost: string}): Promise<any> {
+
+    console.log('initialization.dao updateHost in:' + JSON.stringify({hostId, identityId, stage, credProviderHost}));
+
+    if (!hostId) {
+      console.log('initialization.dao updateHost out');
+      return;
+    }
+
+    const params = [{
+      Put: {
+        TableName: TBL_HOST,
+        Item: { hostId, identityId, stage, credProviderHost }
+      }
+    }];
+
+    const command = new TransactWriteCommand({
+      TransactItems: params
+    });
+
+    const response = await this.ddbDocClient.send(command);  
+
+    console.log('initialization.dao updateHost response:' + JSON.stringify(response));
+
+    console.log('initialization.dao updateHost out');
+
+    return;
+
+  }
+
+  public async getHost(): Promise<any> {
+
+    console.log('initialization.dao getHost in');
+
+    const scanParam = {
+      TableName : TBL_HOST,
+      PageSize : 1
+    };
+
+    const scanCmd = new ScanCommand(scanParam);
+
+    const scanResult = await this.ddbDocClient.send(scanCmd);
+
+    let response;
+    if (scanResult.Items && scanResult.Items.length > 0) {
+      response = scanResult.Items[0];    
+    }
+
+    if (!response) {
+      throw new Error(`getHost empty`);
+    }
+
+    console.log('initialization.dao getHost out:' + JSON.stringify(response));
+
+    return response;
+
+  }
+
 }

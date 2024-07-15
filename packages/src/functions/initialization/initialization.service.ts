@@ -21,24 +21,12 @@ export class InitializationService {
 		return;
 	}
 
-
-  	public async saveHost({hostId, identityId, stage, credProviderHost}: {hostId: string, identityId: string, stage: string, credProviderHost: string}): Promise<any> {
-
-    	console.log('initialization.service saveHost in:' + JSON.stringify({hostId, identityId, stage, credProviderHost}));
-
-    	await this.initializationDao.updateHost({hostId, identityId, stage, credProviderHost});
-
-    	console.log('initialization.service saveHost out');
-
-    	return;
-	}
-
   	public async intializeEnvVar(): Promise<any> {
 
     	console.log('initialization.service intializeEnvVar in');
 
 	    if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST) {
-	        const result = await this.initializationDao.getHost();
+	        const result = await this.assetsService.getHost();
 	        process.env.HOST_ID = result.hostId;
 	        process.env.STAGE = result.stage;
 			process.env.IDENTTITY_ID = result.identityId;

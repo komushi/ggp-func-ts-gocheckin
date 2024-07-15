@@ -23,6 +23,27 @@ export class AssetsService {
 
     this.uid = new ShortUniqueId();
   }
+  public async getHost(): Promise<any> {
+
+    console.log('assets.service getHost in');
+
+    const rtn = await this.assetsDao.getHost();
+
+    console.log('assets.service saveHost out:' + JSON.stringify(rtn));
+
+    return;
+  }
+
+  public async saveHost({hostId, identityId, stage, credProviderHost}: {hostId: string, identityId: string, stage: string, credProviderHost: string}): Promise<any> {
+
+    console.log('assets.service saveHost in:' + JSON.stringify({hostId, identityId, stage, credProviderHost}));
+
+    await this.assetsDao.updateHost({hostId, identityId, stage, credProviderHost});
+
+    console.log('assets.service saveHost out');
+
+    return;
+  }
 
   public async saveProperty(hostId: string, propertyItem: PropertyItem): Promise<any> {
     console.log('assets.service saveProperty in: ' + JSON.stringify({hostId, propertyItem}));
@@ -160,13 +181,14 @@ export class AssetsService {
     const crtScanner:ScannerItem = await this.assetsDao.getScannerById(scannerItem.equipmentId);
 
     if (crtScanner) {
-      scannerItem.lastUpdateOn = (new Date).toISOString();
+      scannerItem.hostId = process.env.HOST_ID;
+      scannerItem.propertyCode = process.env.PROPERTY_CODE;
+      scannerItem.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
+      scannerItem.category = 'SCANNER';
+      scannerItem.coreName = process.env.AWS_IOT_THING_NAME;
       scannerItem.uuid = crtScanner.uuid;
-      scannerItem.hostId = crtScanner.hostId;
-      scannerItem.propertyCode = crtScanner.propertyCode;
-      scannerItem.hostPropertyCode = crtScanner.hostPropertyCode;
-      scannerItem.category = crtScanner.category;
-      scannerItem.coreName = crtScanner.coreName;
+      scannerItem.lastUpdateOn = (new Date).toISOString();
+
     } else {                                                                                      
       scannerItem.hostId = process.env.HOST_ID;
       scannerItem.propertyCode = process.env.PROPERTY_CODE;

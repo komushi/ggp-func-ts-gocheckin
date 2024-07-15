@@ -28,6 +28,22 @@ class AssetsService {
         this.iotService = new iot_service_1.IotService();
         this.uid = new short_unique_id_1.default();
     }
+    getHost() {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service getHost in');
+            const rtn = yield this.assetsDao.getHost();
+            console.log('assets.service saveHost out:' + JSON.stringify(rtn));
+            return;
+        });
+    }
+    saveHost({ hostId, identityId, stage, credProviderHost }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service saveHost in:' + JSON.stringify({ hostId, identityId, stage, credProviderHost }));
+            yield this.assetsDao.updateHost({ hostId, identityId, stage, credProviderHost });
+            console.log('assets.service saveHost out');
+            return;
+        });
+    }
     saveProperty(hostId, propertyItem) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service saveProperty in: ' + JSON.stringify({ hostId, propertyItem }));
@@ -140,13 +156,13 @@ class AssetsService {
             console.log('assets.service refreshScanner in: ' + JSON.stringify(scannerItem));
             const crtScanner = yield this.assetsDao.getScannerById(scannerItem.equipmentId);
             if (crtScanner) {
-                scannerItem.lastUpdateOn = (new Date).toISOString();
+                scannerItem.hostId = process.env.HOST_ID;
+                scannerItem.propertyCode = process.env.PROPERTY_CODE;
+                scannerItem.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
+                scannerItem.category = 'SCANNER';
+                scannerItem.coreName = process.env.AWS_IOT_THING_NAME;
                 scannerItem.uuid = crtScanner.uuid;
-                scannerItem.hostId = crtScanner.hostId;
-                scannerItem.propertyCode = crtScanner.propertyCode;
-                scannerItem.hostPropertyCode = crtScanner.hostPropertyCode;
-                scannerItem.category = crtScanner.category;
-                scannerItem.coreName = crtScanner.coreName;
+                scannerItem.lastUpdateOn = (new Date).toISOString();
             }
             else {
                 scannerItem.hostId = process.env.HOST_ID;

@@ -200,49 +200,5 @@ class InitializationDao {
         });
     }
     ;
-    updateHost({ hostId, identityId, stage, credProviderHost }) {
-        return __awaiter(this, void 0, void 0, function* () {
-            console.log('initialization.dao updateHost in:' + JSON.stringify({ hostId, identityId, stage, credProviderHost }));
-            if (!hostId) {
-                console.log('initialization.dao updateHost out');
-                return;
-            }
-            const params = [{
-                    Put: {
-                        TableName: TBL_HOST,
-                        Item: { hostId, identityId, stage, credProviderHost }
-                    }
-                }];
-            const command = new lib_dynamodb_1.TransactWriteCommand({
-                TransactItems: params
-            });
-            const response = yield this.ddbDocClient.send(command);
-            console.log('initialization.dao updateHost response:' + JSON.stringify(response));
-            console.log('initialization.dao updateHost out');
-            return;
-        });
-    }
-    ;
-    getHost() {
-        return __awaiter(this, void 0, void 0, function* () {
-            console.log('initialization.dao getHost in');
-            const scanParam = {
-                TableName: TBL_HOST,
-                PageSize: 1
-            };
-            const scanCmd = new lib_dynamodb_1.ScanCommand(scanParam);
-            const scanResult = yield this.ddbDocClient.send(scanCmd);
-            let response;
-            if (scanResult.Items && scanResult.Items.length > 0) {
-                response = scanResult.Items[0];
-            }
-            if (!response) {
-                throw new Error(`getHost empty`);
-            }
-            console.log('initialization.dao getHost out:' + JSON.stringify(response));
-            return response;
-        });
-    }
-    ;
 }
 exports.InitializationDao = InitializationDao;

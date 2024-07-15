@@ -25,19 +25,11 @@ class InitializationService {
             return;
         });
     }
-    saveHost({ hostId, identityId, stage, credProviderHost }) {
-        return __awaiter(this, void 0, void 0, function* () {
-            console.log('initialization.service saveHost in:' + JSON.stringify({ hostId, identityId, stage, credProviderHost }));
-            yield this.initializationDao.updateHost({ hostId, identityId, stage, credProviderHost });
-            console.log('initialization.service saveHost out');
-            return;
-        });
-    }
     intializeEnvVar() {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('initialization.service intializeEnvVar in');
             if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST) {
-                const result = yield this.initializationDao.getHost();
+                const result = yield this.assetsService.getHost();
                 process.env.HOST_ID = result.hostId;
                 process.env.STAGE = result.stage;
                 process.env.IDENTTITY_ID = result.identityId;
