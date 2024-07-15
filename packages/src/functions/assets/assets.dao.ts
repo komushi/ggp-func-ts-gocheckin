@@ -156,8 +156,8 @@ export class AssetsDao {
     
   }
 
-  public async createCamera(cameraItem: CameraItem): Promise<any> {
-    console.log('assets.dao createCamera in' + JSON.stringify(cameraItem));
+  public async updateCamera(cameraItem: CameraItem): Promise<any> {
+    console.log('assets.dao updateCamera in' + JSON.stringify(cameraItem));
 
     const params = [{
       Put: {
@@ -168,9 +168,9 @@ export class AssetsDao {
 
     const response = await this.ddbDocClient.send(new TransactWriteCommand({TransactItems: params}));
 
-    console.log('assets.dao createCamera response:' + JSON.stringify(response));
+    console.log('assets.dao updateCamera response:' + JSON.stringify(response));
 
-    console.log(`assets.dao createCamera out`);
+    console.log(`assets.dao updateCamera out`);
 
     return;
   }

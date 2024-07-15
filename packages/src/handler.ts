@@ -91,7 +91,7 @@ const processClassicShadow = async function(event) {
 
 	if (event.state.cameras) {
 		if (getShadowResult.state.desired.cameras) {
-			await assetsService.refreshCameras(getShadowResult.state.desired.cameras).catch(err => {
+			await assetsService.refreshCameras(event.state.cameras, getShadowResult.state.desired.cameras).catch(err => {
 				console.error('refreshCameras error:' + err.message);
 				throw err;
 			});

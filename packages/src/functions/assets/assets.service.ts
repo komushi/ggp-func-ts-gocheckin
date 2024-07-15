@@ -71,6 +71,45 @@ export class AssetsService {
     return propertyItem;
   }
 
+  public async refreshCameras(deltaShadowCameras: ShadowCameras, desiredShadowCameras: ShadowCameras): Promise<any> {
+    console.log('assets.service refreshCameras in: ' + JSON.stringify({deltaShadowCameras, desiredShadowCameras}));
+
+    const deltaCameraItems: CameraItem[] = Object.entries(desiredShadowCameras).map(([uuid, cameraItem]: [string, CameraItem]) => {
+      return cameraItem;
+    }).filter((cameraItem: CameraItem) => {
+      if (deltaShadowCameras[cameraItem.uuid]) {
+        return true;
+      } else {
+        return false;
+      }
+    });
+
+    console.log('assets.service refreshCameras deltaCameraItems: ' + JSON.stringify(deltaCameraItems));
+
+    await Promise.all(deltaCameraItems.map(async (cameraItem: CameraItem) => {
+      
+      const existingCamera: CameraItem = await this.assetsDao.getCamera(cameraItem.hostId, cameraItem.uuid);
+
+      if (existingCamera) {
+        if (existingCamera.lastUpdateOn !== cameraItem.lastUpdateOn) {
+          existingCamera.username = cameraItem.username;
+          existingCamera.password = cameraItem.password;
+          existingCamera.rtsp = cameraItem.rtsp;
+          existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
+
+          await this.assetsDao.updateCamera(existingCamera);
+        }
+      } else {
+        await this.assetsDao.updateCamera(cameraItem);
+      }
+    }));
+
+    console.log('assets.service refreshCameras out');
+
+    return;
+  }
+
+  /*
   public async refreshCameras(shadowCameraItems: ShadowCameras): Promise<any> {
     console.log('assets.service refreshCameras in: ' + JSON.stringify(shadowCameraItems));
 
@@ -106,6 +145,7 @@ export class AssetsService {
 
     return;
   }
+  */
 
   public async discoverCameras(hostId: string): Promise<any> {
     console.log('assets.service discoverCameras in: ' + JSON.stringify({hostId}));
@@ -155,7 +195,7 @@ export class AssetsService {
         cameraItem.propertyCode = propertyCode;
         cameraItem.hostPropertyCode = hostPropertyCode;
       }
-      await this.assetsDao.createCamera(cameraItem);
+      await this.assetsDao.updateCamera(cameraItem);
   
       await this.iotService.publish({
         topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,

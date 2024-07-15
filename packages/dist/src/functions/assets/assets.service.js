@@ -64,17 +64,21 @@ class AssetsService {
             return propertyItem;
         });
     }
-    refreshCameras(shadowCameraItems) {
+    refreshCameras(deltaShadowCameras, desiredShadowCameras) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service refreshCameras in: ' + JSON.stringify(shadowCameraItems));
-            const cameraItems = Object.entries(shadowCameraItems).map(([uuid, cameraItem]) => {
+            console.log('assets.service refreshCameras in: ' + JSON.stringify({ deltaShadowCameras, desiredShadowCameras }));
+            const deltaCameraItems = Object.entries(desiredShadowCameras).map(([uuid, cameraItem]) => {
                 return cameraItem;
+            }).filter((cameraItem) => {
+                if (deltaShadowCameras[cameraItem.uuid]) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
             });
-            console.log('assets.service refreshCameras cameraItems: ' + JSON.stringify(cameraItems));
-            if (cameraItems.length == 0) {
-                yield this.assetsDao.deleteCameras(process.env.HOST_ID);
-            }
-            yield Promise.all(cameraItems.map((cameraItem) => __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service refreshCameras deltaCameraItems: ' + JSON.stringify(deltaCameraItems));
+            yield Promise.all(deltaCameraItems.map((cameraItem) => __awaiter(this, void 0, void 0, function* () {
                 const existingCamera = yield this.assetsDao.getCamera(cameraItem.hostId, cameraItem.uuid);
                 if (existingCamera) {
                     if (existingCamera.lastUpdateOn !== cameraItem.lastUpdateOn) {
@@ -82,17 +86,54 @@ class AssetsService {
                         existingCamera.password = cameraItem.password;
                         existingCamera.rtsp = cameraItem.rtsp;
                         existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
-                        yield this.assetsDao.createCamera(existingCamera);
+                        yield this.assetsDao.updateCamera(existingCamera);
                     }
                 }
                 else {
-                    yield this.assetsDao.createCamera(cameraItem);
+                    yield this.assetsDao.updateCamera(cameraItem);
                 }
             })));
             console.log('assets.service refreshCameras out');
             return;
         });
     }
+    /*
+    public async refreshCameras(shadowCameraItems: ShadowCameras): Promise<any> {
+      console.log('assets.service refreshCameras in: ' + JSON.stringify(shadowCameraItems));
+  
+      const cameraItems: CameraItem[] = Object.entries(shadowCameraItems).map(([uuid, cameraItem]: [string, CameraItem]) => {
+        return cameraItem;
+      });
+  
+      console.log('assets.service refreshCameras cameraItems: ' + JSON.stringify(cameraItems));
+  
+      if (cameraItems.length == 0) {
+        await this.assetsDao.deleteCameras(process.env.HOST_ID);
+      }
+  
+      await Promise.all(cameraItems.map(async (cameraItem: CameraItem) => {
+        
+        const existingCamera: CameraItem = await this.assetsDao.getCamera(cameraItem.hostId, cameraItem.uuid);
+  
+        if (existingCamera) {
+          if (existingCamera.lastUpdateOn !== cameraItem.lastUpdateOn) {
+            existingCamera.username = cameraItem.username;
+            existingCamera.password = cameraItem.password;
+            existingCamera.rtsp = cameraItem.rtsp;
+            existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
+  
+            await this.assetsDao.createCamera(existingCamera);
+          }
+        } else {
+          await this.assetsDao.createCamera(cameraItem);
+        }
+      }));
+  
+      console.log('assets.service refreshCameras out');
+  
+      return;
+    }
+    */
     discoverCameras(hostId) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service discoverCameras in: ' + JSON.stringify({ hostId }));
@@ -136,7 +177,7 @@ class AssetsService {
                     cameraItem.propertyCode = propertyCode;
                     cameraItem.hostPropertyCode = hostPropertyCode;
                 }
-                yield this.assetsDao.createCamera(cameraItem);
+                yield this.assetsDao.updateCamera(cameraItem);
                 yield this.iotService.publish({
                     topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
                     payload: JSON.stringify(cameraItem)

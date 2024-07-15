@@ -126,9 +126,9 @@ class AssetsDao {
             return data.Item;
         });
     }
-    createCamera(cameraItem) {
+    updateCamera(cameraItem) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.dao createCamera in' + JSON.stringify(cameraItem));
+            console.log('assets.dao updateCamera in' + JSON.stringify(cameraItem));
             const params = [{
                     Put: {
                         TableName: TBL_ASSET,
@@ -136,8 +136,8 @@ class AssetsDao {
                     }
                 }];
             const response = yield this.ddbDocClient.send(new lib_dynamodb_1.TransactWriteCommand({ TransactItems: params }));
-            console.log('assets.dao createCamera response:' + JSON.stringify(response));
-            console.log(`assets.dao createCamera out`);
+            console.log('assets.dao updateCamera response:' + JSON.stringify(response));
+            console.log(`assets.dao updateCamera out`);
             return;
         });
     }
