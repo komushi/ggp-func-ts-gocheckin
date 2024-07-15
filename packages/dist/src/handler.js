@@ -34,14 +34,9 @@ exports.function_handler = function (event, context) {
         }
         else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
             // console.log('classic shadow event delta: ' + JSON.stringify(event));
-            yield processClassicShadow(event);
-            // } else if (deletePattern.test(context.clientContext.Custom.subject)) {
-            // 	console.log('named shadow event delete: ' + JSON.stringify(event));
-            // 	const reservationCode = context.clientContext.Custom.subject.match(deletePattern)[1];
-            // 	await reservationsService.processShadowDeleted(reservationCode);
-            // } else if (deltaPattern.test(context.clientContext.Custom.subject)) {
-            // 	console.log('named shadow event delta: ' + JSON.stringify(event));
-            // 	await reservationsService.processShadowDelta(event.state);
+            setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                yield processClassicShadow(event);
+            }), 5000);
         }
         else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
             console.log('scanner_detected event: ' + JSON.stringify(event));
@@ -105,31 +100,17 @@ const processClassicShadow = function (event) {
     });
 };
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const initializationService = new initialization_service_1.InitializationService();
-        yield initializationService.intializeEnvVar();
-        console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
-        console.log('after intializeEnvVar IDENTTITY_ID:' + process.env.IDENTTITY_ID);
-        console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
-        console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
-        console.log('after intializeEnvVar CRED_PROVIDER_HOST:' + process.env.CRED_PROVIDER_HOST);
-        yield assetsService.discoverCameras(process.env.HOST_ID);
-        yield assetsService.startOnvif({
-            hostId: process.env.HOST_ID,
-            identityId: process.env.IDENTTITY_ID,
-            propertyCode: process.env.PROPERTY_CODE,
-            credProviderHost: process.env.CRED_PROVIDER_HOST
-        });
-    }
-    catch (err) {
-        console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
-        console.error(err.name);
-        console.error(err.message);
-        console.error(err.stack);
-        console.trace();
-        console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
-    }
-}), 15000);
+    yield initializationService.intializeEnvVar();
+}), 1000);
+setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
+    yield assetsService.discoverCameras(process.env.HOST_ID);
+    yield assetsService.startOnvif({
+        hostId: process.env.HOST_ID,
+        identityId: process.env.IDENTTITY_ID,
+        propertyCode: process.env.PROPERTY_CODE,
+        credProviderHost: process.env.CRED_PROVIDER_HOST
+    });
+}), 10000);
 /*
 setInterval(async () => {
     try {
@@ -138,12 +119,6 @@ setInterval(async () => {
         await initializationService.intializeEnvVar();
 
         await assetsService.discoverCameras(process.env.HOST_ID);
-
-        console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
-        console.log('after intializeEnvVar IDENTTITY_ID:' + process.env.IDENTTITY_ID);
-        console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
-        console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
-        console.log('after intializeEnvVar CRED_PROVIDER_HOST:' + process.env.CRED_PROVIDER_HOST);
 
     } catch (err) {
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
