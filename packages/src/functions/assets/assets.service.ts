@@ -145,29 +145,22 @@ export class AssetsService {
       if (existingCamera) {
         const newIp = cameraItem.localIp;
         const newCoreName = cameraItem.coreName;
+        const propertyCode = cameraItem.propertyCode;
+        const hostPropertyCode = cameraItem.hostPropertyCode;
+
         cameraItem = existingCamera;
-        if (newIp !== existingCamera.localIp || newCoreName !== existingCamera.coreName) {
-          cameraItem.localIp = newIp;
-          cameraItem.lastUpdateOn = (new Date).toISOString();
-          cameraItem.coreName = newCoreName;
-
-          await this.iotService.publish({
-            topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
-              payload: JSON.stringify(cameraItem)
-          });
-        }
-
-        await this.assetsDao.createCamera(cameraItem);
-      } else {
-
-        await this.assetsDao.createCamera(cameraItem);
-  
-        await this.iotService.publish({
-          topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
-            payload: JSON.stringify(cameraItem)
-        });
+        cameraItem.localIp = newIp;
+        cameraItem.lastUpdateOn = (new Date).toISOString();
+        cameraItem.coreName = newCoreName;
+        cameraItem.propertyCode = propertyCode;
+        cameraItem.hostPropertyCode = hostPropertyCode;
       }
-
+      await this.assetsDao.createCamera(cameraItem);
+  
+      await this.iotService.publish({
+        topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
+          payload: JSON.stringify(cameraItem)
+      });
     }));
 
     console.log('assets.service discoverCameras out');
@@ -214,7 +207,7 @@ export class AssetsService {
   public async startOnvif({hostId, identityId, propertyCode, credProviderHost}: {hostId: string, identityId: string, propertyCode: string, credProviderHost: string}): Promise<any> {
     console.log('assets.service startOnvif in: ' + JSON.stringify({hostId, identityId, propertyCode, credProviderHost}));
 
-    const cameraItems: CameraItem[] = await this.assetsDao.getCameras(hostId);
+    const cameraItems: CameraItem[] = await this.assetsDao.getCameras(`${hostId}-${propertyCode}`);
 
     const hostInfo = {
       hostId,

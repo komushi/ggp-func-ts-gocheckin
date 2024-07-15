@@ -127,25 +127,20 @@ class AssetsService {
                 if (existingCamera) {
                     const newIp = cameraItem.localIp;
                     const newCoreName = cameraItem.coreName;
+                    const propertyCode = cameraItem.propertyCode;
+                    const hostPropertyCode = cameraItem.hostPropertyCode;
                     cameraItem = existingCamera;
-                    if (newIp !== existingCamera.localIp || newCoreName !== existingCamera.coreName) {
-                        cameraItem.localIp = newIp;
-                        cameraItem.lastUpdateOn = (new Date).toISOString();
-                        cameraItem.coreName = newCoreName;
-                        yield this.iotService.publish({
-                            topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
-                            payload: JSON.stringify(cameraItem)
-                        });
-                    }
-                    yield this.assetsDao.createCamera(cameraItem);
+                    cameraItem.localIp = newIp;
+                    cameraItem.lastUpdateOn = (new Date).toISOString();
+                    cameraItem.coreName = newCoreName;
+                    cameraItem.propertyCode = propertyCode;
+                    cameraItem.hostPropertyCode = hostPropertyCode;
                 }
-                else {
-                    yield this.assetsDao.createCamera(cameraItem);
-                    yield this.iotService.publish({
-                        topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
-                        payload: JSON.stringify(cameraItem)
-                    });
-                }
+                yield this.assetsDao.createCamera(cameraItem);
+                yield this.iotService.publish({
+                    topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
+                    payload: JSON.stringify(cameraItem)
+                });
             })));
             console.log('assets.service discoverCameras out');
             return;
@@ -185,7 +180,7 @@ class AssetsService {
     startOnvif({ hostId, identityId, propertyCode, credProviderHost }) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service startOnvif in: ' + JSON.stringify({ hostId, identityId, propertyCode, credProviderHost }));
-            const cameraItems = yield this.assetsDao.getCameras(hostId);
+            const cameraItems = yield this.assetsDao.getCameras(`${hostId}-${propertyCode}`);
             const hostInfo = {
                 hostId,
                 identityId,

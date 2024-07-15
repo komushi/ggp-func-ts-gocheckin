@@ -5,6 +5,7 @@ import { PropertyItem, CameraItem, ScannerItem } from './assets.models';
 const TBL_HOST = process.env.TBL_HOST;
 const TBL_ASSET = process.env.TBL_ASSET;
 const IDX_EQUIPMENT_ID = process.env.IDX_EQUIPMENT_ID;
+const IDX_HOST_PROPERTYCODE = process.env.IDX_HOST_PROPERTYCODE;
 
 const config: DynamoDBClientConfig = {
   endpoint: process.env.DDB_ENDPOINT || 'http://localhost:8080',
@@ -174,21 +175,22 @@ export class AssetsDao {
     return;
   }
 
-  public async getCameras(hostId: string): Promise<any> {
+  public async getCameras(hostPropertyCode: string): Promise<any> {
 
-    console.log('assets.dao getCameras in:' + hostId);
+    console.log('assets.dao getCameras in:' + hostPropertyCode);
 
     const response = await this.ddbDocClient.send(
       new QueryCommand({
         TableName: TBL_ASSET,
+        IndexName: IDX_HOST_PROPERTYCODE,
         KeyConditionExpression: '#hkey = :hkey',
         FilterExpression: '#category = :category',
         ExpressionAttributeNames : {
-            '#hkey' : 'hostId',
+            '#hkey' : 'hostPropertyCode',
             '#category': 'category'
         },
         ExpressionAttributeValues: {
-          ':hkey': hostId,
+          ':hkey': hostPropertyCode,
           ':category': 'CAMERA'
         }
       })

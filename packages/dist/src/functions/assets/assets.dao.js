@@ -15,6 +15,7 @@ const lib_dynamodb_1 = require("@aws-sdk/lib-dynamodb");
 const TBL_HOST = process.env.TBL_HOST;
 const TBL_ASSET = process.env.TBL_ASSET;
 const IDX_EQUIPMENT_ID = process.env.IDX_EQUIPMENT_ID;
+const IDX_HOST_PROPERTYCODE = process.env.IDX_HOST_PROPERTYCODE;
 const config = {
     endpoint: process.env.DDB_ENDPOINT || 'http://localhost:8080',
 };
@@ -140,19 +141,20 @@ class AssetsDao {
             return;
         });
     }
-    getCameras(hostId) {
+    getCameras(hostPropertyCode) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.dao getCameras in:' + hostId);
+            console.log('assets.dao getCameras in:' + hostPropertyCode);
             const response = yield this.ddbDocClient.send(new lib_dynamodb_1.QueryCommand({
                 TableName: TBL_ASSET,
+                IndexName: IDX_HOST_PROPERTYCODE,
                 KeyConditionExpression: '#hkey = :hkey',
                 FilterExpression: '#category = :category',
                 ExpressionAttributeNames: {
-                    '#hkey': 'hostId',
+                    '#hkey': 'hostPropertyCode',
                     '#category': 'category'
                 },
                 ExpressionAttributeValues: {
-                    ':hkey': hostId,
+                    ':hkey': hostPropertyCode,
                     ':category': 'CAMERA'
                 }
             }));
