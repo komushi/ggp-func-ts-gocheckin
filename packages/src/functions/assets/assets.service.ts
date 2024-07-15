@@ -31,7 +31,7 @@ export class AssetsService {
 
     console.log('assets.service saveHost out:' + JSON.stringify(rtn));
 
-    return;
+    return rtn;
   }
 
   public async saveHost({hostId, identityId, stage, credProviderHost}: {hostId: string, identityId: string, stage: string, credProviderHost: string}): Promise<any> {

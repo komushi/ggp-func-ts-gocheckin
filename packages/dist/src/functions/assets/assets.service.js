@@ -33,7 +33,7 @@ class AssetsService {
             console.log('assets.service getHost in');
             const rtn = yield this.assetsDao.getHost();
             console.log('assets.service saveHost out:' + JSON.stringify(rtn));
-            return;
+            return rtn;
         });
     }
     saveHost({ hostId, identityId, stage, credProviderHost }) {
