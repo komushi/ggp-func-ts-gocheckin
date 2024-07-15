@@ -27,17 +27,21 @@ exports.function_handler = async function(event, context) {
 		await assetsService.discoverCameras(process.env.HOST_ID);
 
     } else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
-    	// console.log('classic shadow event delta: ' + JSON.stringify(event));
+    	console.log('classic shadow event delta: ' + JSON.stringify(event));
 
-		setTimeout(async () => {
+		if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
+			setTimeout(async () => {
+				await initializationService.intializeEnvVar();
+				await processClassicShadow(event);
+			}, 10000);
+		} else {
 			await processClassicShadow(event);
-		}, 10000);
+		}
 
 	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
 
 		await assetsService.refreshScanner(event);
-
 	}
 
 };
