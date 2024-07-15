@@ -36,7 +36,7 @@ exports.function_handler = function (event, context) {
             // console.log('classic shadow event delta: ' + JSON.stringify(event));
             setTimeout(() => __awaiter(this, void 0, void 0, function* () {
                 yield processClassicShadow(event);
-            }), 5000);
+            }), 10000);
         }
         else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
             console.log('scanner_detected event: ' + JSON.stringify(event));
@@ -101,7 +101,7 @@ const processClassicShadow = function (event) {
 };
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
     yield initializationService.intializeEnvVar();
-}), 1000);
+}), 500);
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
     yield assetsService.discoverCameras(process.env.HOST_ID);
     yield assetsService.startOnvif({
@@ -110,7 +110,7 @@ setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
         propertyCode: process.env.PROPERTY_CODE,
         credProviderHost: process.env.CRED_PROVIDER_HOST
     });
-}), 10000);
+}), 20000);
 /*
 setInterval(async () => {
     try {

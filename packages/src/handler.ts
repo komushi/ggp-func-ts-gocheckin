@@ -31,7 +31,7 @@ exports.function_handler = async function(event, context) {
 
 		setTimeout(async () => {
 			await processClassicShadow(event);
-		}, 5000);
+		}, 10000);
 
 	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
@@ -109,7 +109,7 @@ const processClassicShadow = async function(event) {
 
 setTimeout(async () => {
 	await initializationService.intializeEnvVar();
-}, 1000);
+}, 500);
 
 setTimeout(async () => {
 	await assetsService.discoverCameras(process.env.HOST_ID);
@@ -121,7 +121,7 @@ setTimeout(async () => {
 		credProviderHost: process.env.CRED_PROVIDER_HOST
 	});
 
-}, 10000);
+}, 20000);
 
 /*
 setInterval(async () => {
