@@ -24,18 +24,29 @@ export class ReservationsService {
   public async processShadow(deltaShadowReservations: ClassicShadowReservations, desiredShadowReservations: ClassicShadowReservations): Promise<any> {
     console.log('reservations.service processShadow in: ' + JSON.stringify({deltaShadowReservations, desiredShadowReservations}));
 
-    Object.keys(deltaShadowReservations).map(async (reservationsCode: string) => {
+    const promises = Object.keys(deltaShadowReservations).map(async (reservationsCode: string) => {
       const classicShadowReservation: ClassicShadowReservation = desiredShadowReservations[reservationsCode];
       if (classicShadowReservation) {
-        if (classicShadowReservation.action == ACTION_REMOVE) {
-          await this.processShadowDeleted(classicShadowReservation, reservationsCode);
-        } else if (classicShadowReservation.action == ACTION_UPDATE) {
-          await this.processShadowDelta(classicShadowReservation, reservationsCode);
-        } else {
+        try {
+          if (classicShadowReservation.action == ACTION_REMOVE) {
+            await this.processShadowDeleted(classicShadowReservation, reservationsCode);
+            
+          } else if (classicShadowReservation.action == ACTION_UPDATE) {
+            await this.processShadowDelta(classicShadowReservation, reservationsCode);
+          }
+  
+        } catch (err) {
+          return {reservationsCode, action: classicShadowReservation.action, error: err.message};
+        } 
 
-        }
+        return {reservationsCode, action: classicShadowReservation.action};
       }
-    })
+    });
+
+    const results = await Promise.allSettled(promises);
+    console.log('reservations.service processShadow results:' + JSON.stringify(results));
+
+    console.log('reservations.service processShadow out');
 
   }
 

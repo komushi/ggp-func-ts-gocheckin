@@ -28,19 +28,26 @@ class ReservationsService {
     processShadow(deltaShadowReservations, desiredShadowReservations) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('reservations.service processShadow in: ' + JSON.stringify({ deltaShadowReservations, desiredShadowReservations }));
-            Object.keys(deltaShadowReservations).map((reservationsCode) => __awaiter(this, void 0, void 0, function* () {
+            const promises = Object.keys(deltaShadowReservations).map((reservationsCode) => __awaiter(this, void 0, void 0, function* () {
                 const classicShadowReservation = desiredShadowReservations[reservationsCode];
                 if (classicShadowReservation) {
-                    if (classicShadowReservation.action == ACTION_REMOVE) {
-                        yield this.processShadowDeleted(classicShadowReservation, reservationsCode);
+                    try {
+                        if (classicShadowReservation.action == ACTION_REMOVE) {
+                            yield this.processShadowDeleted(classicShadowReservation, reservationsCode);
+                        }
+                        else if (classicShadowReservation.action == ACTION_UPDATE) {
+                            yield this.processShadowDelta(classicShadowReservation, reservationsCode);
+                        }
                     }
-                    else if (classicShadowReservation.action == ACTION_UPDATE) {
-                        yield this.processShadowDelta(classicShadowReservation, reservationsCode);
+                    catch (err) {
+                        return { reservationsCode, action: classicShadowReservation.action, error: err.message };
                     }
-                    else {
-                    }
+                    return { reservationsCode, action: classicShadowReservation.action };
                 }
             }));
+            const results = yield Promise.allSettled(promises);
+            console.log('reservations.service processShadow results:' + JSON.stringify(results));
+            console.log('reservations.service processShadow out');
         });
     }
     processShadowDeleted(classicShadowReservation, reservationCode) {
