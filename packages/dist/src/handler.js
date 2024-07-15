@@ -103,7 +103,6 @@ setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
         console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
         console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
         console.log('after intializeEnvVar CRED_PROVIDER_HOST:' + process.env.CRED_PROVIDER_HOST);
-        const assetsService = new assets_service_1.AssetsService();
         yield assetsService.discoverCameras(process.env.HOST_ID);
         yield assetsService.startOnvif({
             hostId: process.env.HOST_ID,
@@ -127,6 +126,8 @@ setInterval(async () => {
         
         const initializationService = new InitializationService();
         await initializationService.intializeEnvVar();
+
+        await assetsService.discoverCameras(process.env.HOST_ID);
 
         console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
         console.log('after intializeEnvVar IDENTTITY_ID:' + process.env.IDENTTITY_ID);
