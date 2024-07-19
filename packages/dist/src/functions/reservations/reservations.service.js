@@ -40,7 +40,7 @@ class ReservationsService {
                         }
                     }
                     catch (err) {
-                        return { reservationsCode, action: classicShadowReservation.action, error: err.message };
+                        return { reservationsCode, action: classicShadowReservation.action, message: err.message, stack: err.stack };
                     }
                     return { reservationsCode, action: classicShadowReservation.action };
                 }
