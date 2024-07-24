@@ -107,44 +107,6 @@ export class AssetsService {
     return;
   }
 
-  /*
-  public async refreshCameras(shadowCameraItems: ShadowCameras): Promise<any> {
-    console.log('assets.service refreshCameras in: ' + JSON.stringify(shadowCameraItems));
-
-    const cameraItems: CameraItem[] = Object.entries(shadowCameraItems).map(([uuid, cameraItem]: [string, CameraItem]) => {
-      return cameraItem;
-    });
-
-    console.log('assets.service refreshCameras cameraItems: ' + JSON.stringify(cameraItems));
-
-    if (cameraItems.length == 0) {
-      await this.assetsDao.deleteCameras(process.env.HOST_ID);
-    }
-
-    await Promise.all(cameraItems.map(async (cameraItem: CameraItem) => {
-      
-      const existingCamera: CameraItem = await this.assetsDao.getCamera(cameraItem.hostId, cameraItem.uuid);
-
-      if (existingCamera) {
-        if (existingCamera.lastUpdateOn !== cameraItem.lastUpdateOn) {
-          existingCamera.username = cameraItem.username;
-          existingCamera.password = cameraItem.password;
-          existingCamera.rtsp = cameraItem.rtsp;
-          existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
-
-          await this.assetsDao.createCamera(existingCamera);
-        }
-      } else {
-        await this.assetsDao.createCamera(cameraItem);
-      }
-    }));
-
-    console.log('assets.service refreshCameras out');
-
-    return;
-  }
-  */
-
   public async discoverCameras(hostId: string): Promise<any> {
     console.log('assets.service discoverCameras in: ' + JSON.stringify({hostId}));
 
