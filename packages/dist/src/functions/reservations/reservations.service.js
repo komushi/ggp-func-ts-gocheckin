@@ -129,10 +129,11 @@ class ReservationsService {
             })));
             // update local ddb members
             yield this.reservationsDao.updateMembers(responsesEmbedding);
+            console.log('reservations.service refreshReservation force scanner to call fetch_members');
             // force scanner to call fetch_members
-            // await Promise.allSettled([''].map(async () => {
-            //   await axios.post("http://localhost:7777/recognise");
-            // }));
+            yield Promise.allSettled([''].map(() => __awaiter(this, void 0, void 0, function* () {
+                yield axios_1.default.post("http://localhost:7777/recognise");
+            })));
             console.log('reservations.service refreshReservation out');
             return {};
         });
