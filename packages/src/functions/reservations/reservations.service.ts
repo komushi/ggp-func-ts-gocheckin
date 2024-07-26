@@ -150,9 +150,11 @@ export class ReservationsService {
     console.log('reservations.service refreshReservation force scanner to call fetch_members');
 
     // force scanner to call fetch_members
-    await Promise.allSettled([''].map(async () => {
-      await axios.post("http://localhost:7777/recognise");
+    const responseFetchMembers = await Promise.allSettled([''].map(async () => {
+      return await axios.post("http://localhost:7777/recognise");
     }));
+
+    console.log('reservations.service refreshReservation out' + JSON.stringify(responseFetchMembers));
 
     console.log('reservations.service refreshReservation out');
 
