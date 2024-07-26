@@ -147,6 +147,11 @@ export class ReservationsService {
     // update local ddb members
     await this.reservationsDao.updateMembers(responsesEmbedding);
 
+    // force scanner to call fetch_members
+    await Promise.allSettled([''].map(async () => {
+      await axios.post("http://localhost:7777/recognise");
+    }));
+
     console.log('reservations.service refreshReservation out');
 
     return {};

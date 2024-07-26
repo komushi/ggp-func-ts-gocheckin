@@ -129,6 +129,10 @@ class ReservationsService {
             })));
             // update local ddb members
             yield this.reservationsDao.updateMembers(responsesEmbedding);
+            // force scanner to call fetch_members
+            yield Promise.allSettled([''].map(() => __awaiter(this, void 0, void 0, function* () {
+                yield axios_1.default.post("http://localhost:7777/recognise");
+            })));
             console.log('reservations.service refreshReservation out');
             return {};
         });

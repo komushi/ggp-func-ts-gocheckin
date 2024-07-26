@@ -95,7 +95,6 @@ class AssetsService {
             return;
         });
     }
-
     discoverCameras(hostId) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service discoverCameras in: ' + JSON.stringify({ hostId }));
