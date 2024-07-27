@@ -243,7 +243,7 @@ export class AssetsService {
         // const now = Date.now();
 
         if (motion) {
-          console.log('assets.service startOnvif request scanner to start detect at ' + cameraItem.localIp);
+          console.log('assets.service startOnvif request scanner to detect at ' + cameraItem.localIp);
           
           const response = await axios.post(
             "http://localhost:7777/detect", 
@@ -274,10 +274,10 @@ export class AssetsService {
         return false;
       }
     }).map(async(listenerResponse) => {
-      console.log('assets.service startOnvif request scanner to start detect at ' + listenerResponse);
+      console.log('assets.service startOnvif request scanner to start scanner at ' + JSON.stringify(listenerResponse));
           
       const response = await axios.post(
-        "http://localhost:7777/detect", 
+        "http://localhost:7777/start", 
         { 
           cameraItem: listenerResponse['value'] 
         }
