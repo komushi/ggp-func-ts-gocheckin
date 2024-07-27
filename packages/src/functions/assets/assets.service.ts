@@ -248,8 +248,7 @@ export class AssetsService {
           const response = await axios.post(
             "http://localhost:7777/detect", 
             { 
-              cameraItem, 
-              hostInfo
+              cameraItem
             }
           ).catch(err => {
             console.log("request scanner err:" + JSON.stringify(err));
@@ -279,6 +278,7 @@ export class AssetsService {
       const response = await axios.post(
         "http://localhost:7777/start", 
         { 
+          hostInfo,
           cameraItem: listenerResponse['value'] 
         }
       ).catch(err => {
