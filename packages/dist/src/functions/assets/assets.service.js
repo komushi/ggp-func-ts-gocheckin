@@ -212,7 +212,7 @@ class AssetsService {
                     // const now = Date.now();
                     if (motion) {
                         console.log('assets.service startOnvif request scanner to detect at ' + cameraItem.localIp);
-                        const response = yield axios_1.default.post("http://localhost:7777/detect", {
+                        const response = yield axios_1.default.post("http://localhost:7777/record", {
                             cameraItem
                         }).catch(err => {
                             console.log("request scanner err:" + JSON.stringify(err));
