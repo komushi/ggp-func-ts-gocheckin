@@ -217,7 +217,7 @@ export class AssetsService {
     }
 
     const listenerResponses = await Promise.allSettled(cameraItems.filter((cameraItem: CameraItem) => {
-      if (cameraItem.onvif && cameraItem.localIp && cameraItem.username && cameraItem.password && cameraItem.onvif.port) {
+      if (cameraItem.onvif && cameraItem.localIp && cameraItem.username && cameraItem.password && cameraItem.onvif.port && cameraItem.rtsp.codec) {
         return true;
       } else {
         return false;

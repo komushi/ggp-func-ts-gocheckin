@@ -190,7 +190,7 @@ class AssetsService {
                 credProviderHost
             };
             const listenerResponses = yield Promise.allSettled(cameraItems.filter((cameraItem) => {
-                if (cameraItem.onvif && cameraItem.localIp && cameraItem.username && cameraItem.password && cameraItem.onvif.port) {
+                if (cameraItem.onvif && cameraItem.localIp && cameraItem.username && cameraItem.password && cameraItem.onvif.port && cameraItem.rtsp.codec) {
                     return true;
                 }
                 else {
