@@ -246,7 +246,7 @@ export class AssetsService {
           console.log('assets.service startOnvif request scanner to detect_record at ' + cameraItem.localIp);
           
           const response = await axios.post(
-            "http://localhost:7777/detect_record", 
+            "http://localhost:7777/record", 
             { 
               cameraItem
             }
