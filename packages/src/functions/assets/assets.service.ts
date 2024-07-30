@@ -245,7 +245,7 @@ export class AssetsService {
         if (motion) {
           console.log('assets.service startOnvif request scanner to detect at ' + cameraItem.localIp);
           
-          const response = await axios.post(
+          const responseDetect = await axios.post(
             "http://localhost:7777/detect", 
             { 
               cameraItem
@@ -254,8 +254,20 @@ export class AssetsService {
             console.log("request scanner err:" + JSON.stringify(err));
             return { status: "", data: {}};
           });
+
+          console.log("request detect status:" + responseDetect.status + " data:" + JSON.stringify(responseDetect.data));
           
-          console.log("request detect status:" + response.status + " data:" + JSON.stringify(response.data));
+          const responseRecord = await axios.post(
+            "http://localhost:7777/record", 
+            { 
+              cameraItem
+            }
+          ).catch(err => {
+            console.log("request scanner err:" + JSON.stringify(err));
+            return { status: "", data: {}};
+          });
+
+          console.log("request record status:" + responseRecord.status + " data:" + JSON.stringify(responseRecord.data));
 
         }
       });
