@@ -258,7 +258,7 @@ export class AssetsService {
           // console.log("request detect status:" + responseDetect.status + " data:" + JSON.stringify(responseDetect.data));
           
           const responseRecord = await axios.post(
-            "http://localhost:7777/record", 
+            "http://localhost:7777/detect_record", 
             { 
               cameraItem
             }
@@ -267,7 +267,7 @@ export class AssetsService {
             return { status: "", data: {}};
           });
 
-          console.log("request record status:" + responseRecord.status + " data:" + JSON.stringify(responseRecord.data));
+          console.log("request detect_record status:" + responseRecord.status + " data:" + JSON.stringify(responseRecord.data));
 
         }
       });
