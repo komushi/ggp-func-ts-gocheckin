@@ -93,6 +93,8 @@ export class AssetsService {
       if (existingCamera) {
         existingCamera.username = cameraItem.username;
         existingCamera.password = cameraItem.password;
+        existingCamera.isDetecting = cameraItem.isDetecting;
+        existingCamera.isRecording = cameraItem.isRecording;
         existingCamera.rtsp = cameraItem.rtsp;
         existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
 
@@ -139,6 +141,8 @@ export class AssetsService {
         onvif: {
           port: parseInt(parsedUrl.port) || 80
         },
+        isDetecting: false,
+        isRecording: false,
         lastUpdateOn: (new Date).toISOString()
       }
 

@@ -20,6 +20,8 @@ export interface CameraItem {
     password: string;
     rtsp: RTSP;
     onvif: ONVIF;
+    isRecording: boolean;
+    isDetecting: boolean;
     lastUpdateOn: string;
 }
 
