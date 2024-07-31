@@ -212,13 +212,16 @@ class AssetsService {
                     // const now = Date.now();
                     if (motion) {
                         console.log('assets.service startOnvif request scanner to detect at ' + cameraItem.localIp);
-                        const responseDetect = yield axios_1.default.post("http://localhost:7777/detect", {
-                            cameraItem
-                        }).catch(err => {
-                            console.log("request scanner err:" + JSON.stringify(err));
-                            return { status: "", data: {} };
-                        });
-                        console.log("request detect status:" + responseDetect.status + " data:" + JSON.stringify(responseDetect.data));
+                        // const responseDetect = await axios.post(
+                        //   "http://localhost:7777/detect", 
+                        //   { 
+                        //     cameraItem
+                        //   }
+                        // ).catch(err => {
+                        //   console.log("request scanner err:" + JSON.stringify(err));
+                        //   return { status: "", data: {}};
+                        // });
+                        // console.log("request detect status:" + responseDetect.status + " data:" + JSON.stringify(responseDetect.data));
                         // const responseRecord = await axios.post(
                         //   "http://localhost:7777/record", 
                         //   { 
@@ -228,7 +231,14 @@ class AssetsService {
                         //   console.log("request scanner err:" + JSON.stringify(err));
                         //   return { status: "", data: {}};
                         // });
-                        // console.log("request detect_record status:" + responseRecord.status + " data:" + JSON.stringify(responseRecord.data));
+                        // console.log("request record status:" + responseRecord.status + " data:" + JSON.stringify(responseRecord.data));
+                        const responseRecord = yield axios_1.default.post("http://localhost:7777/detect_record", {
+                            cameraItem
+                        }).catch(err => {
+                            console.log("request scanner err:" + JSON.stringify(err));
+                            return { status: "", data: {} };
+                        });
+                        console.log("request detect_record status:" + responseRecord.status + " data:" + JSON.stringify(responseRecord.data));
                     }
                 }));
                 return cameraItem;
