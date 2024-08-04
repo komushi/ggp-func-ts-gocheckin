@@ -237,7 +237,7 @@ class AssetsService {
                         // });
                         // console.log("request record status:" + responseRecord.status + " data:" + JSON.stringify(responseRecord.data));
                         const responseRecord = yield axios_1.default.post("http://localhost:7777/detect_record", {
-                            cameraItem
+                            cam_ip: cameraItem.localIp
                         }).catch(err => {
                             console.log("request scanner err:" + JSON.stringify(err));
                             return { status: "", data: {} };
