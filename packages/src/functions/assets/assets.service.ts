@@ -222,10 +222,12 @@ export class AssetsService {
 
     const listenerResponses = await Promise.allSettled(cameraItems.filter((cameraItem: CameraItem) => {
       if (cameraItem.onvif && cameraItem.localIp && cameraItem.username && cameraItem.password && cameraItem.onvif.port && cameraItem.rtsp.codec) {
-        return true;
-      } else {
-        return false;
+        if (cameraItem.isDetecting || cameraItem.isRecording) {
+          return true;
+        }
       }
+      
+      return false;
     }).map(async (cameraItem: CameraItem, index: number) => {
       console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
 

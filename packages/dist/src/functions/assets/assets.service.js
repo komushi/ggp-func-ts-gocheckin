@@ -195,11 +195,11 @@ class AssetsService {
             };
             const listenerResponses = yield Promise.allSettled(cameraItems.filter((cameraItem) => {
                 if (cameraItem.onvif && cameraItem.localIp && cameraItem.username && cameraItem.password && cameraItem.onvif.port && cameraItem.rtsp.codec) {
-                    return true;
+                    if (cameraItem.isDetecting || cameraItem.isRecording) {
+                        return true;
+                    }
                 }
-                else {
-                    return false;
-                }
+                return false;
             }).map((cameraItem, index) => __awaiter(this, void 0, void 0, function* () {
                 console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
                 const options = {
