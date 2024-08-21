@@ -120,12 +120,10 @@ setTimeout(async () => {
 
 	await assetsService.startOnvif({
 		hostId: process.env.HOST_ID,
-		identityId: process.env.IDENTTITY_ID,
-		propertyCode: process.env.PROPERTY_CODE,
-		credProviderHost: process.env.CRED_PROVIDER_HOST
+		propertyCode: process.env.PROPERTY_CODE
 	});
 
-}, 20000);
+}, 10000);
 
 /*
 setInterval(async () => {

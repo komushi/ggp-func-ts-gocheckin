@@ -208,17 +208,10 @@ export class AssetsService {
     return;
   }
 
-  public async startOnvif({hostId, identityId, propertyCode, credProviderHost}: {hostId: string, identityId: string, propertyCode: string, credProviderHost: string}): Promise<any> {
-    console.log('assets.service startOnvif in: ' + JSON.stringify({hostId, identityId, propertyCode, credProviderHost}));
+  public async startOnvif({hostId, propertyCode}: {hostId: string, propertyCode: string}): Promise<any> {
+    console.log('assets.service startOnvif in: ' + JSON.stringify({hostId, propertyCode}));
 
     const cameraItems: CameraItem[] = await this.assetsDao.getCameras(`${hostId}-${propertyCode}`);
-
-    const hostInfo = {
-      hostId,
-      identityId,
-      propertyCode,
-      credProviderHost
-    }
 
     const listenerResponses = await Promise.allSettled(cameraItems.filter((cameraItem: CameraItem) => {
       if (cameraItem.onvif && cameraItem.localIp && cameraItem.username && cameraItem.password && cameraItem.onvif.port && cameraItem.rtsp.codec) {
@@ -251,30 +244,6 @@ export class AssetsService {
         if (motion) {
           console.log('assets.service startOnvif request scanner to detect at ' + cameraItem.localIp);
           
-          // const responseDetect = await axios.post(
-          //   "http://localhost:7777/detect", 
-          //   { 
-          //     cameraItem
-          //   }
-          // ).catch(err => {
-          //   console.log("request scanner err:" + JSON.stringify(err));
-          //   return { status: "", data: {}};
-          // });
-
-          // console.log("request detect status:" + responseDetect.status + " data:" + JSON.stringify(responseDetect.data));
-          
-          // const responseRecord = await axios.post(
-          //   "http://localhost:7777/record", 
-          //   { 
-          //     cameraItem
-          //   }
-          // ).catch(err => {
-          //   console.log("request scanner err:" + JSON.stringify(err));
-          //   return { status: "", data: {}};
-          // });
-
-          // console.log("request record status:" + responseRecord.status + " data:" + JSON.stringify(responseRecord.data));
-
           const responseRecord = await axios.post(
             "http://localhost:7777/detect_record", 
             { 
@@ -294,7 +263,7 @@ export class AssetsService {
 
     }));
 
-    console.log('assets.service startOnvif listenerResponses:' + JSON.stringify(inspect(listenerResponses)));
+    // console.log('assets.service startOnvif listenerResponses:' + JSON.stringify(inspect(listenerResponses)));
 
     listenerResponses.filter(listenerResponse => {
       if (listenerResponse.status === 'fulfilled') {
@@ -304,13 +273,11 @@ export class AssetsService {
       }
     }).map(async(listenerResponse) => {
       console.log('assets.service startOnvif request scanner to start scanner at ' + JSON.stringify(listenerResponse));
+
+      let cameraItem = listenerResponse['value'] as CameraItem;
           
       const response = await axios.post(
-        "http://localhost:7777/start", 
-        { 
-          hostInfo,
-          cameraItem: (listenerResponse['value'] as CameraItem) 
-        }
+        "http://localhost:7777/start", { cam_ip: cameraItem.localIp }
       ).catch(err => {
         console.log("request scanner err:" + JSON.stringify(err));
         return { status: "", data: {}};
