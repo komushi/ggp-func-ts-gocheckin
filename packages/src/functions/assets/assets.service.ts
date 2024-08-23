@@ -264,7 +264,7 @@ export class AssetsService {
     }));
 
     // console.log('assets.service startOnvif listenerResponses:' + JSON.stringify(inspect(listenerResponses)));
-
+    /*
     listenerResponses.filter(listenerResponse => {
       if (listenerResponse.status === 'fulfilled') {
         return true;
@@ -285,6 +285,7 @@ export class AssetsService {
       
       console.log("request scanner status:" + response.status + " data:" + JSON.stringify(response.data));
     })
+    */
 
     console.log('assets.service startOnvif out');
 

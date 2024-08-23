@@ -221,22 +221,28 @@ class AssetsService {
                 return cameraItem;
             })));
             // console.log('assets.service startOnvif listenerResponses:' + JSON.stringify(inspect(listenerResponses)));
+            /*
             listenerResponses.filter(listenerResponse => {
-                if (listenerResponse.status === 'fulfilled') {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }).map((listenerResponse) => __awaiter(this, void 0, void 0, function* () {
-                console.log('assets.service startOnvif request scanner to start scanner at ' + JSON.stringify(listenerResponse));
-                let cameraItem = listenerResponse['value'];
-                const response = yield axios_1.default.post("http://localhost:7777/start", { cam_ip: cameraItem.localIp }).catch(err => {
-                    console.log("request scanner err:" + JSON.stringify(err));
-                    return { status: "", data: {} };
-                });
-                console.log("request scanner status:" + response.status + " data:" + JSON.stringify(response.data));
-            }));
+              if (listenerResponse.status === 'fulfilled') {
+                return true;
+              } else {
+                return false;
+              }
+            }).map(async(listenerResponse) => {
+              console.log('assets.service startOnvif request scanner to start scanner at ' + JSON.stringify(listenerResponse));
+        
+              let cameraItem = listenerResponse['value'] as CameraItem;
+                  
+              const response = await axios.post(
+                "http://localhost:7777/start", { cam_ip: cameraItem.localIp }
+              ).catch(err => {
+                console.log("request scanner err:" + JSON.stringify(err));
+                return { status: "", data: {}};
+              });
+              
+              console.log("request scanner status:" + response.status + " data:" + JSON.stringify(response.data));
+            })
+            */
             console.log('assets.service startOnvif out');
             return;
         });
