@@ -154,7 +154,7 @@ export class ReservationsService {
       return await axios.post("http://localhost:7777/recognise");
     }));
 
-    console.log('reservations.service refreshReservation out' + JSON.stringify(responseFetchMembers));
+    // console.log('reservations.service refreshReservation out' + JSON.stringify(responseFetchMembers));
 
     console.log('reservations.service refreshReservation out');
 

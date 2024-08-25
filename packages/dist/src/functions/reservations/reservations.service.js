@@ -134,7 +134,7 @@ class ReservationsService {
             const responseFetchMembers = yield Promise.allSettled([''].map(() => __awaiter(this, void 0, void 0, function* () {
                 return yield axios_1.default.post("http://localhost:7777/recognise");
             })));
-            console.log('reservations.service refreshReservation out' + JSON.stringify(responseFetchMembers));
+            // console.log('reservations.service refreshReservation out' + JSON.stringify(responseFetchMembers));
             console.log('reservations.service refreshReservation out');
             return {};
         });
