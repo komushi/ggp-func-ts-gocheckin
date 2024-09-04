@@ -3,11 +3,8 @@ import { AssetsDao } from './assets.dao';
 import { IotService } from '../iot/iot.service';
 
 import ShortUniqueId from 'short-unique-id';
-import { MotionDetector, Options } from 'node-onvif-events';
+// import { MotionDetector, Options } from 'node-onvif-events';
 import Onvif from 'node-onvif';
-
-import axios, { AxiosResponse } from 'axios';
-import { inspect } from 'util';
 
 export class AssetsService {
 
@@ -207,7 +204,7 @@ export class AssetsService {
 
     return;
   }
-
+/*
   public async startOnvif({hostId, propertyCode}: {hostId: string, propertyCode: string}): Promise<any> {
     console.log('assets.service startOnvif in: ' + JSON.stringify({hostId, propertyCode}));
 
@@ -263,32 +260,9 @@ export class AssetsService {
 
     }));
 
-    // console.log('assets.service startOnvif listenerResponses:' + JSON.stringify(inspect(listenerResponses)));
-    /*
-    listenerResponses.filter(listenerResponse => {
-      if (listenerResponse.status === 'fulfilled') {
-        return true;
-      } else {
-        return false;
-      }
-    }).map(async(listenerResponse) => {
-      console.log('assets.service startOnvif request scanner to start scanner at ' + JSON.stringify(listenerResponse));
-
-      let cameraItem = listenerResponse['value'] as CameraItem;
-          
-      const response = await axios.post(
-        "http://localhost:7777/start", { cam_ip: cameraItem.localIp }
-      ).catch(err => {
-        console.log("request scanner err:" + JSON.stringify(err));
-        return { status: "", data: {}};
-      });
-      
-      console.log("request scanner status:" + response.status + " data:" + JSON.stringify(response.data));
-    })
-    */
-
     console.log('assets.service startOnvif out');
 
     return;
   }
+*/    
 }

@@ -16,9 +16,8 @@ exports.AssetsService = void 0;
 const assets_dao_1 = require("./assets.dao");
 const iot_service_1 = require("../iot/iot.service");
 const short_unique_id_1 = __importDefault(require("short-unique-id"));
-const node_onvif_events_1 = require("node-onvif-events");
+// import { MotionDetector, Options } from 'node-onvif-events';
 const node_onvif_1 = __importDefault(require("node-onvif"));
-const axios_1 = __importDefault(require("axios"));
 class AssetsService {
     // private lastMotionTime: number | null = null;
     // private timer: NodeJS.Timeout | null = null;
@@ -179,71 +178,6 @@ class AssetsService {
                 payload: JSON.stringify(scannerItem)
             });
             console.log('assets.service refreshScanner out');
-            return;
-        });
-    }
-    startOnvif({ hostId, propertyCode }) {
-        return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service startOnvif in: ' + JSON.stringify({ hostId, propertyCode }));
-            const cameraItems = yield this.assetsDao.getCameras(`${hostId}-${propertyCode}`);
-            const listenerResponses = yield Promise.allSettled(cameraItems.filter((cameraItem) => {
-                if (cameraItem.onvif && cameraItem.localIp && cameraItem.username && cameraItem.password && cameraItem.onvif.port && cameraItem.rtsp.codec) {
-                    if (cameraItem.isDetecting || cameraItem.isRecording) {
-                        return true;
-                    }
-                }
-                return false;
-            }).map((cameraItem, index) => __awaiter(this, void 0, void 0, function* () {
-                console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
-                const options = {
-                    id: index,
-                    hostname: cameraItem.localIp,
-                    username: cameraItem.username,
-                    password: cameraItem.password,
-                    port: cameraItem.onvif.port, // Onvif device service port
-                };
-                console.log('assets.service startOnvif options:' + JSON.stringify(options));
-                const detector = yield node_onvif_events_1.MotionDetector.create(options.id, options);
-                console.log('>> Motion Detection Listening on ' + options.hostname);
-                detector.listen((motion) => __awaiter(this, void 0, void 0, function* () {
-                    // const now = Date.now();
-                    if (motion) {
-                        console.log('assets.service startOnvif request scanner to detect at ' + cameraItem.localIp);
-                        const responseRecord = yield axios_1.default.post("http://localhost:7777/detect_record", {
-                            cam_ip: cameraItem.localIp
-                        }).catch(err => {
-                            console.log("request scanner err:" + JSON.stringify(err));
-                            return { status: "", data: {} };
-                        });
-                        console.log("request detect_record status:" + responseRecord.status + " data:" + JSON.stringify(responseRecord.data));
-                    }
-                }));
-                return cameraItem;
-            })));
-            // console.log('assets.service startOnvif listenerResponses:' + JSON.stringify(inspect(listenerResponses)));
-            /*
-            listenerResponses.filter(listenerResponse => {
-              if (listenerResponse.status === 'fulfilled') {
-                return true;
-              } else {
-                return false;
-              }
-            }).map(async(listenerResponse) => {
-              console.log('assets.service startOnvif request scanner to start scanner at ' + JSON.stringify(listenerResponse));
-        
-              let cameraItem = listenerResponse['value'] as CameraItem;
-                  
-              const response = await axios.post(
-                "http://localhost:7777/start", { cam_ip: cameraItem.localIp }
-              ).catch(err => {
-                console.log("request scanner err:" + JSON.stringify(err));
-                return { status: "", data: {}};
-              });
-              
-              console.log("request scanner status:" + response.status + " data:" + JSON.stringify(response.data));
-            })
-            */
-            console.log('assets.service startOnvif out');
             return;
         });
     }

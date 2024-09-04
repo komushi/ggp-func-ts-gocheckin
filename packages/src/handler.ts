@@ -118,10 +118,10 @@ setTimeout(async () => {
 setTimeout(async () => {
 	await assetsService.discoverCameras(process.env.HOST_ID);
 
-	await assetsService.startOnvif({
-		hostId: process.env.HOST_ID,
-		propertyCode: process.env.PROPERTY_CODE
-	});
+	// await assetsService.startOnvif({
+	// 	hostId: process.env.HOST_ID,
+	// 	propertyCode: process.env.PROPERTY_CODE
+	// });
 
 }, 10000);
 
