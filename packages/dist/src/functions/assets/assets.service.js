@@ -92,6 +92,12 @@ class AssetsService {
                     yield this.assetsDao.updateCamera(cameraItem);
                 }
             })));
+            if (deltaCameraItems.length > 0) {
+                yield this.iotService.publish({
+                    topic: 'gocheckin/fetch_camera_items',
+                    payload: ''
+                });
+            }
             console.log('assets.service refreshCameras out');
             return;
         });

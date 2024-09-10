@@ -102,6 +102,13 @@ export class AssetsService {
       }
     }));
 
+    if (deltaCameraItems.length > 0) {
+      await this.iotService.publish({
+        topic: 'gocheckin/fetch_camera_items',
+        payload: ''
+      });
+    }
+
     console.log('assets.service refreshCameras out');
 
     return;
@@ -207,65 +214,5 @@ export class AssetsService {
 
     return;
   }
-/*
-  public async startOnvif({hostId, propertyCode}: {hostId: string, propertyCode: string}): Promise<any> {
-    console.log('assets.service startOnvif in: ' + JSON.stringify({hostId, propertyCode}));
 
-    const cameraItems: CameraItem[] = await this.assetsDao.getCameras(`${hostId}-${propertyCode}`);
-
-    const listenerResponses = await Promise.allSettled(cameraItems.filter((cameraItem: CameraItem) => {
-      if (cameraItem.onvif && cameraItem.localIp && cameraItem.username && cameraItem.password && cameraItem.onvif.port && cameraItem.rtsp.codec) {
-        if (cameraItem.isDetecting || cameraItem.isRecording) {
-          return true;
-        }
-      }
-      
-      return false;
-    }).map(async (cameraItem: CameraItem, index: number) => {
-      console.log('assets.service startOnvif cameraItem:' + JSON.stringify(cameraItem));
-
-      const options: Options = {
-        id: index,                      // Any number id
-        hostname: cameraItem.localIp,  // IP Address of device
-        username: cameraItem.username,          // User
-        password: cameraItem.password,       // Password
-        port: cameraItem.onvif.port,                   // Onvif device service port
-      };
-
-      console.log('assets.service startOnvif options:' + JSON.stringify(options));
-
-      const detector = await MotionDetector.create(options.id, options);
-
-      console.log('>> Motion Detection Listening on ' + options.hostname);
-
-      detector.listen(async (motion: boolean) => {
-        // const now = Date.now();
-
-        if (motion) {
-          console.log('assets.service startOnvif request scanner to detect at ' + cameraItem.localIp);
-          
-          const responseRecord = await axios.post(
-            "http://localhost:7777/detect_record", 
-            { 
-              cam_ip: cameraItem.localIp
-            }
-          ).catch(err => {
-            console.log("request scanner err:" + JSON.stringify(err));
-            return { status: "", data: {}};
-          });
-
-          console.log("request detect_record status:" + responseRecord.status + " data:" + JSON.stringify(responseRecord.data));
-
-        }
-      });
-
-      return cameraItem;
-
-    }));
-
-    console.log('assets.service startOnvif out');
-
-    return;
-  }
-*/    
 }
