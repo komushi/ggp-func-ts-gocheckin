@@ -54,4 +54,6 @@ interface RTSP {
 
 interface ONVIF {
     port: number;
+    isSubscription: boolean;
+    isPullpoint: boolean;
 }

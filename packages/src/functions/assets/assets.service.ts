@@ -93,6 +93,7 @@ export class AssetsService {
         existingCamera.isDetecting = cameraItem.isDetecting;
         existingCamera.isRecording = cameraItem.isRecording;
         existingCamera.rtsp = cameraItem.rtsp;
+        existingCamera.onvif = cameraItem.onvif;
         existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
 
         await this.assetsDao.updateCamera(existingCamera);
@@ -136,7 +137,9 @@ export class AssetsService {
           framerate: 10
         },
         onvif: {
-          port: parseInt(parsedUrl.port) || 80
+          port: parseInt(parsedUrl.port) || 80,
+          isPullpoint: false,
+          isSubscription: false
         },
         isDetecting: false,
         isRecording: false,
