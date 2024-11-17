@@ -1,6 +1,6 @@
 import { DynamoDBClientConfig, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, TransactWriteCommand, ScanCommand, QueryCommand, DeleteCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
-import { PropertyItem, CameraItem, ScannerItem } from './assets.models';
+import { PropertyItem, NamedShadowCamera, ScannerItem } from './assets.models';
 
 const TBL_HOST = process.env.TBL_HOST;
 const TBL_ASSET = process.env.TBL_ASSET;
@@ -151,12 +151,12 @@ export class AssetsDao {
 
     console.log(`assets.dao getCamera out: ${JSON.stringify(data.Item)}`);
 
-    return data.Item as CameraItem;
+    return data.Item as NamedShadowCamera;
 
     
   }
 
-  public async updateCamera(cameraItem: CameraItem): Promise<any> {
+  public async updateCamera(cameraItem: NamedShadowCamera): Promise<any> {
     console.log('assets.dao updateCamera in' + JSON.stringify(cameraItem));
 
     const params = [{
@@ -198,17 +198,39 @@ export class AssetsDao {
 
     console.log('assets.dao getCameras out:' + JSON.stringify(response.Items));
 
-    return response.Items as CameraItem[];
+    return response.Items as NamedShadowCamera[];
 
+  }
+
+  public async deleteCamera(hostId: string, uuid: string): Promise<any> {
+
+    console.log('assets.dao deleteCamera in:' + JSON.stringify({hostId, uuid}));
+
+
+    const param = {
+      TableName: TBL_ASSET,
+      Key: {
+        hostId: hostId,
+        uuid: uuid
+      }
+    };
+
+    const deleteResponse =  await this.ddbDocClient.send(new DeleteCommand(param)); 
+
+    console.log('assets.dao deleteCamera delete response:' + JSON.stringify(deleteResponse));
+
+    console.log('assets.dao deleteCamera out');
+
+    return;
   }
 
   public async deleteCameras(hostId: string): Promise<any> {
 
     console.log('assets.dao deleteCameras in:' + hostId);
 
-    const cameraItems: CameraItem[] = await this.getCameras(hostId);
+    const cameraItems: NamedShadowCamera[] = await this.getCameras(hostId);
 
-    const deleteResponse = await Promise.all(cameraItems.map(async (cameraItem: CameraItem) => {
+    const deleteResponse = await Promise.all(cameraItems.map(async (cameraItem: NamedShadowCamera) => {
       const param = {
         TableName: TBL_ASSET,
         Key: {

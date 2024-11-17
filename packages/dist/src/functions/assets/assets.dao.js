@@ -162,6 +162,22 @@ class AssetsDao {
             return response.Items;
         });
     }
+    deleteCamera(hostId, uuid) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.dao deleteCamera in:' + JSON.stringify({ hostId, uuid }));
+            const param = {
+                TableName: TBL_ASSET,
+                Key: {
+                    hostId: hostId,
+                    uuid: uuid
+                }
+            };
+            const deleteResponse = yield this.ddbDocClient.send(new lib_dynamodb_1.DeleteCommand(param));
+            console.log('assets.dao deleteCamera delete response:' + JSON.stringify(deleteResponse));
+            console.log('assets.dao deleteCamera out');
+            return;
+        });
+    }
     deleteCameras(hostId) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.dao deleteCameras in:' + hostId);

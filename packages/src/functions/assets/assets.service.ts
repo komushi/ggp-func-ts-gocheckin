@@ -1,4 +1,6 @@
-import { PropertyItem, CameraItem, ScannerItem, ShadowCameras } from './assets.models';
+const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
+
+import { PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras } from './assets.models';
 import { AssetsDao } from './assets.dao';
 import { IotService } from '../iot/iot.service';
 
@@ -68,6 +70,7 @@ export class AssetsService {
     return propertyItem;
   }
 
+  /*
   public async refreshCameras(deltaShadowCameras: ShadowCameras, desiredShadowCameras: ShadowCameras): Promise<any> {
     console.log('assets.service refreshCameras in: ' + JSON.stringify({deltaShadowCameras, desiredShadowCameras}));
 
@@ -113,6 +116,67 @@ export class AssetsService {
 
     return;
   }
+  */
+ 
+  private async processShadowDelta(uuid: string): Promise<any> {
+    console.log('assets.service processShadowDelta in: ' + JSON.stringify({uuid}));
+
+    const getShadowResult = await this.iotService.getShadow({
+      thingName: AWS_IOT_THING_NAME,
+      shadowName: uuid
+    });
+
+    const delta: NamedShadowCamera = getShadowResult.state.desired;
+
+    const existingCamera: NamedShadowCamera = await this.assetsDao.getCamera(delta.hostId, delta.uuid);
+
+    if (existingCamera) {
+      existingCamera.username = delta.username;
+      existingCamera.password = delta.password;
+      existingCamera.isDetecting = delta.isDetecting;
+      existingCamera.isRecording = delta.isRecording;
+      existingCamera.rtsp = delta.rtsp;
+      existingCamera.onvif = delta.onvif;
+      existingCamera.lastUpdateOn = delta.lastUpdateOn;
+
+      await this.assetsDao.updateCamera(existingCamera);
+    } else {
+      await this.assetsDao.updateCamera(delta);
+    }
+
+    console.log('assets.service processShadowDelta out');
+
+    return;
+  }
+
+  public async processShadow(deltaShadowCameras: ClassicShadowCameras, desiredShadowCameras: ClassicShadowCameras): Promise<any> {
+    console.log('assets.service processShadow in: ' + JSON.stringify({deltaShadowCameras, desiredShadowCameras}));
+
+    const promises = Object.keys(deltaShadowCameras).map(async (uuid: string) => {
+      const classicShadowCamera: ClassicShadowCamera = desiredShadowCameras[uuid];
+      if (classicShadowCamera) {
+        try {
+          if (classicShadowCamera.active) {
+            await this.assetsDao.deleteCamera(classicShadowCamera.hostId, uuid);
+            
+          } else {
+            await this.processShadowDelta(uuid);
+          }
+  
+        } catch (err) {
+          return {uuid, action: classicShadowCamera.active, message: err.message, stack: err.stack};
+        } 
+
+        return {uuid, action: classicShadowCamera.active};
+      }
+    });
+
+    const results = await Promise.allSettled(promises);
+    console.log('assets.service processShadow results:' + JSON.stringify(results));
+
+    console.log('assets.service processShadow out');
+
+  }
 
   public async discoverCameras(hostId: string): Promise<any> {
     console.log('assets.service discoverCameras in: ' + JSON.stringify({hostId}));
@@ -123,9 +187,9 @@ export class AssetsService {
       const uuid = discoveredCamera.urn.split(":").slice(-1)[0] ;
       const parsedUrl = new URL(discoveredCamera.xaddrs[0]);
 
-      const existingCamera: CameraItem = await this.assetsDao.getCamera(hostId, uuid);
+      const existingCamera: NamedShadowCamera = await this.assetsDao.getCamera(hostId, uuid);
 
-      let cameraItem: CameraItem = {
+      let cameraItem: NamedShadowCamera = {
         hostId,
         uuid,
         propertyCode: process.env.PROPERTY_CODE,

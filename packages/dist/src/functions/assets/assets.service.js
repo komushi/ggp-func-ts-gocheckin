@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AssetsService = void 0;
+const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
 const assets_dao_1 = require("./assets.dao");
 const iot_service_1 = require("../iot/iot.service");
 const short_unique_id_1 = __importDefault(require("short-unique-id"));
@@ -62,44 +63,102 @@ class AssetsService {
             return propertyItem;
         });
     }
-    refreshCameras(deltaShadowCameras, desiredShadowCameras) {
+    /*
+    public async refreshCameras(deltaShadowCameras: ShadowCameras, desiredShadowCameras: ShadowCameras): Promise<any> {
+      console.log('assets.service refreshCameras in: ' + JSON.stringify({deltaShadowCameras, desiredShadowCameras}));
+  
+      const deltaCameraItems: CameraItem[] = Object.entries(desiredShadowCameras).map(([uuid, cameraItem]: [string, CameraItem]) => {
+        return cameraItem;
+      }).filter((cameraItem: CameraItem) => {
+        if (deltaShadowCameras[cameraItem.uuid]) {
+          return true;
+        } else {
+          return false;
+        }
+      });
+  
+      console.log('assets.service refreshCameras deltaCameraItems: ' + JSON.stringify(deltaCameraItems));
+  
+      await Promise.all(deltaCameraItems.map(async (cameraItem: CameraItem) => {
+        
+        const existingCamera: CameraItem = await this.assetsDao.getCamera(cameraItem.hostId, cameraItem.uuid);
+  
+        if (existingCamera) {
+          existingCamera.username = cameraItem.username;
+          existingCamera.password = cameraItem.password;
+          existingCamera.isDetecting = cameraItem.isDetecting;
+          existingCamera.isRecording = cameraItem.isRecording;
+          existingCamera.rtsp = cameraItem.rtsp;
+          existingCamera.onvif = cameraItem.onvif;
+          existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
+  
+          await this.assetsDao.updateCamera(existingCamera);
+        } else {
+          await this.assetsDao.updateCamera(cameraItem);
+        }
+      }));
+  
+      if (deltaCameraItems.length > 0) {
+        await this.iotService.publish({
+          topic: 'gocheckin/fetch_cameras',
+          payload: ''
+        });
+      }
+  
+      console.log('assets.service refreshCameras out');
+  
+      return;
+    }
+    */
+    processShadowDelta(uuid) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service refreshCameras in: ' + JSON.stringify({ deltaShadowCameras, desiredShadowCameras }));
-            const deltaCameraItems = Object.entries(desiredShadowCameras).map(([uuid, cameraItem]) => {
-                return cameraItem;
-            }).filter((cameraItem) => {
-                if (deltaShadowCameras[cameraItem.uuid]) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
+            console.log('assets.service processShadowDelta in: ' + JSON.stringify({ uuid }));
+            const getShadowResult = yield this.iotService.getShadow({
+                thingName: AWS_IOT_THING_NAME,
+                shadowName: uuid
             });
-            console.log('assets.service refreshCameras deltaCameraItems: ' + JSON.stringify(deltaCameraItems));
-            yield Promise.all(deltaCameraItems.map((cameraItem) => __awaiter(this, void 0, void 0, function* () {
-                const existingCamera = yield this.assetsDao.getCamera(cameraItem.hostId, cameraItem.uuid);
-                if (existingCamera) {
-                    existingCamera.username = cameraItem.username;
-                    existingCamera.password = cameraItem.password;
-                    existingCamera.isDetecting = cameraItem.isDetecting;
-                    existingCamera.isRecording = cameraItem.isRecording;
-                    existingCamera.rtsp = cameraItem.rtsp;
-                    existingCamera.onvif = cameraItem.onvif;
-                    existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
-                    yield this.assetsDao.updateCamera(existingCamera);
-                }
-                else {
-                    yield this.assetsDao.updateCamera(cameraItem);
-                }
-            })));
-            if (deltaCameraItems.length > 0) {
-                yield this.iotService.publish({
-                    topic: 'gocheckin/fetch_cameras',
-                    payload: ''
-                });
+            const delta = getShadowResult.state.desired;
+            const existingCamera = yield this.assetsDao.getCamera(delta.hostId, delta.uuid);
+            if (existingCamera) {
+                existingCamera.username = delta.username;
+                existingCamera.password = delta.password;
+                existingCamera.isDetecting = delta.isDetecting;
+                existingCamera.isRecording = delta.isRecording;
+                existingCamera.rtsp = delta.rtsp;
+                existingCamera.onvif = delta.onvif;
+                existingCamera.lastUpdateOn = delta.lastUpdateOn;
+                yield this.assetsDao.updateCamera(existingCamera);
             }
-            console.log('assets.service refreshCameras out');
+            else {
+                yield this.assetsDao.updateCamera(delta);
+            }
+            console.log('assets.service processShadowDelta out');
             return;
+        });
+    }
+    processShadow(deltaShadowCameras, desiredShadowCameras) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service processShadow in: ' + JSON.stringify({ deltaShadowCameras, desiredShadowCameras }));
+            const promises = Object.keys(deltaShadowCameras).map((uuid) => __awaiter(this, void 0, void 0, function* () {
+                const classicShadowCamera = desiredShadowCameras[uuid];
+                if (classicShadowCamera) {
+                    try {
+                        if (classicShadowCamera.active) {
+                            yield this.assetsDao.deleteCamera(classicShadowCamera.hostId, uuid);
+                        }
+                        else {
+                            yield this.processShadowDelta(uuid);
+                        }
+                    }
+                    catch (err) {
+                        return { uuid, action: classicShadowCamera.active, message: err.message, stack: err.stack };
+                    }
+                    return { uuid, action: classicShadowCamera.active };
+                }
+            }));
+            const results = yield Promise.allSettled(promises);
+            console.log('assets.service processShadow results:' + JSON.stringify(results));
+            console.log('assets.service processShadow out');
         });
     }
     discoverCameras(hostId) {

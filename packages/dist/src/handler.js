@@ -84,7 +84,7 @@ const processClassicShadow = function (event) {
         }
         if (event.state.cameras) {
             if (getShadowResult.state.desired.cameras) {
-                yield assetsService.refreshCameras(event.state.cameras, getShadowResult.state.desired.cameras).catch(err => {
+                yield assetsService.processShadow(event.state.cameras, getShadowResult.state.desired.cameras).catch(err => {
                     console.error('refreshCameras error:' + err.message);
                     throw err;
                 });

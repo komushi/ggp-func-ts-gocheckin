@@ -6,7 +6,7 @@ export interface PropertyItem {
     category: string;
 }
 
-export interface CameraItem {
+export interface NamedShadowCamera {
     hostId: string;
     uuid: string;
     propertyCode: string;
@@ -25,9 +25,14 @@ export interface CameraItem {
     lastUpdateOn: string;
 }
 
+export interface ClassicShadowCamera {
+    hostId: string;
+    uuid: string;
+    active: boolean;
+};
 
-export interface ShadowCameras {
-    [uuid: string]: CameraItem;
+export interface ClassicShadowCameras {
+    [uuid: string]: ClassicShadowCamera;
 };
 
 export interface ScannerItem {
