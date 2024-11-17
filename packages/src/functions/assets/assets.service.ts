@@ -156,7 +156,7 @@ export class AssetsService {
       const classicShadowCamera: ClassicShadowCamera = desiredShadowCameras[uuid];
       if (classicShadowCamera) {
         try {
-          if (classicShadowCamera.active) {
+          if (!classicShadowCamera.active) {
             await this.assetsDao.deleteCamera(classicShadowCamera.hostId, uuid);
             
           } else {

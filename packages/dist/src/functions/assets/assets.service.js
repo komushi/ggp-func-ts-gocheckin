@@ -143,7 +143,7 @@ class AssetsService {
                 const classicShadowCamera = desiredShadowCameras[uuid];
                 if (classicShadowCamera) {
                     try {
-                        if (classicShadowCamera.active) {
+                        if (!classicShadowCamera.active) {
                             yield this.assetsDao.deleteCamera(classicShadowCamera.hostId, uuid);
                         }
                         else {
