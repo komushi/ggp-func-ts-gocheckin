@@ -142,6 +142,26 @@ class AssetsService {
             return;
         });
     }
+    processShadowDeleted(uuid) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service processShadowDeleted in: ' + JSON.stringify({ uuid }));
+            const getShadowResult = yield this.iotService.getShadow({
+                thingName: AWS_IOT_THING_NAME,
+                shadowName: uuid
+            });
+            const delta = getShadowResult.state.desired;
+            yield this.assetsDao.deleteCamera(delta.hostId, uuid);
+            yield this.iotService.deleteShadow({
+                thingName: AWS_IOT_THING_NAME,
+                shadowName: uuid
+            }).catch(err => {
+                console.log('processShadowDeleted deleteShadow err:' + JSON.stringify(err));
+                return;
+            });
+            console.log('assets.service processShadowDeleted out');
+            return;
+        });
+    }
     processShadow(deltaShadowCameras, desiredShadowCameras) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service processShadow in: ' + JSON.stringify({ deltaShadowCameras, desiredShadowCameras }));
@@ -150,7 +170,7 @@ class AssetsService {
                 if (classicShadowCamera) {
                     try {
                         if (!classicShadowCamera.active) {
-                            yield this.assetsDao.deleteCamera(classicShadowCamera.hostId, uuid);
+                            yield this.processShadowDeleted(uuid);
                         }
                         else {
                             yield this.processShadowDelta(uuid);
