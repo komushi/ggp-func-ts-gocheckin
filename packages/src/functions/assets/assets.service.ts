@@ -144,6 +144,13 @@ export class AssetsService {
       await this.assetsDao.updateCamera(delta);
     }
 
+    // Update the named shadow
+    await this.iotService.updateReportedShadow({
+      thingName: AWS_IOT_THING_NAME,
+      shadowName: uuid,
+      reportedState: delta
+    });
+
     console.log('assets.service processShadowDelta out');
 
     return;

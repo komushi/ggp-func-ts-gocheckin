@@ -132,6 +132,12 @@ class AssetsService {
             else {
                 yield this.assetsDao.updateCamera(delta);
             }
+            // Update the named shadow
+            yield this.iotService.updateReportedShadow({
+                thingName: AWS_IOT_THING_NAME,
+                shadowName: uuid,
+                reportedState: delta
+            });
             console.log('assets.service processShadowDelta out');
             return;
         });
