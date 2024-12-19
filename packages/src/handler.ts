@@ -110,10 +110,10 @@ const processClassicShadow = async function(event) {
 };
 
 
-
+/*
 setTimeout(async () => {
 	await initializationService.intializeEnvVar();
-}, 8000);
+}, 2000);
 
 setTimeout(async () => {
 	await assetsService.discoverCameras(process.env.HOST_ID);
@@ -124,8 +124,9 @@ setTimeout(async () => {
 	// });
 
 }, 10000);
+*/
 
-/*
+
 setInterval(async () => {
     try {
 		
@@ -142,5 +143,4 @@ setInterval(async () => {
         console.trace();
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
     } 
-}, 360000);
-*/
+}, 10000);
