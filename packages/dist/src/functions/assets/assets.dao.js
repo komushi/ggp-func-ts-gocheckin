@@ -279,9 +279,9 @@ class AssetsDao {
     }
     updateHost({ hostId, identityId, stage, credProviderHost }) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('initialization.dao updateHost in:' + JSON.stringify({ hostId, identityId, stage, credProviderHost }));
+            console.log('assets.dao updateHost in:' + JSON.stringify({ hostId, identityId, stage, credProviderHost }));
             if (!hostId) {
-                console.log('initialization.dao updateHost out');
+                console.log('assets.dao updateHost out');
                 return;
             }
             const params = [{
@@ -294,14 +294,14 @@ class AssetsDao {
                 TransactItems: params
             });
             const response = yield this.ddbDocClient.send(command);
-            console.log('initialization.dao updateHost response:' + JSON.stringify(response));
-            console.log('initialization.dao updateHost out');
+            console.log('assets.dao updateHost response:' + JSON.stringify(response));
+            console.log('assets.dao updateHost out');
             return;
         });
     }
     getHost() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('initialization.dao getHost in');
+            console.log('assets.dao getHost in');
             const scanParam = {
                 TableName: TBL_HOST,
                 PageSize: 1
@@ -315,7 +315,7 @@ class AssetsDao {
             if (!response) {
                 throw new Error(`getHost empty`);
             }
-            console.log('initialization.dao getHost out:' + JSON.stringify(response));
+            console.log('assets.dao getHost out:' + JSON.stringify(response));
             return response;
         });
     }

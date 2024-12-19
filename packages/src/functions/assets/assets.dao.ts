@@ -358,10 +358,10 @@ export class AssetsDao {
 
   public async updateHost({hostId, identityId, stage, credProviderHost}: {hostId: string, identityId: string, stage: string, credProviderHost: string}): Promise<any> {
 
-    console.log('initialization.dao updateHost in:' + JSON.stringify({hostId, identityId, stage, credProviderHost}));
+    console.log('assets.dao updateHost in:' + JSON.stringify({hostId, identityId, stage, credProviderHost}));
 
     if (!hostId) {
-      console.log('initialization.dao updateHost out');
+      console.log('assets.dao updateHost out');
       return;
     }
 
@@ -378,9 +378,9 @@ export class AssetsDao {
 
     const response = await this.ddbDocClient.send(command);  
 
-    console.log('initialization.dao updateHost response:' + JSON.stringify(response));
+    console.log('assets.dao updateHost response:' + JSON.stringify(response));
 
-    console.log('initialization.dao updateHost out');
+    console.log('assets.dao updateHost out');
 
     return;
 
@@ -388,7 +388,7 @@ export class AssetsDao {
 
   public async getHost(): Promise<any> {
 
-    console.log('initialization.dao getHost in');
+    console.log('assets.dao getHost in');
 
     const scanParam = {
       TableName : TBL_HOST,
@@ -408,7 +408,7 @@ export class AssetsDao {
       throw new Error(`getHost empty`);
     }
 
-    console.log('initialization.dao getHost out:' + JSON.stringify(response));
+    console.log('assets.dao getHost out:' + JSON.stringify(response));
 
     return response;
 

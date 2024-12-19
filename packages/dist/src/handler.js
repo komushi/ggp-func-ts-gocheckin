@@ -107,7 +107,7 @@ const processClassicShadow = function (event) {
 };
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
     yield initializationService.intializeEnvVar();
-}), 2000);
+}), 8000);
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
     yield assetsService.discoverCameras(process.env.HOST_ID);
     // await assetsService.startOnvif({
