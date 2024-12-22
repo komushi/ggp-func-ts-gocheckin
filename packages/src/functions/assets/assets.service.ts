@@ -269,7 +269,7 @@ export class AssetsService {
       });
     }));
 
-    console.log('assets.service discoverCameras out');
+    console.log(`assets.service discoverCameras out ${discoveredCameras.length} found`);
 
     return;
   }

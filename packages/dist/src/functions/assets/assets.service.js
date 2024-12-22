@@ -240,7 +240,7 @@ class AssetsService {
                     payload: JSON.stringify(cameraItem)
                 });
             })));
-            console.log('assets.service discoverCameras out');
+            console.log(`assets.service discoverCameras out ${discoveredCameras.length} found`);
             return;
         });
     }
