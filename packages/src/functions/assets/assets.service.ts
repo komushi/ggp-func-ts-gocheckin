@@ -210,7 +210,7 @@ export class AssetsService {
   }
 
   public async discoverCameras(hostId: string): Promise<any> {
-    console.log('assets.service discoverCameras in: ' + JSON.stringify({hostId}));
+    console.log(`assets.service discoverCameras in hostId: ${hostId}`);
 
     const discoveredCameras = await Onvif.startProbe();
 

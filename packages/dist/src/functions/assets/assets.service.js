@@ -189,7 +189,7 @@ class AssetsService {
     }
     discoverCameras(hostId) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service discoverCameras in: ' + JSON.stringify({ hostId }));
+            console.log(`assets.service discoverCameras in hostId: ${hostId}`);
             const discoveredCameras = yield node_onvif_1.default.startProbe();
             yield Promise.allSettled(discoveredCameras.map((discoveredCamera) => __awaiter(this, void 0, void 0, function* () {
                 const uuid = discoveredCamera.urn.split(":").slice(-1)[0];
