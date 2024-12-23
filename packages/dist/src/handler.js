@@ -107,7 +107,7 @@ const processClassicShadow = function (event) {
 };
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
     yield initializationService.intializeEnvVar();
-}), 5000);
+}), 10000);
 /*
 setTimeout(async () => {
     await assetsService.discoverCameras(process.env.HOST_ID);
@@ -121,8 +121,8 @@ setTimeout(async () => {
 */
 setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // const initializationService = new InitializationService();
-        // await initializationService.intializeEnvVar();
+        const initializationService = new initialization_service_1.InitializationService();
+        yield initializationService.intializeEnvVar();
         yield assetsService.discoverCameras(process.env.HOST_ID);
     }
     catch (err) {
@@ -133,4 +133,4 @@ setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
         console.trace();
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
     }
-}), 10000);
+}), 30000);
