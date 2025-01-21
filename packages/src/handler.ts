@@ -13,6 +13,8 @@ const reservationsService = new ReservationsService();
 const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
 const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
 
+const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/device\/`);
+
 exports.function_handler = async function(event, context) {
     console.log('context: ' + JSON.stringify(context));
 
@@ -42,7 +44,9 @@ exports.function_handler = async function(event, context) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
 
 		await assetsService.refreshScanner(event);
-	}
+	} else if (z2mDevicePattern.test(context.clientContext.Custom.subject)) {
+		console.log('z2m_device event: ' + JSON.stringify(event));
+ 	}
 
 };
 

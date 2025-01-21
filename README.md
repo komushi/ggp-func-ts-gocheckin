@@ -1,9 +1,16 @@
-```
-aws dynamodb scan --table-name gocheckin_asset --endpoint-url http://192.168.11.68:8080
-```
-
+## 1. Build
 
 ```
-aws dynamodb delete-item --table-name gocheckin_asset --endpoint-url http://192.168.11.68:8080 \
---key '{"hostId": {"S": "rulin"}, "uuid": {"S": "00010010-0001-1020-8000-c479051b6993"}}'
+$ cd packages
+$ npm run build
 ```
+
+## 2. Push to git(github)
+
+```
+$ git add .
+$ git commit -m 'commit contents/name'
+$ git push
+```
+
+## 3. Deploy using 
