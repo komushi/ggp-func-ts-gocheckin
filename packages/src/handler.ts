@@ -15,8 +15,6 @@ const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_TH
 
 const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/device\/`);
 
-const z2mBridgePattern = new RegExp(`^zigbee2mqtt\/bridge\/devices\/`);
-
 exports.function_handler = async function(event, context) {
     console.log('context: ' + JSON.stringify(context));
 
@@ -48,7 +46,7 @@ exports.function_handler = async function(event, context) {
 		await assetsService.refreshScanner(event);
 	} else if (z2mDevicePattern.test(context.clientContext.Custom.subject)) {
 		console.log('z2m_device event: ' + JSON.stringify(event));
- 	} else if (z2mBridgePattern.test(context.clientContext.Custom.subject)) {
+ 	} else if (context.clientContext.Custom.subject == `zigbee2mqtt/bridge/devices`) {
 		console.log('z2m_bridge event: ' + JSON.stringify(event));
 	}
 
