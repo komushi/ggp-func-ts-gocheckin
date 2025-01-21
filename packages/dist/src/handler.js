@@ -22,6 +22,7 @@ const reservationsService = new reservations_service_1.ReservationsService();
 const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
 const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
 const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/device\/`);
+const z2mPattern = new RegExp(`^zigbee2mqtt\/`);
 exports.function_handler = function (event, context) {
     return __awaiter(this, void 0, void 0, function* () {
         // console.log('context: ' + JSON.stringify(context));
@@ -52,8 +53,8 @@ exports.function_handler = function (event, context) {
         else if (z2mDevicePattern.test(context.clientContext.Custom.subject)) {
             console.log('z2m_device event: ' + JSON.stringify(event));
         }
-        else if (context.clientContext.Custom.subject == `zigbee2mqtt/bridge/devices`) {
-            console.log('z2m_bridge event: ' + JSON.stringify(event));
+        else if (z2mPattern.test(context.clientContext.Custom.subject)) {
+            console.log('z2m_bridge context: ' + context.clientContext.Custom.subject);
         }
     });
 };
