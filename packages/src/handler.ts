@@ -47,6 +47,7 @@ exports.function_handler = async function(event, context) {
 	} else if (z2mDevicePattern.test(context.clientContext.Custom.subject)) {
 		console.log('z2m_device event: ' + JSON.stringify(event));
  	} else if (context.clientContext.Custom.subject == `zigbee2mqtt/bridge/devices`) {
+		console.log('z2m_bridge topic: ' + context.clientContext.Custom.subject);
 		console.log('z2m_bridge event: ' + JSON.stringify(event));
 	}
 
