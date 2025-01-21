@@ -56,6 +56,10 @@ exports.function_handler = function (event, context) {
             console.log('z2m_bridge topic: ' + context.clientContext.Custom.subject);
             console.log('z2m_bridge event: ' + JSON.stringify(event));
         }
+        else {
+            console.log('other topic: ' + context.clientContext.Custom.subject);
+            console.log('other event: ' + JSON.stringify(event));
+        }
     });
 };
 const processClassicShadow = function (event) {
