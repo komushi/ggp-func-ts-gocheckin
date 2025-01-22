@@ -14,7 +14,7 @@ const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/i
 const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
 
 const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/device\/`);
-const z2mEventPattern = new RegExp(`^zigbee2mqtt\/bridge\/event\/`);
+const z2mEventPattern = new RegExp(`^\\zigbee2mqtt\/bridge\/event$`);
 
 exports.function_handler = async function(event, context) {
     // console.log('context: ' + JSON.stringify(context));
@@ -151,4 +151,4 @@ setInterval(async () => {
         console.trace();
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
     } 
-}, 30000);
+}, 300000);

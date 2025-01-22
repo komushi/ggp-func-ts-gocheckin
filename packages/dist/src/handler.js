@@ -22,7 +22,7 @@ const reservationsService = new reservations_service_1.ReservationsService();
 const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
 const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
 const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/device\/`);
-const z2mEventPattern = new RegExp(`^zigbee2mqtt\/bridge\/event\/`);
+const z2mEventPattern = new RegExp(`^\\zigbee2mqtt\/bridge\/event$`);
 exports.function_handler = function (event, context) {
     return __awaiter(this, void 0, void 0, function* () {
         // console.log('context: ' + JSON.stringify(context));
@@ -141,4 +141,4 @@ setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
         console.trace();
         console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
     }
-}), 30000);
+}), 300000);
