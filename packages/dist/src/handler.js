@@ -25,7 +25,7 @@ const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/device\/`);
 const z2mEventPattern = new RegExp(`^\\zigbee2mqtt\/bridge\/event$`);
 exports.function_handler = function (event, context) {
     return __awaiter(this, void 0, void 0, function* () {
-        // console.log('context: ' + JSON.stringify(context));
+        console.log('context: ' + JSON.stringify(context));
         if (initPattern.test(context.clientContext.Custom.subject)) {
             console.log('init_db event: ' + JSON.stringify(event));
             yield initializationService.createTables();
@@ -49,12 +49,14 @@ exports.function_handler = function (event, context) {
         else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
             console.log('scanner_detected event: ' + JSON.stringify(event));
             yield assetsService.refreshScanner(event);
+            // } else if (z2mDevicePattern.test(context.clientContext.Custom.subject)) {
+            // 	console.log('z2mDevicePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
+            // } else if (z2mEventPattern.test(context.clientContext.Custom.subject)) {
+            // 	console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
+            // }
         }
-        else if (z2mDevicePattern.test(context.clientContext.Custom.subject)) {
-            console.log('z2mDevicePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
-        }
-        else if (z2mEventPattern.test(context.clientContext.Custom.subject)) {
-            console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
+        else {
+            console.log('other topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
         }
     });
 };
