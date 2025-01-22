@@ -47,11 +47,10 @@ exports.function_handler = async function(event, context) {
 		await assetsService.refreshScanner(event);
 	// } else if (z2mDevicePattern.test(context.clientContext.Custom.subject)) {
 	// 	console.log('z2mDevicePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
- 	// } else if (z2mEventPattern.test(context.clientContext.Custom.subject)) {
-	// 	console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
-	// }
+ 	} else if (context.clientContext.Custom.subject == `zigbee2mqtt/bridge/event`) {
+		console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
 	} else {
-		console.log('other topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
+		console.log('other topic: ' + context.clientContext.Custom.subject);
 	}
 
 };
