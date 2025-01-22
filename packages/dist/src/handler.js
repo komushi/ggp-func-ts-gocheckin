@@ -22,7 +22,7 @@ const reservationsService = new reservations_service_1.ReservationsService();
 const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
 const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
 const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/device\/`);
-// const z2mPattern = new RegExp(`^zigbee2mqtt\/`);
+const z2mEventPattern = new RegExp(`^zigbee2mqtt\/bridge\/event\/`);
 exports.function_handler = function (event, context) {
     return __awaiter(this, void 0, void 0, function* () {
         // console.log('context: ' + JSON.stringify(context));
@@ -51,10 +51,10 @@ exports.function_handler = function (event, context) {
             yield assetsService.refreshScanner(event);
         }
         else if (z2mDevicePattern.test(context.clientContext.Custom.subject)) {
-            console.log('z2m_device event: ' + JSON.stringify(event));
+            console.log('z2mDevicePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
         }
-        else {
-            console.log('other context: ' + context.clientContext.Custom.subject);
+        else if (z2mEventPattern.test(context.clientContext.Custom.subject)) {
+            console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
         }
     });
 };
