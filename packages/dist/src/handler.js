@@ -25,7 +25,7 @@ const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/device\/`);
 const z2mEventPattern = new RegExp(`^\\zigbee2mqtt\/bridge\/event$`);
 exports.function_handler = function (event, context) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('context: ' + JSON.stringify(context));
+        // console.log('context: ' + JSON.stringify(context));
         if (initPattern.test(context.clientContext.Custom.subject)) {
             console.log('init_db event: ' + JSON.stringify(event));
             yield initializationService.createTables();
@@ -54,9 +54,8 @@ exports.function_handler = function (event, context) {
         }
         else if (context.clientContext.Custom.subject == `zigbee2mqtt/bridge/event`) {
             console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
-        }
-        else {
-            console.log('other topic: ' + context.clientContext.Custom.subject);
+            // } else {
+            // 	console.log('other topic: ' + context.clientContext.Custom.subject);
         }
     });
 };
