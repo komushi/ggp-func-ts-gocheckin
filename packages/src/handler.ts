@@ -13,7 +13,7 @@ const reservationsService = new ReservationsService();
 const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
 const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
 
-const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/device\/`);
+const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/device\/`);
 const z2mEventPattern = new RegExp(`^\\zigbee2mqtt\/bridge\/event$`);
 
 exports.function_handler = async function(event, context) {
@@ -45,12 +45,10 @@ exports.function_handler = async function(event, context) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
 
 		await assetsService.refreshScanner(event);
-	// } else if (z2mDevicePattern.test(context.clientContext.Custom.subject)) {
-	// 	console.log('z2mDevicePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
+	} else if (z2mResponsePattern.test(context.clientContext.Custom.subject)) {
+		console.log('z2mResponsePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
  	} else if (context.clientContext.Custom.subject == `zigbee2mqtt/bridge/event`) {
 		console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
-	// } else {
-	// 	console.log('other topic: ' + context.clientContext.Custom.subject);
 	}
 
 };

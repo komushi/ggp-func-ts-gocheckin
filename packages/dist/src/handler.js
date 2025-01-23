@@ -21,7 +21,7 @@ const reservationsService = new reservations_service_1.ReservationsService();
 // const deletePattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/delete/accepted$`);
 const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
 const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
-const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/device\/`);
+const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/device\/`);
 const z2mEventPattern = new RegExp(`^\\zigbee2mqtt\/bridge\/event$`);
 exports.function_handler = function (event, context) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -49,13 +49,12 @@ exports.function_handler = function (event, context) {
         else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
             console.log('scanner_detected event: ' + JSON.stringify(event));
             yield assetsService.refreshScanner(event);
-            // } else if (z2mDevicePattern.test(context.clientContext.Custom.subject)) {
-            // 	console.log('z2mDevicePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
+        }
+        else if (z2mResponsePattern.test(context.clientContext.Custom.subject)) {
+            console.log('z2mResponsePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
         }
         else if (context.clientContext.Custom.subject == `zigbee2mqtt/bridge/event`) {
             console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
-            // } else {
-            // 	console.log('other topic: ' + context.clientContext.Custom.subject);
         }
     });
 };
