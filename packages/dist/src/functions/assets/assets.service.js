@@ -316,6 +316,9 @@ class AssetsService {
     }
     removeZigbee(z2mRemoved) {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service removeZigbee in: ' + JSON.stringify(z2mRemoved));
+            console.log('assets.service removeZigbee out');
+            return;
         });
     }
 }

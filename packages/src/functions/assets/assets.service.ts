@@ -357,7 +357,11 @@ export class AssetsService {
   }
 
   public async removeZigbee(z2mRemoved: Z2mRemoved): Promise<any> {
+    console.log('assets.service removeZigbee in: ' + JSON.stringify(z2mRemoved));
 
+    console.log('assets.service removeZigbee out');
+
+    return;
   }
 
 }
