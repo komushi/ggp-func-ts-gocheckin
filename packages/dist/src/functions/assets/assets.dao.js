@@ -319,5 +319,20 @@ class AssetsDao {
             return response;
         });
     }
+    createLock(lockItem) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.dao createLock in' + JSON.stringify(lockItem));
+            const params = [{
+                    Put: {
+                        TableName: TBL_ASSET,
+                        Item: lockItem
+                    }
+                }];
+            const response = yield this.ddbDocClient.send(new lib_dynamodb_1.TransactWriteCommand({ TransactItems: params }));
+            console.log('assets.dao createLock response:' + JSON.stringify(response));
+            console.log(`assets.dao createLock out`);
+            return lockItem;
+        });
+    }
 }
 exports.AssetsDao = AssetsDao;

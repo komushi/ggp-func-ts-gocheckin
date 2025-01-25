@@ -275,5 +275,48 @@ class AssetsService {
             return;
         });
     }
+    discoverZigbee(z2mEvent) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service discoverZigbee in: ' + JSON.stringify(z2mEvent));
+            if (z2mEvent.type && z2mEvent.type == 'device_interview') {
+                if (z2mEvent.data) {
+                    if (z2mEvent.data.status && z2mEvent.data.status == 'successful') {
+                        if (z2mEvent.data.supported) {
+                            const z2mLock = {
+                                hostId: process.env.HOST_ID,
+                                uuid: z2mEvent.data.ieee_address,
+                                hostPropertyCode: `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`,
+                                propertyCode: process.env.PROPERTY_CODE,
+                                equipmentId: z2mEvent.data.ieee_address,
+                                equipmentName: z2mEvent.data.friendly_name,
+                                coreName: process.env.AWS_IOT_THING_NAME,
+                                withKeypad: true,
+                                category: 'LOCK',
+                                lastUpdateOn: (new Date).toISOString()
+                            };
+                            yield this.assetsDao.createLock(z2mLock);
+                            yield this.iotService.publish({
+                                topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
+                                payload: JSON.stringify(z2mLock)
+                            });
+                        }
+                    }
+                }
+            }
+            console.log('assets.service discoverZigbee out');
+            return;
+        });
+    }
+    renameZigbee(z2mRenamed) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service renameZigbee in: ' + JSON.stringify(z2mRenamed));
+            console.log('assets.service renameZigbee out');
+            return;
+        });
+    }
+    removeZigbee(z2mRemoved) {
+        return __awaiter(this, void 0, void 0, function* () {
+        });
+    }
 }
 exports.AssetsService = AssetsService;

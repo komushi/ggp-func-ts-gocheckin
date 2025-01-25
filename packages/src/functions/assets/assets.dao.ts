@@ -1,6 +1,6 @@
 import { DynamoDBClientConfig, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, TransactWriteCommand, ScanCommand, QueryCommand, DeleteCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
-import { PropertyItem, NamedShadowCamera, ScannerItem } from './assets.models';
+import { PropertyItem, NamedShadowCamera, ScannerItem, Z2mLock } from './assets.models';
 
 const TBL_HOST = process.env.TBL_HOST;
 const TBL_ASSET = process.env.TBL_ASSET;
@@ -412,6 +412,25 @@ export class AssetsDao {
 
     return response;
 
+  }
+
+  public async createLock(lockItem: Z2mLock): Promise<any> {
+    console.log('assets.dao createLock in' + JSON.stringify(lockItem));
+
+    const params = [{
+      Put: {
+        TableName: TBL_ASSET,
+        Item: lockItem
+      }
+    }];
+
+    const response = await this.ddbDocClient.send(new TransactWriteCommand({TransactItems: params}));
+
+    console.log('assets.dao createLock response:' + JSON.stringify(response));
+
+    console.log(`assets.dao createLock out`);
+
+    return lockItem;
   }
 
 }

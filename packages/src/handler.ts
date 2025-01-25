@@ -47,8 +47,17 @@ exports.function_handler = async function(event, context) {
 		await assetsService.refreshScanner(event);
 	} else if (z2mResponsePattern.test(context.clientContext.Custom.subject)) {
 		console.log('z2mResponsePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
+
+		if (context.clientContext.Custom.subject == 'zigbee2mqtt/bridge/response/device/rename') {
+			await assetsService.renameZigbee(event);
+		} else if (context.clientContext.Custom.subject == 'zigbee2mqtt/bridge/response/device/remove') {
+			await assetsService.removeZigbee(event);
+		}
+		
  	} else if (context.clientContext.Custom.subject == `zigbee2mqtt/bridge/event`) {
 		console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
+
+		await assetsService.discoverZigbee(event);
 	}
 
 };

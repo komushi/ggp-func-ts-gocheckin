@@ -1,6 +1,6 @@
 const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
 
-import { PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras } from './assets.models';
+import { Z2mRemoved, Z2mRenamed, Z2mLock, Z2mEvent, PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras } from './assets.models';
 import { AssetsDao } from './assets.dao';
 import { IotService } from '../iot/iot.service';
 
@@ -308,6 +308,56 @@ export class AssetsService {
     console.log('assets.service refreshScanner out');
 
     return;
+  }
+
+  public async discoverZigbee(z2mEvent: Z2mEvent): Promise<any> {
+    console.log('assets.service discoverZigbee in: ' + JSON.stringify(z2mEvent));
+
+    if (z2mEvent.type && z2mEvent.type == 'device_interview') {
+      if (z2mEvent.data) {
+        if (z2mEvent.data.status && z2mEvent.data.status == 'successful') {
+          if (z2mEvent.data.supported) {
+            const z2mLock: Z2mLock = {
+              hostId: process.env.HOST_ID,
+              uuid: z2mEvent.data.ieee_address,
+              hostPropertyCode: `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`,
+              propertyCode: process.env.PROPERTY_CODE,
+              equipmentId: z2mEvent.data.ieee_address,
+              equipmentName: z2mEvent.data.friendly_name,
+              coreName: process.env.AWS_IOT_THING_NAME,
+              withKeypad: true,
+              category: 'LOCK',
+              lastUpdateOn: (new Date).toISOString()
+            }
+            
+            await this.assetsDao.createLock(z2mLock);
+
+            await this.iotService.publish({
+              topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
+                payload: JSON.stringify(z2mLock)
+            });
+          }
+        }
+      }
+
+    }
+
+    console.log('assets.service discoverZigbee out');
+
+    return;
+  }
+
+  
+  public async renameZigbee(z2mRenamed: Z2mRenamed): Promise<any> {
+    console.log('assets.service renameZigbee in: ' + JSON.stringify(z2mRenamed));
+
+    console.log('assets.service renameZigbee out');
+
+    return;
+  }
+
+  public async removeZigbee(z2mRemoved: Z2mRemoved): Promise<any> {
+
   }
 
 }
