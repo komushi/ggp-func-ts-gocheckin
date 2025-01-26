@@ -197,7 +197,7 @@ export class InitializationDao {
           KeySchema: [
             {
               AttributeName: 'equipmentName',
-              KeyType: 'RANGE'
+              KeyType: 'HASH'
             }
           ],
           Projection: {
