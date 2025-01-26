@@ -294,7 +294,7 @@ class AssetsService {
                                 category: 'LOCK',
                                 lastUpdateOn: (new Date).toISOString()
                             };
-                            yield this.assetsDao.createLock(z2mLock);
+                            yield this.assetsDao.updateLock(z2mLock);
                             yield this.iotService.publish({
                                 topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
                                 payload: JSON.stringify(z2mLock)
@@ -310,7 +310,8 @@ class AssetsService {
     renameZigbee(z2mRenamed) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service renameZigbee in: ' + JSON.stringify(z2mRenamed));
-            console.log('assets.service renameZigbee out');
+            const z2mLock = yield this.assetsDao.getZbLockByName(z2mRenamed.data.from);
+            console.log('assets.service renameZigbee out ' + JSON.stringify(z2mLock));
             return;
         });
     }

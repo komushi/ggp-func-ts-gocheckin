@@ -15,6 +15,7 @@ const lib_dynamodb_1 = require("@aws-sdk/lib-dynamodb");
 const TBL_HOST = process.env.TBL_HOST;
 const TBL_ASSET = process.env.TBL_ASSET;
 const IDX_EQUIPMENT_ID = process.env.IDX_EQUIPMENT_ID;
+const IDX_EQUIPMENT_NAME = process.env.IDX_EQUIPMENT_NAME;
 const IDX_HOST_PROPERTYCODE = process.env.IDX_HOST_PROPERTYCODE;
 const config = {
     endpoint: process.env.DDB_ENDPOINT || 'http://localhost:8080',
@@ -319,9 +320,9 @@ class AssetsDao {
             return response;
         });
     }
-    createLock(lockItem) {
+    updateLock(lockItem) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.dao createLock in' + JSON.stringify(lockItem));
+            console.log('assets.dao updateLock in' + JSON.stringify(lockItem));
             const params = [{
                     Put: {
                         TableName: TBL_ASSET,
@@ -329,9 +330,30 @@ class AssetsDao {
                     }
                 }];
             const response = yield this.ddbDocClient.send(new lib_dynamodb_1.TransactWriteCommand({ TransactItems: params }));
-            console.log('assets.dao createLock response:' + JSON.stringify(response));
-            console.log(`assets.dao createLock out`);
+            console.log('assets.dao updateLock response:' + JSON.stringify(response));
+            console.log(`assets.dao updateLock out`);
             return lockItem;
+        });
+    }
+    getZbLockByName(equipmentName) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.dao getZbLockByName in:' + equipmentName);
+            const response = yield this.ddbDocClient.send(new lib_dynamodb_1.QueryCommand({
+                TableName: TBL_ASSET,
+                IndexName: IDX_EQUIPMENT_NAME,
+                KeyConditionExpression: '#en = :en',
+                FilterExpression: '#category = :category',
+                ExpressionAttributeNames: {
+                    '#en': 'equipmentName',
+                    '#category': 'category'
+                },
+                ExpressionAttributeValues: {
+                    ':en': equipmentName,
+                    ':category': 'LOCK'
+                }
+            }));
+            console.log('assets.dao getZbLockByName out:' + JSON.stringify(response.Items));
+            return response.Items;
         });
     }
 }

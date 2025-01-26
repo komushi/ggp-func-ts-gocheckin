@@ -18,6 +18,7 @@ const TBL_HOST = process.env.TBL_HOST;
 const TBL_ASSET = process.env.TBL_ASSET;
 const IDX_HOST_PROPERTYCODE = process.env.IDX_HOST_PROPERTYCODE;
 const IDX_EQUIPMENT_ID = process.env.IDX_EQUIPMENT_ID;
+const IDX_EQUIPMENT_NAME = process.env.IDX_EQUIPMENT_NAME;
 const config = {
     endpoint: process.env.DDB_ENDPOINT || 'http://localhost:8080',
 };
@@ -134,6 +135,10 @@ class InitializationDao {
                         AttributeType: 'S'
                     },
                     {
+                        AttributeName: 'equipmentName',
+                        AttributeType: 'S'
+                    },
+                    {
                         AttributeName: 'hostId',
                         AttributeType: 'S'
                     }
@@ -168,6 +173,22 @@ class InitializationDao {
                             },
                             {
                                 AttributeName: 'uuid',
+                                KeyType: 'RANGE'
+                            }
+                        ],
+                        Projection: {
+                            ProjectionType: 'ALL'
+                        },
+                        ProvisionedThroughput: {
+                            ReadCapacityUnits: 5,
+                            WriteCapacityUnits: 5
+                        }
+                    },
+                    {
+                        IndexName: IDX_EQUIPMENT_NAME,
+                        KeySchema: [
+                            {
+                                AttributeName: 'equipmentName',
                                 KeyType: 'RANGE'
                             }
                         ],

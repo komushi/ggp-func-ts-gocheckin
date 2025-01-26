@@ -330,7 +330,7 @@ export class AssetsService {
               lastUpdateOn: (new Date).toISOString()
             }
             
-            await this.assetsDao.createLock(z2mLock);
+            await this.assetsDao.updateLock(z2mLock);
 
             await this.iotService.publish({
               topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
@@ -351,7 +351,9 @@ export class AssetsService {
   public async renameZigbee(z2mRenamed: Z2mRenamed): Promise<any> {
     console.log('assets.service renameZigbee in: ' + JSON.stringify(z2mRenamed));
 
-    console.log('assets.service renameZigbee out');
+    const z2mLock: Z2mLock = await this.assetsDao.getZbLockByName(z2mRenamed.data.from);
+
+    console.log('assets.service renameZigbee out ' + JSON.stringify(z2mLock));
 
     return;
   }

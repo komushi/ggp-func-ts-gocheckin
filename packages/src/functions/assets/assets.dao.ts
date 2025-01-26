@@ -5,6 +5,7 @@ import { PropertyItem, NamedShadowCamera, ScannerItem, Z2mLock } from './assets.
 const TBL_HOST = process.env.TBL_HOST;
 const TBL_ASSET = process.env.TBL_ASSET;
 const IDX_EQUIPMENT_ID = process.env.IDX_EQUIPMENT_ID;
+const IDX_EQUIPMENT_NAME = process.env.IDX_EQUIPMENT_NAME;
 const IDX_HOST_PROPERTYCODE = process.env.IDX_HOST_PROPERTYCODE;
 
 const config: DynamoDBClientConfig = {
@@ -414,8 +415,8 @@ export class AssetsDao {
 
   }
 
-  public async createLock(lockItem: Z2mLock): Promise<any> {
-    console.log('assets.dao createLock in' + JSON.stringify(lockItem));
+  public async updateLock(lockItem: Z2mLock): Promise<any> {
+    console.log('assets.dao updateLock in' + JSON.stringify(lockItem));
 
     const params = [{
       Put: {
@@ -426,11 +427,38 @@ export class AssetsDao {
 
     const response = await this.ddbDocClient.send(new TransactWriteCommand({TransactItems: params}));
 
-    console.log('assets.dao createLock response:' + JSON.stringify(response));
+    console.log('assets.dao updateLock response:' + JSON.stringify(response));
 
-    console.log(`assets.dao createLock out`);
+    console.log(`assets.dao updateLock out`);
 
     return lockItem;
+  }
+
+  public async getZbLockByName(equipmentName: string): Promise<any> {
+
+    console.log('assets.dao getZbLockByName in:' + equipmentName);
+
+    const response = await this.ddbDocClient.send(
+      new QueryCommand({
+        TableName: TBL_ASSET,
+        IndexName: IDX_EQUIPMENT_NAME,
+        KeyConditionExpression: '#en = :en',
+        FilterExpression: '#category = :category',
+        ExpressionAttributeNames : {
+            '#en' : 'equipmentName',
+            '#category': 'category'
+        },
+        ExpressionAttributeValues: {
+          ':en': equipmentName,
+          ':category': 'LOCK'
+        }
+      })
+    );
+
+    console.log('assets.dao getZbLockByName out:' + JSON.stringify(response.Items));
+
+    return response.Items as Z2mLock[];
+
   }
 
 }
