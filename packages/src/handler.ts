@@ -129,7 +129,7 @@ const processClassicShadow = async function(event) {
 
 setTimeout(async () => {
 	await initializationService.intializeEnvVar();
-}, 10000);
+}, 1000);
 
 /*
 setTimeout(async () => {

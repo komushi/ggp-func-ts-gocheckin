@@ -122,7 +122,7 @@ const processClassicShadow = function (event) {
 };
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
     yield initializationService.intializeEnvVar();
-}), 10000);
+}), 1000);
 /*
 setTimeout(async () => {
     await assetsService.discoverCameras(process.env.HOST_ID);
