@@ -310,21 +310,33 @@ class AssetsService {
     renameZigbee(z2mRenamed) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service renameZigbee in: ' + JSON.stringify(z2mRenamed));
-            const z2mLock = yield this.assetsDao.getZbLockByName(z2mRenamed.data.from);
-            z2mLock.equipmentName = z2mRenamed.data.to;
-            z2mLock.lastUpdateOn = (new Date).toISOString();
-            yield this.assetsDao.updateLock(z2mLock);
-            yield this.iotService.publish({
-                topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
-                payload: JSON.stringify(z2mLock)
-            });
-            console.log('assets.service renameZigbee out ' + JSON.stringify(z2mLock));
+            const z2mLocks = yield this.assetsDao.getZbLockByName(z2mRenamed.data.from);
+            if (z2mLocks.length == 1) {
+                z2mLocks[0].equipmentName = z2mRenamed.data.to;
+                z2mLocks[0].lastUpdateOn = (new Date).toISOString();
+                yield this.assetsDao.updateLock(z2mLocks[0]);
+                yield this.iotService.publish({
+                    topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
+                    payload: JSON.stringify(z2mLocks[0])
+                });
+                console.log('assets.service renameZigbee out ' + JSON.stringify(z2mLocks[0]));
+                return;
+            }
+            console.log('assets.service renameZigbee out');
             return;
         });
     }
     removeZigbee(z2mRemoved) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service removeZigbee in: ' + JSON.stringify(z2mRemoved));
+            const z2mLock = yield this.assetsDao.getZbLock(process.env.HOST_ID, z2mRemoved.data.id);
+            if (z2mLock) {
+                yield this.assetsDao.deleteZbLock(process.env.HOST_ID, z2mLock.equipmentId);
+                yield this.iotService.publish({
+                    topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_removed`,
+                    payload: JSON.stringify(z2mLock)
+                });
+            }
             console.log('assets.service removeZigbee out');
             return;
         });

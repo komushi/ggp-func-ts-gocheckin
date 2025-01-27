@@ -351,25 +351,42 @@ export class AssetsService {
   public async renameZigbee(z2mRenamed: Z2mRenamed): Promise<any> {
     console.log('assets.service renameZigbee in: ' + JSON.stringify(z2mRenamed));
 
-    const z2mLock: Z2mLock = await this.assetsDao.getZbLockByName(z2mRenamed.data.from);
+    const z2mLocks: Z2mLock[] = await this.assetsDao.getZbLockByName(z2mRenamed.data.from);
 
-    z2mLock.equipmentName = z2mRenamed.data.to;
-    z2mLock.lastUpdateOn = (new Date).toISOString()
+    if (z2mLocks.length == 1) {
+      z2mLocks[0].equipmentName = z2mRenamed.data.to;
+      z2mLocks[0].lastUpdateOn = (new Date).toISOString();
+      
+      await this.assetsDao.updateLock(z2mLocks[0]);
 
-    await this.assetsDao.updateLock(z2mLock);
+      await this.iotService.publish({
+        topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
+          payload: JSON.stringify(z2mLocks[0])
+      });
+  
+      console.log('assets.service renameZigbee out ' + JSON.stringify(z2mLocks[0]));
 
-    await this.iotService.publish({
-      topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
-        payload: JSON.stringify(z2mLock)
-    });
+      return;
+    }
 
-    console.log('assets.service renameZigbee out ' + JSON.stringify(z2mLock));
+    console.log('assets.service renameZigbee out');
 
     return;
   }
 
   public async removeZigbee(z2mRemoved: Z2mRemoved): Promise<any> {
     console.log('assets.service removeZigbee in: ' + JSON.stringify(z2mRemoved));
+    
+    const z2mLock: Z2mLock = await this.assetsDao.getZbLock(process.env.HOST_ID, z2mRemoved.data.id);
+
+    if (z2mLock) {
+      await　this.assetsDao.deleteZbLock(process.env.HOST_ID, z2mLock.equipmentId);
+
+      await this.iotService.publish({
+        topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_removed`,
+          payload: JSON.stringify(z2mLock)
+      });
+    }
 
     console.log('assets.service removeZigbee out');
 

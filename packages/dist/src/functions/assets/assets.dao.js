@@ -335,6 +335,21 @@ class AssetsDao {
             return lockItem;
         });
     }
+    getZbLock(hostId, uuid, attributes) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(`assets.dao getZbLock in: ${JSON.stringify({ hostId, uuid, attributes })}`);
+            const data = yield this.ddbDocClient.send(new lib_dynamodb_1.GetCommand({
+                TableName: TBL_ASSET,
+                AttributesToGet: attributes,
+                Key: {
+                    hostId,
+                    uuid
+                }
+            }));
+            console.log(`assets.dao getZbLock out: ${JSON.stringify(data.Item)}`);
+            return data.Item;
+        });
+    }
     getZbLockByName(equipmentName) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.dao getZbLockByName in:' + equipmentName);
@@ -354,6 +369,22 @@ class AssetsDao {
             }));
             console.log('assets.dao getZbLockByName out:' + JSON.stringify(response.Items));
             return response.Items;
+        });
+    }
+    deleteZbLock(hostId, uuid) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.dao deleteZbLock in:' + JSON.stringify({ hostId, uuid }));
+            const param = {
+                TableName: TBL_ASSET,
+                Key: {
+                    hostId: hostId,
+                    uuid: uuid
+                }
+            };
+            const deleteResponse = yield this.ddbDocClient.send(new lib_dynamodb_1.DeleteCommand(param));
+            console.log('assets.dao deleteZbLock delete response:' + JSON.stringify(deleteResponse));
+            console.log('assets.dao deleteZbLock out');
+            return;
         });
     }
 }

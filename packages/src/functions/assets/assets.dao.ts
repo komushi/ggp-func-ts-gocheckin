@@ -200,13 +200,11 @@ export class AssetsDao {
     console.log('assets.dao getCameras out:' + JSON.stringify(response.Items));
 
     return response.Items as NamedShadowCamera[];
-
   }
 
   public async deleteCamera(hostId: string, uuid: string): Promise<any> {
 
     console.log('assets.dao deleteCamera in:' + JSON.stringify({hostId, uuid}));
-
 
     const param = {
       TableName: TBL_ASSET,
@@ -434,6 +432,28 @@ export class AssetsDao {
     return lockItem;
   }
 
+  public async getZbLock(hostId: string, uuid: string): Promise<any>;
+  public async getZbLock(hostId: string, uuid: string, attributes: string[]): Promise<any>;
+  public async getZbLock(hostId: string, uuid: string, attributes?: string[]): Promise<any> {
+
+    console.log(`assets.dao getZbLock in: ${JSON.stringify({hostId, uuid, attributes})}`);
+
+    const data = await this.ddbDocClient.send(
+      new GetCommand({
+				TableName: TBL_ASSET,
+				AttributesToGet: attributes,
+				Key: {
+          hostId,
+          uuid
+        }
+			})
+    );
+
+    console.log(`assets.dao getZbLock out: ${JSON.stringify(data.Item)}`);
+
+    return data.Item as Z2mLock;
+  }
+
   public async getZbLockByName(equipmentName: string): Promise<any> {
 
     console.log('assets.dao getZbLockByName in:' + equipmentName);
@@ -458,7 +478,28 @@ export class AssetsDao {
     console.log('assets.dao getZbLockByName out:' + JSON.stringify(response.Items));
 
     return response.Items as Z2mLock[];
-
   }
+
+  public async deleteZbLock(hostId: string, uuid: string): Promise<any> {
+
+    console.log('assets.dao deleteZbLock in:' + JSON.stringify({hostId, uuid}));
+
+    const param = {
+      TableName: TBL_ASSET,
+      Key: {
+        hostId: hostId,
+        uuid: uuid
+      }
+    };
+
+    const deleteResponse =  await this.ddbDocClient.send(new DeleteCommand(param)); 
+
+    console.log('assets.dao deleteZbLock delete response:' + JSON.stringify(deleteResponse));
+
+    console.log('assets.dao deleteZbLock out');
+
+    return;
+  }
+
 
 }
