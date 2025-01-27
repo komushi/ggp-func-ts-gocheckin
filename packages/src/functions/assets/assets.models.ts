@@ -157,6 +157,7 @@ export interface Z2mLock {
     propertyCode: string
     equipmentName: string;
     equipmentId: string;
+    roomCode?: string;
     withKeypad: boolean;
     category: string;
     coreName: string;
