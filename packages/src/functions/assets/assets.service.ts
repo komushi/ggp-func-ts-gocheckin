@@ -353,6 +353,16 @@ export class AssetsService {
 
     const z2mLock: Z2mLock = await this.assetsDao.getZbLockByName(z2mRenamed.data.from);
 
+    z2mLock.equipmentName = z2mRenamed.data.to;
+    z2mLock.lastUpdateOn = (new Date).toISOString()
+
+    await this.assetsDao.updateLock(z2mLock);
+
+    await this.iotService.publish({
+      topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
+        payload: JSON.stringify(z2mLock)
+    });
+
     console.log('assets.service renameZigbee out ' + JSON.stringify(z2mLock));
 
     return;

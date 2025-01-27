@@ -311,6 +311,13 @@ class AssetsService {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service renameZigbee in: ' + JSON.stringify(z2mRenamed));
             const z2mLock = yield this.assetsDao.getZbLockByName(z2mRenamed.data.from);
+            z2mLock.equipmentName = z2mRenamed.data.to;
+            z2mLock.lastUpdateOn = (new Date).toISOString();
+            yield this.assetsDao.updateLock(z2mLock);
+            yield this.iotService.publish({
+                topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
+                payload: JSON.stringify(z2mLock)
+            });
             console.log('assets.service renameZigbee out ' + JSON.stringify(z2mLock));
             return;
         });
