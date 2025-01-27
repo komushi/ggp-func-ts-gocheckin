@@ -313,7 +313,7 @@ class AssetsService {
             const z2mLocks = yield this.assetsDao.getZbLockByName(z2mRenamed.data.from);
             if (z2mLocks.length == 1) {
                 z2mLocks[0].roomCode = z2mRenamed.data.to;
-                z2mLocks[0].equipmentName = `${process.env.PROPERTY_CODE} ${z2mRenamed.data.to}`;
+                z2mLocks[0].equipmentName = `${z2mRenamed.data.to}`;
                 z2mLocks[0].lastUpdateOn = (new Date).toISOString();
                 yield this.assetsDao.updateLock(z2mLocks[0]);
                 yield this.iotService.publish({
