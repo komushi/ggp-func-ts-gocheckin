@@ -153,6 +153,7 @@ export interface Z2mDevice {
 export interface Z2mLock {
     hostId: string;
     uuid: string;
+    coreName: string;
     hostPropertyCode: string;
     propertyCode: string
     equipmentName: string;
@@ -160,6 +161,7 @@ export interface Z2mLock {
     roomCode?: string;
     withKeypad: boolean;
     category: string;
-    coreName: string;
+    vendor: string;
+    model: string;
     lastUpdateOn: string;
 }
