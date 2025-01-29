@@ -1,6 +1,6 @@
 const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
 const ZB_CATS = process.env.ZB_CAT.split(",");
-const ZB_CAT_WITH_KEYPADS = process.env.ZB_CAT_WITH_KEYPAD.split(",");
+const ZB_CATS_WITH_KEYPAD = process.env.ZB_CAT_WITH_KEYPAD.split(",");
 
 import { Z2mRemoved, Z2mRenamed, Z2mLock, Z2mEvent, PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras } from './assets.models';
 import { AssetsDao } from './assets.dao';
@@ -324,10 +324,10 @@ export class AssetsService {
             ZB_CATS.forEach((zbCat) => {
               if ((process.env[zbCat].split(",")).includes(z2mEvent.data.definition.model)) {
                 category = zbCat;
-              }
-
-              if (ZB_CAT_WITH_KEYPADS.includes(zbCat)) {
-                withKeypad = true;
+                
+                if (ZB_CATS_WITH_KEYPAD.includes(zbCat)) {
+                  withKeypad = true;
+                }
               }
             })
 
