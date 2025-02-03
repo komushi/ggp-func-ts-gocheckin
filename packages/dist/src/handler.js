@@ -50,6 +50,9 @@ exports.function_handler = function (event, context) {
             console.log('scanner_detected event: ' + JSON.stringify(event));
             yield assetsService.refreshScanner(event);
         }
+        else if (context.clientContext.Custom.subject == `gocheckin/member_detected`) {
+            console.log('member_detected event: ' + JSON.stringify(event));
+        }
         else if (z2mResponsePattern.test(context.clientContext.Custom.subject)) {
             console.log('z2mResponsePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
             if (context.clientContext.Custom.subject == 'zigbee2mqtt/bridge/response/device/rename') {

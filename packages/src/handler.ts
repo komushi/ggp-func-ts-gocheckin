@@ -45,6 +45,9 @@ exports.function_handler = async function(event, context) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
 
 		await assetsService.refreshScanner(event);
+	} else if (context.clientContext.Custom.subject == `gocheckin/member_detected`) {
+		console.log('member_detected event: ' + JSON.stringify(event));
+
 	} else if (z2mResponsePattern.test(context.clientContext.Custom.subject)) {
 		console.log('z2mResponsePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
 
