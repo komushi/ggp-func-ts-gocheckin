@@ -374,16 +374,19 @@ class AssetsService {
                             payload = {
                                 'state': 'ON'
                             };
+                            z2mLock.state = false;
                         }
                         else {
                             payload = {
                                 'state': 'OFF'
                             };
+                            z2mLock.state = true;
                         }
                         yield this.iotService.publish({
                             topic: `zigbee2mqtt/102/set`,
                             payload: JSON.stringify(payload)
                         });
+                        yield this.assetsDao.updateLock(z2mLock);
                     }
                 }));
             }
