@@ -128,6 +128,7 @@ class AssetsService {
                 existingCamera.isRecording = delta.isRecording;
                 existingCamera.rtsp = delta.rtsp;
                 existingCamera.onvif = delta.onvif;
+                existingCamera.locks = delta.locks;
                 existingCamera.lastUpdateOn = delta.lastUpdateOn;
                 yield this.assetsDao.updateCamera(existingCamera);
             }
@@ -220,6 +221,7 @@ class AssetsService {
                         isPullpoint: false,
                         isSubscription: false
                     },
+                    locks: {},
                     isDetecting: false,
                     isRecording: false,
                     lastUpdateOn: (new Date).toISOString()
@@ -353,6 +355,19 @@ class AssetsService {
                 });
             }
             console.log('assets.service removeZigbee out');
+            return;
+        });
+    }
+    unlockZbLock(memberDetectedItem) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service unlockZbLock in: ' + JSON.stringify(memberDetectedItem));
+            yield this.iotService.publish({
+                topic: `gocheckin/${memberDetectedItem.equipmentName}/set`,
+                payload: JSON.stringify({
+                    'state': 'ON'
+                })
+            });
+            console.log('assets.service unlockZbLock out');
             return;
         });
     }

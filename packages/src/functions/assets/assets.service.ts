@@ -2,7 +2,7 @@ const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
 const ZB_CATS = process.env.ZB_CAT.split(",");
 const ZB_CATS_WITH_KEYPAD = process.env.ZB_CAT_WITH_KEYPAD.split(",");
 
-import { Z2mRemoved, Z2mRenamed, Z2mLock, Z2mEvent, PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras } from './assets.models';
+import { MemberDetectedItem, Z2mRemoved, Z2mRenamed, Z2mLock, Z2mEvent, PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras } from './assets.models';
 import { AssetsDao } from './assets.dao';
 import { IotService } from '../iot/iot.service';
 
@@ -139,6 +139,7 @@ export class AssetsService {
       existingCamera.isRecording = delta.isRecording;
       existingCamera.rtsp = delta.rtsp;
       existingCamera.onvif = delta.onvif;
+      existingCamera.locks = delta.locks;
       existingCamera.lastUpdateOn = delta.lastUpdateOn;
 
       await this.assetsDao.updateCamera(existingCamera);
@@ -245,6 +246,7 @@ export class AssetsService {
           isPullpoint: false,
           isSubscription: false
         },
+        locks: {},
         isDetecting: false,
         isRecording: false,
         lastUpdateOn: (new Date).toISOString()
@@ -409,5 +411,22 @@ export class AssetsService {
 
     return;
   }
+
+  public async unlockZbLock(memberDetectedItem: MemberDetectedItem): Promise<any> {
+    console.log('assets.service unlockZbLock in: ' + JSON.stringify(memberDetectedItem));
+    
+    await this.iotService.publish({
+      topic: `gocheckin/${memberDetectedItem.equipmentName}/set`,
+        payload: JSON.stringify({
+          'state': 'ON'
+        })
+    });
+
+    console.log('assets.service unlockZbLock out');
+
+    return;
+  }
+
+  
 
 }

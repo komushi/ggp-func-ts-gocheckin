@@ -20,10 +20,20 @@ export interface NamedShadowCamera {
     password: string;
     rtsp: RTSP;
     onvif: ONVIF;
+    locks: GoCheckInLocks;
     isRecording: boolean;
     isDetecting: boolean;
     lastUpdateOn: string;
 }
+export interface GoCheckInLock {
+    equipmentId: string;
+    equipmentName: string;
+    withKeypad: boolean;
+};
+
+export interface GoCheckInLocks {
+    [equipmentId: string]: GoCheckInLock;
+};
 
 export interface ClassicShadowCamera {
     hostId: string;
@@ -164,4 +174,22 @@ export interface Z2mLock {
     vendor: string;
     model: string;
     lastUpdateOn: string;
+}
+
+export interface MemberDetectedItem {
+    hostId: string;
+    propertyCode: string;
+    hostPropertyCode: string;
+    coreName: string;
+    equipmentId: string;
+    equipmentName: string;
+    cameraIp: string;
+    reservationCode: string;
+    listingId: string;
+    memberNo: number;
+    fullName: string;
+    similarity: number;
+    recordTime: string;
+    checkInImgKey: string;
+    propertyImgKey: string;
 }

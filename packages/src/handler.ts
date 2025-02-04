@@ -48,6 +48,7 @@ exports.function_handler = async function(event, context) {
 	} else if (context.clientContext.Custom.subject == `gocheckin/member_detected`) {
 		console.log('member_detected event: ' + JSON.stringify(event));
 
+		await assetsService.unlockZbLock(event);
 	} else if (z2mResponsePattern.test(context.clientContext.Custom.subject)) {
 		console.log('z2mResponsePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
 
