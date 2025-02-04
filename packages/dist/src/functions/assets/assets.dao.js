@@ -350,6 +350,32 @@ class AssetsDao {
             return data.Item;
         });
     }
+    getZbLockById(equipmentId, attributes) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(`assets.dao getZbLockById in: ${JSON.stringify({ equipmentId, attributes })}`);
+            const data = yield this.ddbDocClient.send(new lib_dynamodb_1.QueryCommand({
+                TableName: TBL_ASSET,
+                IndexName: IDX_EQUIPMENT_ID,
+                ProjectionExpression: attributes === null || attributes === void 0 ? void 0 : attributes.join(),
+                KeyConditionExpression: '#hkey = :hkey',
+                ExpressionAttributeNames: {
+                    '#hkey': 'equipmentId'
+                },
+                ExpressionAttributeValues: {
+                    ':hkey': equipmentId
+                }
+            }));
+            if (((_a = data.Items) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+                console.log(`assets.dao getZbLockById out: ${JSON.stringify(data.Items)}`);
+                return data.Items[0];
+            }
+            else {
+                console.log(`assets.dao getZbLockById out: []`);
+                return;
+            }
+        });
+    }
     getZbLockByName(equipmentName) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.dao getZbLockByName in:' + equipmentName);

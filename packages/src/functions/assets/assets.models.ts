@@ -173,6 +173,7 @@ export interface Z2mLock {
     category: string;
     vendor: string;
     model: string;
+    state: boolean;
     lastUpdateOn: string;
 }
 

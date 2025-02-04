@@ -454,6 +454,38 @@ export class AssetsDao {
     return data.Item as Z2mLock;
   }
 
+  public async getZbLockById(equipmentId: string): Promise<any>;
+  public async getZbLockById(equipmentId: string, attributes: string[]): Promise<any>;
+  public async getZbLockById(equipmentId: string, attributes?: string[]): Promise<any> {
+
+    console.log(`assets.dao getZbLockById in: ${JSON.stringify({equipmentId, attributes})}`);
+
+    const data = await this.ddbDocClient.send(
+      new QueryCommand({
+        TableName: TBL_ASSET,
+        IndexName: IDX_EQUIPMENT_ID,
+        ProjectionExpression: attributes?.join(),
+        KeyConditionExpression: '#hkey = :hkey',
+        ExpressionAttributeNames : {
+            '#hkey' : 'equipmentId'
+        },
+        ExpressionAttributeValues: {
+          ':hkey': equipmentId
+        }
+      })
+    );
+
+    if (data.Items?.length > 0) {
+      console.log(`assets.dao getZbLockById out: ${JSON.stringify(data.Items)}`);
+
+      return data.Items[0] as Z2mLock;
+    } else {
+      console.log(`assets.dao getZbLockById out: []`);
+
+      return;
+    }
+  }
+
   public async getZbLockByName(equipmentName: string): Promise<any> {
 
     console.log('assets.dao getZbLockByName in:' + equipmentName);

@@ -345,6 +345,7 @@ export class AssetsService {
               category: category,
               vendor: z2mEvent.data.definition.vendor,
               model: z2mEvent.data.definition.model,
+              state: false,
               lastUpdateOn: (new Date).toISOString()
             }
             
@@ -419,11 +420,31 @@ export class AssetsService {
 
     console.log(`assets.service unlockZbLock locks: ${cameraItem.locks}`);
 
-    await this.iotService.publish({
-      topic: `zigbee2mqtt/102/set`,
-        payload: JSON.stringify({
-          'state': 'ON'
-        })
+    const zbLockPromises = Object.keys(cameraItem.locks).map(async (equipmentId) => {
+      const z2mLock: Z2mLock = await this.assetsDao.getZbLockById(equipmentId);
+      if (z2mLock) {
+        let payload = {};
+
+        if (z2mLock.state) {
+          payload = {
+            'state': 'ON'
+          };
+        } else {
+          payload = {
+            'state': 'OFF'
+          };
+        }
+
+        await this.iotService.publish({
+          topic: `zigbee2mqtt/102/set`,
+            payload: JSON.stringify(payload)
+        });
+      }
+    });
+
+    const results = await Promise.allSettled(zbLockPromises);
+    results.forEach((result) => {
+      console.log(results);
     });
 
     console.log('assets.service unlockZbLock out');
