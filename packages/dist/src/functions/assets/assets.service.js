@@ -361,8 +361,10 @@ class AssetsService {
     unlockZbLock(memberDetectedItem) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service unlockZbLock in: ' + JSON.stringify(memberDetectedItem));
+            const cameraItem = yield this.assetsDao.getCamera(memberDetectedItem.hostId, memberDetectedItem.equipmentId);
+            console.log(`assets.service unlockZbLock locks: ${cameraItem.locks}`);
             yield this.iotService.publish({
-                topic: `gocheckin/${memberDetectedItem.equipmentName}/set`,
+                topic: `zigbee2mqtt/102/set`,
                 payload: JSON.stringify({
                     'state': 'ON'
                 })

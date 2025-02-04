@@ -414,9 +414,13 @@ export class AssetsService {
 
   public async unlockZbLock(memberDetectedItem: MemberDetectedItem): Promise<any> {
     console.log('assets.service unlockZbLock in: ' + JSON.stringify(memberDetectedItem));
-    
+
+    const cameraItem: NamedShadowCamera = await this.assetsDao.getCamera(memberDetectedItem.hostId, memberDetectedItem.equipmentId);
+
+    console.log(`assets.service unlockZbLock locks: ${cameraItem.locks}`);
+
     await this.iotService.publish({
-      topic: `gocheckin/${memberDetectedItem.equipmentName}/set`,
+      topic: `zigbee2mqtt/102/set`,
         payload: JSON.stringify({
           'state': 'ON'
         })
