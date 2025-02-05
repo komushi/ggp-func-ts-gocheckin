@@ -440,7 +440,7 @@ export class AssetsService {
           }
   
           await this.iotService.publish({
-            topic: `zigbee2mqtt/102/set`,
+            topic: `zigbee2mqtt/${z2mLock.equipmentName}/set`,
               payload: JSON.stringify(payload)
           });
 
