@@ -418,7 +418,7 @@ export class AssetsService {
 
     const cameraItem: NamedShadowCamera = await this.assetsDao.getCamera(memberDetectedItem.hostId, memberDetectedItem.equipmentId);
 
-    console.log(`assets.service unlockZbLock locks: ${cameraItem.locks}`);
+    console.log(`assets.service unlockZbLock locks: ${JSON.stringify(cameraItem.locks)}`);
 
     let zbLockPromises = [];
     if (cameraItem.locks) {

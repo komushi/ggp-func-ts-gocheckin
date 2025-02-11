@@ -363,7 +363,7 @@ class AssetsService {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service unlockZbLock in: ' + JSON.stringify(memberDetectedItem));
             const cameraItem = yield this.assetsDao.getCamera(memberDetectedItem.hostId, memberDetectedItem.equipmentId);
-            console.log(`assets.service unlockZbLock locks: ${cameraItem.locks}`);
+            console.log(`assets.service unlockZbLock locks: ${JSON.stringify(cameraItem.locks)}`);
             let zbLockPromises = [];
             if (cameraItem.locks) {
                 zbLockPromises = Object.keys(cameraItem.locks).map((equipmentId) => __awaiter(this, void 0, void 0, function* () {
