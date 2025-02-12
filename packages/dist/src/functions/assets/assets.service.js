@@ -392,7 +392,7 @@ class AssetsService {
             }
             const results = yield Promise.allSettled(zbLockPromises);
             results.forEach((result) => {
-                console.log(results);
+                console.log(`assets.service unlockZbLock promises result: ${JSON.stringify(result)}`);
             });
             console.log('assets.service unlockZbLock out');
             return;
