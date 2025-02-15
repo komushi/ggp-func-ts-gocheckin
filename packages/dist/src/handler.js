@@ -75,31 +75,27 @@ const processClassicShadow = function (event) {
         const getShadowResult = yield iotService.getShadow({
             thingName: process.env.AWS_IOT_THING_NAME
         });
-        if (event.state.host) {
-            if (getShadowResult.state.desired.host) {
-                process.env.HOST_ID = getShadowResult.state.desired.host.hostId;
-                process.env.STAGE = getShadowResult.state.desired.host.stage;
-                process.env.IDENTTITY_ID = getShadowResult.state.desired.host.identityId;
-                process.env.CRED_PROVIDER_HOST = getShadowResult.state.desired.host.credProviderHost;
-                yield assetsService.saveHost({
-                    hostId: getShadowResult.state.desired.host.hostId,
-                    identityId: getShadowResult.state.desired.host.identityId,
-                    stage: getShadowResult.state.desired.host.stage,
-                    credProviderHost: getShadowResult.state.desired.host.credProviderHost
-                }).catch(err => {
-                    console.error('saveHost error:' + err.message);
-                    throw err;
-                });
-            }
+        if (getShadowResult.state.desired.host) {
+            process.env.HOST_ID = getShadowResult.state.desired.host.hostId;
+            process.env.STAGE = getShadowResult.state.desired.host.stage;
+            process.env.IDENTTITY_ID = getShadowResult.state.desired.host.identityId;
+            process.env.CRED_PROVIDER_HOST = getShadowResult.state.desired.host.credProviderHost;
+            yield assetsService.saveHost({
+                hostId: getShadowResult.state.desired.host.hostId,
+                identityId: getShadowResult.state.desired.host.identityId,
+                stage: getShadowResult.state.desired.host.stage,
+                credProviderHost: getShadowResult.state.desired.host.credProviderHost
+            }).catch(err => {
+                console.error('saveHost error:' + err.message);
+                throw err;
+            });
         }
-        if (event.state.property) {
-            if (getShadowResult.state.desired.property) {
-                process.env.PROPERTY_CODE = getShadowResult.state.desired.property.propertyCode;
-                yield assetsService.saveProperty(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.property).catch(err => {
-                    console.error('saveProperty error:' + err.message);
-                    throw err;
-                });
-            }
+        if (getShadowResult.state.desired.property) {
+            process.env.PROPERTY_CODE = getShadowResult.state.desired.property.propertyCode;
+            yield assetsService.saveProperty(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.property).catch(err => {
+                console.error('saveProperty error:' + err.message);
+                throw err;
+            });
         }
         if (event.state.cameras) {
             if (getShadowResult.state.desired.cameras) {
