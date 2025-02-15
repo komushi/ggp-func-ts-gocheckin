@@ -123,29 +123,19 @@ const processClassicShadow = function (event) {
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
     yield initializationService.intializeEnvVar();
 }), 1000);
-/*
-setTimeout(async () => {
-    await assetsService.discoverCameras(process.env.HOST_ID);
-
-    // await assetsService.startOnvif({
-    // 	hostId: process.env.HOST_ID,
-    // 	propertyCode: process.env.PROPERTY_CODE
-    // });
-
-}, 10000);
-*/
+setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
+    if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
+        yield initializationService.intializeEnvVar();
+    }
+}), 10000);
 setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const initializationService = new initialization_service_1.InitializationService();
-        yield initializationService.intializeEnvVar();
         yield assetsService.discoverCameras(process.env.HOST_ID);
     }
     catch (err) {
-        console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
         console.error(err.name);
         console.error(err.message);
         console.error(err.stack);
         console.trace();
-        console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
     }
 }), 300000);

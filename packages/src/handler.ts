@@ -133,33 +133,23 @@ setTimeout(async () => {
 	await initializationService.intializeEnvVar();
 }, 1000);
 
-/*
-setTimeout(async () => {
-	await assetsService.discoverCameras(process.env.HOST_ID);
 
-	// await assetsService.startOnvif({
-	// 	hostId: process.env.HOST_ID,
-	// 	propertyCode: process.env.PROPERTY_CODE
-	// });
-
+setInterval(async () => {
+	if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
+		await initializationService.intializeEnvVar();
+	}
 }, 10000);
-*/
 
 
 setInterval(async () => {
     try {
 		
-    	const initializationService = new InitializationService();
-        await initializationService.intializeEnvVar();
-
 		await assetsService.discoverCameras(process.env.HOST_ID);
 
     } catch (err) {
-        console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
         console.error(err.name);
         console.error(err.message);
         console.error(err.stack);
         console.trace();
-        console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
     } 
 }, 300000);
