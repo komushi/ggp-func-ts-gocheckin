@@ -32,14 +32,16 @@ exports.function_handler = async function(event, context) {
     } else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
     	console.log('classic shadow event delta: ' + JSON.stringify(event));
 
-		if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
-			setTimeout(async () => {
-				await initializationService.intializeEnvVar();
-				await processClassicShadow(event);
-			}, 10000);
-		} else {
-			await processClassicShadow(event);
-		}
+		// if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
+		// 	setTimeout(async () => {
+		// 		await initializationService.intializeEnvVar();
+		// 		await processClassicShadow(event);
+		// 	}, 10000);
+		// } else {
+		// 	await processClassicShadow(event);
+		// }
+
+		await processClassicShadow(event);
 
 	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
    		console.log('scanner_detected event: ' + JSON.stringify(event));
