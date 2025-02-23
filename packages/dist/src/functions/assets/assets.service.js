@@ -180,12 +180,12 @@ class AssetsService {
                 const classicShadowCamera = desiredShadowCameras[uuid];
                 if (classicShadowCamera) {
                     try {
-                        if (!classicShadowCamera.active) {
-                            yield this.processShadowDeleted(uuid);
-                        }
-                        else {
-                            yield this.processShadowDelta(uuid);
-                        }
+                        // if (!classicShadowCamera.active) {
+                        //   await this.processShadowDeleted(uuid);
+                        // } else {
+                        //   await this.processShadowDelta(uuid);
+                        // }
+                        yield this.processShadowDelta(uuid);
                     }
                     catch (err) {
                         return { uuid, action: classicShadowCamera.active, message: err.message, stack: err.stack };
