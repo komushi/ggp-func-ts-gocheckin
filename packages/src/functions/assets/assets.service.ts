@@ -130,7 +130,7 @@ export class AssetsService {
 
     const delta: NamedShadowCamera = getShadowResult.state.desired;
 
-    const existingCamera: NamedShadowCamera = await this.assetsDao.getCamera(delta.hostId, delta.uuid);
+    let existingCamera: NamedShadowCamera = await this.assetsDao.getCamera(delta.hostId, delta.uuid);
 
     if (existingCamera) {
       existingCamera.username = delta.username;
@@ -141,17 +141,22 @@ export class AssetsService {
       existingCamera.onvif = delta.onvif;
       existingCamera.locks = delta.locks;
       existingCamera.lastUpdateOn = delta.lastUpdateOn;
-
-      await this.assetsDao.updateCamera(existingCamera);
     } else {
-      await this.assetsDao.updateCamera(delta);
+      existingCamera = delta;
     }
+
+    await this.assetsDao.updateCamera(existingCamera);
 
     // Update the named shadow
     await this.iotService.updateReportedShadow({
       thingName: AWS_IOT_THING_NAME,
       shadowName: uuid,
       reportedState: delta
+    });
+
+    await this.iotService.publish({
+      topic: `gocheckin/reset_camera`,
+      payload: JSON.stringify({cam_ip: existingCamera.localIp})
     });
 
     console.log('assets.service processShadowDelta out');
@@ -177,6 +182,11 @@ export class AssetsService {
     }).catch(err => {
       console.log('processShadowDeleted deleteShadow err:' + JSON.stringify(err));
       return;
+    });
+
+    await this.iotService.publish({
+      topic: `gocheckin/reset_camera`,
+      payload: JSON.stringify({cam_ip: delta.localIp})
     });
 
     console.log('assets.service processShadowDeleted out');
@@ -269,7 +279,7 @@ export class AssetsService {
   
       await this.iotService.publish({
         topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
-          payload: JSON.stringify(cameraItem)
+        payload: JSON.stringify(cameraItem)
       });
     }));
 
@@ -306,7 +316,7 @@ export class AssetsService {
 
 		await this.iotService.publish({
 			topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/scanner_detected`,
-		    payload: JSON.stringify(scannerItem)
+      payload: JSON.stringify(scannerItem)
 		});
 
     console.log('assets.service refreshScanner out');
@@ -353,7 +363,7 @@ export class AssetsService {
 
             await this.iotService.publish({
               topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
-                payload: JSON.stringify(z2mLock)
+              payload: JSON.stringify(z2mLock)
             });
           }
         }
@@ -381,7 +391,7 @@ export class AssetsService {
 
       await this.iotService.publish({
         topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
-          payload: JSON.stringify(z2mLocks[0])
+        payload: JSON.stringify(z2mLocks[0])
       });
   
       console.log('assets.service renameZigbee out ' + JSON.stringify(z2mLocks[0]));
@@ -404,7 +414,7 @@ export class AssetsService {
 
       await this.iotService.publish({
         topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_removed`,
-          payload: JSON.stringify(z2mLocks[0])
+        payload: JSON.stringify(z2mLocks[0])
       });
     }
 

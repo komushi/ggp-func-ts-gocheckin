@@ -120,7 +120,7 @@ class AssetsService {
                 shadowName: uuid
             });
             const delta = getShadowResult.state.desired;
-            const existingCamera = yield this.assetsDao.getCamera(delta.hostId, delta.uuid);
+            let existingCamera = yield this.assetsDao.getCamera(delta.hostId, delta.uuid);
             if (existingCamera) {
                 existingCamera.username = delta.username;
                 existingCamera.password = delta.password;
@@ -130,16 +130,20 @@ class AssetsService {
                 existingCamera.onvif = delta.onvif;
                 existingCamera.locks = delta.locks;
                 existingCamera.lastUpdateOn = delta.lastUpdateOn;
-                yield this.assetsDao.updateCamera(existingCamera);
             }
             else {
-                yield this.assetsDao.updateCamera(delta);
+                existingCamera = delta;
             }
+            yield this.assetsDao.updateCamera(existingCamera);
             // Update the named shadow
             yield this.iotService.updateReportedShadow({
                 thingName: AWS_IOT_THING_NAME,
                 shadowName: uuid,
                 reportedState: delta
+            });
+            yield this.iotService.publish({
+                topic: `gocheckin/reset_camera`,
+                payload: JSON.stringify({ cam_ip: existingCamera.localIp })
             });
             console.log('assets.service processShadowDelta out');
             return;
@@ -160,6 +164,10 @@ class AssetsService {
             }).catch(err => {
                 console.log('processShadowDeleted deleteShadow err:' + JSON.stringify(err));
                 return;
+            });
+            yield this.iotService.publish({
+                topic: `gocheckin/reset_camera`,
+                payload: JSON.stringify({ cam_ip: delta.localIp })
             });
             console.log('assets.service processShadowDeleted out');
             return;
