@@ -1,6 +1,6 @@
 import { DynamoDBClientConfig, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, TransactWriteCommand, ScanCommand, QueryCommand, DeleteCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
-import { PropertyItem, NamedShadowCamera, ScannerItem, Z2mLock } from './assets.models';
+import { PropertyItem, NamedShadowCamera, Space, ScannerItem, Z2mLock } from './assets.models';
 
 const TBL_HOST = process.env.TBL_HOST;
 const TBL_ASSET = process.env.TBL_ASSET;
@@ -411,6 +411,58 @@ export class AssetsDao {
 
     return response;
 
+  }
+
+  public async getSpaces(hostId: string): Promise<any> {
+
+    console.log('assets.dao getSpaces in:' + hostId);
+
+    const response = await this.ddbDocClient.send(
+      new QueryCommand({
+        TableName: TBL_ASSET,
+        KeyConditionExpression: '#hkey = :hkey',
+        FilterExpression: '#category = :category',
+        ExpressionAttributeNames : {
+            '#hkey' : 'hostId',
+            '#category': 'category'
+        },
+        ExpressionAttributeValues: {
+          ':hkey': hostId,
+          ':category': 'SPACE'
+        }
+      })
+    );
+
+    console.log('assets.dao getSpaces out:' + JSON.stringify(response.Items));
+
+    return response.Items as Space[];
+
+  }
+
+  public async deleteSpaces(hostId: string): Promise<any> {
+
+    console.log('assets.dao deleteSpaces in:' + hostId);
+
+    const spaces: Space[] = await this.getSpaces(hostId);
+
+    const deleteResponse = await Promise.all(spaces.map(async (space: Space) => {
+      const param = {
+        TableName: TBL_ASSET,
+        Key: {
+          hostId: space.hostId,
+          uuid: space.uuid
+        }
+      };
+
+      return await this.ddbDocClient.send(new DeleteCommand(param)); 
+
+    }));
+
+    console.log('assets.dao deleteScanners delete response:' + JSON.stringify(deleteResponse));
+
+    console.log('assets.dao deleteScanners out');
+
+    return;
   }
 
   public async updateLock(lockItem: Z2mLock): Promise<any> {

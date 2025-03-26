@@ -320,6 +320,45 @@ class AssetsDao {
             return response;
         });
     }
+    getSpaces(hostId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.dao getSpaces in:' + hostId);
+            const response = yield this.ddbDocClient.send(new lib_dynamodb_1.QueryCommand({
+                TableName: TBL_ASSET,
+                KeyConditionExpression: '#hkey = :hkey',
+                FilterExpression: '#category = :category',
+                ExpressionAttributeNames: {
+                    '#hkey': 'hostId',
+                    '#category': 'category'
+                },
+                ExpressionAttributeValues: {
+                    ':hkey': hostId,
+                    ':category': 'SPACE'
+                }
+            }));
+            console.log('assets.dao getSpaces out:' + JSON.stringify(response.Items));
+            return response.Items;
+        });
+    }
+    deleteSpaces(hostId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.dao deleteSpaces in:' + hostId);
+            const spaces = yield this.getSpaces(hostId);
+            const deleteResponse = yield Promise.all(spaces.map((space) => __awaiter(this, void 0, void 0, function* () {
+                const param = {
+                    TableName: TBL_ASSET,
+                    Key: {
+                        hostId: space.hostId,
+                        uuid: space.uuid
+                    }
+                };
+                return yield this.ddbDocClient.send(new lib_dynamodb_1.DeleteCommand(param));
+            })));
+            console.log('assets.dao deleteScanners delete response:' + JSON.stringify(deleteResponse));
+            console.log('assets.dao deleteScanners out');
+            return;
+        });
+    }
     updateLock(lockItem) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.dao updateLock in' + JSON.stringify(lockItem));

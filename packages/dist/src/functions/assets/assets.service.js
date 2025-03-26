@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AssetsService = void 0;
 const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
-const ZB_CATS = process.env.ZB_CAT.split(",");
+const ZB_CATS = process.env.ZB_CATS.split(",");
 const ZB_CATS_WITH_KEYPAD = process.env.ZB_CAT_WITH_KEYPAD.split(",");
 const assets_dao_1 = require("./assets.dao");
 const iot_service_1 = require("../iot/iot.service");
@@ -65,56 +65,29 @@ class AssetsService {
             return propertyItem;
         });
     }
-    /*
-    public async refreshCameras(deltaShadowCameras: ShadowCameras, desiredShadowCameras: ShadowCameras): Promise<any> {
-      console.log('assets.service refreshCameras in: ' + JSON.stringify({deltaShadowCameras, desiredShadowCameras}));
-  
-      const deltaCameraItems: CameraItem[] = Object.entries(desiredShadowCameras).map(([uuid, cameraItem]: [string, CameraItem]) => {
-        return cameraItem;
-      }).filter((cameraItem: CameraItem) => {
-        if (deltaShadowCameras[cameraItem.uuid]) {
-          return true;
-        } else {
-          return false;
-        }
-      });
-  
-      console.log('assets.service refreshCameras deltaCameraItems: ' + JSON.stringify(deltaCameraItems));
-  
-      await Promise.all(deltaCameraItems.map(async (cameraItem: CameraItem) => {
-        
-        const existingCamera: CameraItem = await this.assetsDao.getCamera(cameraItem.hostId, cameraItem.uuid);
-  
-        if (existingCamera) {
-          existingCamera.username = cameraItem.username;
-          existingCamera.password = cameraItem.password;
-          existingCamera.isDetecting = cameraItem.isDetecting;
-          existingCamera.isRecording = cameraItem.isRecording;
-          existingCamera.rtsp = cameraItem.rtsp;
-          existingCamera.onvif = cameraItem.onvif;
-          existingCamera.lastUpdateOn = cameraItem.lastUpdateOn;
-  
-          await this.assetsDao.updateCamera(existingCamera);
-        } else {
-          await this.assetsDao.updateCamera(cameraItem);
-        }
-      }));
-  
-      if (deltaCameraItems.length > 0) {
-        await this.iotService.publish({
-          topic: 'gocheckin/fetch_cameras',
-          payload: ''
-        });
-      }
-  
-      console.log('assets.service refreshCameras out');
-  
-      return;
-    }
-    */
-    processShadowDelta(uuid) {
+    processSpacesShadow(deltaShadowSpaces, desiredShadowSpaces) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service processShadowDelta in: ' + JSON.stringify({ uuid }));
+            console.log('assets.service processSpacesShadow in: ' + JSON.stringify({ deltaShadowSpaces, desiredShadowSpaces }));
+            const promises = Object.keys(deltaShadowSpaces).map((uuid) => __awaiter(this, void 0, void 0, function* () {
+                const classicShadowSpace = desiredShadowSpaces[uuid];
+                if (classicShadowSpace) {
+                    try {
+                        // await this.assetsDao.deleteSpaces(process.env.HOST_ID);
+                    }
+                    catch (err) {
+                        return { uuid, message: err.message, stack: err.stack };
+                    }
+                    return { uuid };
+                }
+            }));
+            const results = yield Promise.allSettled(promises);
+            console.log('assets.service processSpacesShadow results:' + JSON.stringify(results));
+            console.log('assets.service processSpacesShadow out');
+        });
+    }
+    processCamerasShadowDelta(uuid) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service processCamerasShadowDelta in: ' + JSON.stringify({ uuid }));
             const getShadowResult = yield this.iotService.getShadow({
                 thingName: AWS_IOT_THING_NAME,
                 shadowName: uuid
@@ -145,37 +118,44 @@ class AssetsService {
                 topic: `gocheckin/reset_camera`,
                 payload: JSON.stringify({ cam_ip: existingCamera.localIp })
             });
-            console.log('assets.service processShadowDelta out');
+            console.log('assets.service processCamerasShadowDelta out');
             return;
         });
     }
-    processShadowDeleted(uuid) {
-        return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service processShadowDeleted in: ' + JSON.stringify({ uuid }));
-            const getShadowResult = yield this.iotService.getShadow({
-                thingName: AWS_IOT_THING_NAME,
-                shadowName: uuid
-            });
-            const delta = getShadowResult.state.desired;
-            yield this.assetsDao.deleteCamera(delta.hostId, uuid);
-            yield this.iotService.deleteShadow({
-                thingName: AWS_IOT_THING_NAME,
-                shadowName: uuid
-            }).catch(err => {
-                console.log('processShadowDeleted deleteShadow err:' + JSON.stringify(err));
-                return;
-            });
-            yield this.iotService.publish({
-                topic: `gocheckin/reset_camera`,
-                payload: JSON.stringify({ cam_ip: delta.localIp })
-            });
-            console.log('assets.service processShadowDeleted out');
-            return;
-        });
+    /*
+    private async processShadowDeleted(uuid: string): Promise<any> {
+      console.log('assets.service processShadowDeleted in: ' + JSON.stringify({uuid}));
+  
+      const getShadowResult = await this.iotService.getShadow({
+        thingName: AWS_IOT_THING_NAME,
+        shadowName: uuid
+      });
+  
+      const delta: NamedShadowCamera = getShadowResult.state.desired;
+  
+      await this.assetsDao.deleteCamera(delta.hostId, uuid);
+  
+      await this.iotService.deleteShadow({
+        thingName: AWS_IOT_THING_NAME,
+        shadowName: uuid
+      }).catch(err => {
+        console.log('processShadowDeleted deleteShadow err:' + JSON.stringify(err));
+        return;
+      });
+  
+      await this.iotService.publish({
+        topic: `gocheckin/reset_camera`,
+        payload: JSON.stringify({cam_ip: delta.localIp})
+      });
+  
+      console.log('assets.service processShadowDeleted out');
+  
+      return;
     }
-    processShadow(deltaShadowCameras, desiredShadowCameras) {
+    */
+    processCamerasShadow(deltaShadowCameras, desiredShadowCameras) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service processShadow in: ' + JSON.stringify({ deltaShadowCameras, desiredShadowCameras }));
+            console.log('assets.service processCamerasShadow in: ' + JSON.stringify({ deltaShadowCameras, desiredShadowCameras }));
             const promises = Object.keys(deltaShadowCameras).map((uuid) => __awaiter(this, void 0, void 0, function* () {
                 const classicShadowCamera = desiredShadowCameras[uuid];
                 if (classicShadowCamera) {
@@ -185,7 +165,7 @@ class AssetsService {
                         // } else {
                         //   await this.processShadowDelta(uuid);
                         // }
-                        yield this.processShadowDelta(uuid);
+                        yield this.processCamerasShadowDelta(uuid);
                     }
                     catch (err) {
                         return { uuid, action: classicShadowCamera.active, message: err.message, stack: err.stack };
@@ -194,8 +174,8 @@ class AssetsService {
                 }
             }));
             const results = yield Promise.allSettled(promises);
-            console.log('assets.service processShadow results:' + JSON.stringify(results));
-            console.log('assets.service processShadow out');
+            console.log('assets.service processCamerasShadow results:' + JSON.stringify(results));
+            console.log('assets.service processCamerasShadow out');
         });
     }
     discoverCameras(hostId) {
@@ -221,7 +201,7 @@ class AssetsService {
                     rtsp: {
                         port: 554,
                         path: '',
-                        codec: 'h264',
+                        codec: 'h265',
                         framerate: 10
                     },
                     onvif: {

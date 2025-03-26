@@ -1,8 +1,20 @@
+export interface Space {
+	hostId: string;
+	uuid: string;
+	propertyCode: string;
+	hostPropertyCode: string;
+	coreName: string;
+    equipmentName: string;
+	category: string;
+	layoutId: number;
+}
+
+
 export interface PropertyItem {
     hostId: string;
     uuid: string;
-    hostPropertyCode: string;
     propertyCode: string;
+    hostPropertyCode: string;
     category: string;
 }
 
@@ -25,25 +37,35 @@ export interface NamedShadowCamera {
     isDetecting: boolean;
     lastUpdateOn: string;
 }
+
 export interface GoCheckInLock {
     equipmentId: string;
     equipmentName: string;
     withKeypad: boolean;
-};
+}
 
 export interface GoCheckInLocks {
     [equipmentId: string]: GoCheckInLock;
-};
+}
+
+export interface ClassicShadowSpace {
+    hostId: string;
+    uuid: string;
+}
+
+export interface ClassicShadowSpaces {
+    [uuid: string]: ClassicShadowSpace;
+}
 
 export interface ClassicShadowCamera {
     hostId: string;
     uuid: string;
     active: boolean;
-};
+}
 
 export interface ClassicShadowCameras {
     [uuid: string]: ClassicShadowCamera;
-};
+}
 
 export interface ScannerItem {
     uuid: string;
@@ -83,7 +105,7 @@ export interface Z2mEvent {
         supported?: boolean;
     };
     type: string;
-};
+}
   
 // Hierarchical Interfaces (More Granular)
 interface DeviceDefinition {

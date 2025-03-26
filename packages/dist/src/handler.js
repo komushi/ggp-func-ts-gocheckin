@@ -99,12 +99,20 @@ const processClassicShadow = function (event) {
         }
         if (event.state.cameras) {
             if (getShadowResult.state.desired.cameras) {
-                yield assetsService.processShadow(event.state.cameras, getShadowResult.state.desired.cameras).catch(err => {
-                    console.error('refreshCameras error:' + err.message);
+                yield assetsService.processCamerasShadow(event.state.cameras, getShadowResult.state.desired.cameras).catch(err => {
+                    console.error('processCamerasShadow error:' + err.message);
                     throw err;
                 });
             }
         }
+        // if (event.state.spaces) {
+        // 	if (getShadowResult.state.desired.spaces) {
+        // 		await assetsService.processSpacesShadow(event.state.spaces, getShadowResult.state.desired.spaces).catch(err => {
+        // 			console.error('processSpacesShadow error:' + err.message);
+        // 			throw err;
+        // 		});
+        // 	}
+        // }
         if (event.state.reservations) {
             if (getShadowResult.state.desired.reservations) {
                 yield reservationsService.processShadow(event.state.reservations, getShadowResult.state.desired.reservations).catch(err => {
