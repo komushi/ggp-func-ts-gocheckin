@@ -17,7 +17,7 @@ const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/`);
 // const z2mEventPattern = new RegExp(`^\\zigbee2mqtt\/bridge\/event$`);
 
 exports.function_handler = async function(event, context) {
-    // console.log('context: ' + JSON.stringify(context));
+    console.log('context: ' + context.clientContext.Custom.subject);
 
 	if (initPattern.test(context.clientContext.Custom.subject)) {
     	console.log('init_db event: ' + JSON.stringify(event));
