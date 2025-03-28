@@ -93,7 +93,7 @@ class AssetsService {
                 shadowName: uuid
             });
             const delta = getShadowResult.state.desired;
-            let existingCamera = yield this.assetsDao.getCamera(delta.hostId, delta.uuid);
+            let existingCamera = yield this.assetsDao.getCamera(process.env.HOST_ID, uuid);
             if (existingCamera) {
                 existingCamera.username = delta.username;
                 existingCamera.password = delta.password;
@@ -122,37 +122,30 @@ class AssetsService {
             return;
         });
     }
-    /*
-    private async processShadowDeleted(uuid: string): Promise<any> {
-      console.log('assets.service processShadowDeleted in: ' + JSON.stringify({uuid}));
-  
-      const getShadowResult = await this.iotService.getShadow({
-        thingName: AWS_IOT_THING_NAME,
-        shadowName: uuid
-      });
-  
-      const delta: NamedShadowCamera = getShadowResult.state.desired;
-  
-      await this.assetsDao.deleteCamera(delta.hostId, uuid);
-  
-      await this.iotService.deleteShadow({
-        thingName: AWS_IOT_THING_NAME,
-        shadowName: uuid
-      }).catch(err => {
-        console.log('processShadowDeleted deleteShadow err:' + JSON.stringify(err));
-        return;
-      });
-  
-      await this.iotService.publish({
-        topic: `gocheckin/reset_camera`,
-        payload: JSON.stringify({cam_ip: delta.localIp})
-      });
-  
-      console.log('assets.service processShadowDeleted out');
-  
-      return;
+    processCamerasShadowDeleted(uuid) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service processCamerasShadowDeleted in: ' + JSON.stringify({ uuid }));
+            // const getShadowResult = await this.iotService.getShadow({
+            //   thingName: AWS_IOT_THING_NAME,
+            //   shadowName: uuid
+            // });
+            // const delta: NamedShadowCamera = getShadowResult.state.desired;
+            // await this.iotService.deleteShadow({
+            //   thingName: AWS_IOT_THING_NAME,
+            //   shadowName: uuid     
+            // }).catch(err => {
+            //   console.log('processCamerasShadowDeleted deleteShadow err:' + JSON.stringify(err));
+            //   return;
+            // });
+            yield this.assetsDao.deleteCamera(process.env.HOST_ID, uuid);
+            yield this.iotService.publish({
+                topic: `gocheckin/reset_camera`,
+                payload: JSON.stringify({})
+            });
+            console.log('assets.service processCamerasShadowDeleted out');
+            return;
+        });
     }
-    */
     processCamerasShadow(deltaShadowCameras, desiredShadowCameras) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service processCamerasShadow in: ' + JSON.stringify({ deltaShadowCameras, desiredShadowCameras }));
@@ -160,17 +153,17 @@ class AssetsService {
                 const classicShadowCamera = desiredShadowCameras[uuid];
                 if (classicShadowCamera) {
                     try {
-                        // if (!classicShadowCamera.active) {
-                        //   await this.processShadowDeleted(uuid);
-                        // } else {
-                        //   await this.processShadowDelta(uuid);
-                        // }
-                        yield this.processCamerasShadowDelta(uuid);
+                        if (classicShadowCamera.action == 'UPDATE') {
+                            yield this.processCamerasShadowDelta(uuid);
+                        }
+                        else {
+                            yield this.processCamerasShadowDeleted(uuid);
+                        }
                     }
                     catch (err) {
-                        return { uuid, action: classicShadowCamera.active, message: err.message, stack: err.stack };
+                        return { uuid, action: classicShadowCamera.action, message: err.message, stack: err.stack };
                     }
-                    return { uuid, action: classicShadowCamera.active };
+                    return { uuid, action: classicShadowCamera.action };
                 }
             }));
             const results = yield Promise.allSettled(promises);

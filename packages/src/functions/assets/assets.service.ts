@@ -106,7 +106,7 @@ export class AssetsService {
 
     const delta: NamedShadowCamera = getShadowResult.state.desired;
 
-    let existingCamera: NamedShadowCamera = await this.assetsDao.getCamera(delta.hostId, delta.uuid);
+    let existingCamera: NamedShadowCamera = await this.assetsDao.getCamera(process.env.HOST_ID, uuid);
 
     if (existingCamera) {
       existingCamera.username = delta.username;
@@ -140,37 +140,35 @@ export class AssetsService {
     return;
   }
 
-  /*
-  private async processShadowDeleted(uuid: string): Promise<any> {
-    console.log('assets.service processShadowDeleted in: ' + JSON.stringify({uuid}));
+  private async processCamerasShadowDeleted(uuid: string): Promise<any> {
+    console.log('assets.service processCamerasShadowDeleted in: ' + JSON.stringify({uuid}));    
 
-    const getShadowResult = await this.iotService.getShadow({
-      thingName: AWS_IOT_THING_NAME,
-      shadowName: uuid
-    });
+    // const getShadowResult = await this.iotService.getShadow({
+    //   thingName: AWS_IOT_THING_NAME,
+    //   shadowName: uuid
+    // });
 
-    const delta: NamedShadowCamera = getShadowResult.state.desired;
+    // const delta: NamedShadowCamera = getShadowResult.state.desired;
 
-    await this.assetsDao.deleteCamera(delta.hostId, uuid);
+    // await this.iotService.deleteShadow({
+    //   thingName: AWS_IOT_THING_NAME,
+    //   shadowName: uuid     
+    // }).catch(err => {
+    //   console.log('processCamerasShadowDeleted deleteShadow err:' + JSON.stringify(err));
+    //   return;
+    // });
 
-    await this.iotService.deleteShadow({
-      thingName: AWS_IOT_THING_NAME,
-      shadowName: uuid     
-    }).catch(err => {
-      console.log('processShadowDeleted deleteShadow err:' + JSON.stringify(err));
-      return;
-    });
+    await this.assetsDao.deleteCamera(process.env.HOST_ID, uuid);
 
     await this.iotService.publish({
       topic: `gocheckin/reset_camera`,
-      payload: JSON.stringify({cam_ip: delta.localIp})
+      payload: JSON.stringify({})
     });
 
-    console.log('assets.service processShadowDeleted out');
+    console.log('assets.service processCamerasShadowDeleted out');
 
     return;
   }
-  */
 
   public async processCamerasShadow(deltaShadowCameras: ClassicShadowCameras, desiredShadowCameras: ClassicShadowCameras): Promise<any> {
     console.log('assets.service processCamerasShadow in: ' + JSON.stringify({deltaShadowCameras, desiredShadowCameras}));
@@ -179,19 +177,17 @@ export class AssetsService {
       const classicShadowCamera: ClassicShadowCamera = desiredShadowCameras[uuid];
       if (classicShadowCamera) {
         try {
-          // if (!classicShadowCamera.active) {
-          //   await this.processShadowDeleted(uuid);
-          // } else {
-          //   await this.processShadowDelta(uuid);
-          // }
-
-          await this.processCamerasShadowDelta(uuid);
+          if (classicShadowCamera.action == 'UPDATE') {
+            await this.processCamerasShadowDelta(uuid);
+          } else {
+            await this.processCamerasShadowDeleted(uuid);
+          }
   
         } catch (err) {
-          return {uuid, action: classicShadowCamera.active, message: err.message, stack: err.stack};
+          return {uuid, action: classicShadowCamera.action, message: err.message, stack: err.stack};
         } 
 
-        return {uuid, action: classicShadowCamera.active};
+        return {uuid, action: classicShadowCamera.action};
       }
     });
 

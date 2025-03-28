@@ -58,9 +58,8 @@ export interface ClassicShadowSpaces {
 }
 
 export interface ClassicShadowCamera {
-    hostId: string;
-    uuid: string;
-    active: boolean;
+    action: string;
+    lastRequestOn: string;
 }
 
 export interface ClassicShadowCameras {
