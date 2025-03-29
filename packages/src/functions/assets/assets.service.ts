@@ -160,9 +160,17 @@ export class AssetsService {
 
     await this.assetsDao.deleteCamera(process.env.HOST_ID, uuid);
 
+    /* TODO: Remove this once the camera is deleted from the database
     await this.iotService.publish({
       topic: `gocheckin/reset_camera`,
       payload: JSON.stringify({})
+    });
+    */
+
+    
+    await this.iotService.publish({
+      topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_removed`,
+      payload: JSON.stringify({uuid: uuid})
     });
 
     console.log('assets.service processCamerasShadowDeleted out');

@@ -138,9 +138,15 @@ class AssetsService {
             //   return;
             // });
             yield this.assetsDao.deleteCamera(process.env.HOST_ID, uuid);
+            /* TODO: Remove this once the camera is deleted from the database
+            await this.iotService.publish({
+              topic: `gocheckin/reset_camera`,
+              payload: JSON.stringify({})
+            });
+            */
             yield this.iotService.publish({
-                topic: `gocheckin/reset_camera`,
-                payload: JSON.stringify({})
+                topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_removed`,
+                payload: JSON.stringify({ uuid: uuid })
             });
             console.log('assets.service processCamerasShadowDeleted out');
             return;
