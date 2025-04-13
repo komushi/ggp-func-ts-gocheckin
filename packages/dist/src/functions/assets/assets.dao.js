@@ -340,6 +340,42 @@ class AssetsDao {
             return response.Items;
         });
     }
+    refreshSpaces(hostId, newSpaceUUIDs, removedSpaceUUIDs) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.dao refreshSpaces in:' + JSON.stringify({ hostId, newSpaceUUIDs, removedSpaceUUIDs }));
+            const transactItems = [];
+            removedSpaceUUIDs === null || removedSpaceUUIDs === void 0 ? void 0 : removedSpaceUUIDs.forEach((uuid) => {
+                transactItems.push({
+                    Delete: {
+                        TableName: TBL_ASSET,
+                        Key: {
+                            "hostId": hostId,
+                            "uuid": uuid
+                        }
+                    }
+                });
+            });
+            newSpaceUUIDs === null || newSpaceUUIDs === void 0 ? void 0 : newSpaceUUIDs.forEach((uuid) => {
+                transactItems.push({
+                    Put: {
+                        TableName: TBL_ASSET,
+                        Item: {
+                            "hostId": hostId,
+                            "uuid": uuid,
+                            "category": "SPACE"
+                        }
+                    }
+                });
+            });
+            const command = new lib_dynamodb_1.TransactWriteCommand({
+                TransactItems: transactItems
+            });
+            const response = yield this.ddbDocClient.send(command);
+            console.log('assets.dao refreshSpaces response:' + JSON.stringify(response));
+            console.log('assets.dao refreshSpaces out');
+            return;
+        });
+    }
     deleteSpaces(hostId) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.dao deleteSpaces in:' + hostId);

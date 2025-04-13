@@ -49,8 +49,8 @@ export interface GoCheckInLocks {
 }
 
 export interface ClassicShadowSpace {
-    hostId: string;
-    uuid: string;
+    action: string;
+    lastRequestOn: string;
 }
 
 export interface ClassicShadowSpaces {

@@ -439,6 +439,51 @@ export class AssetsDao {
 
   }
 
+  public async refreshSpaces(hostId: string, newSpaceUUIDs: string[], removedSpaceUUIDs: string[]): Promise<any> {
+
+    console.log('assets.dao refreshSpaces in:' + JSON.stringify({hostId, newSpaceUUIDs, removedSpaceUUIDs}));
+
+    const transactItems = [];
+    
+    removedSpaceUUIDs?.forEach((uuid: string) => {
+      transactItems.push({
+        Delete: 
+          {
+            TableName: TBL_ASSET,
+            Key: {
+              "hostId": hostId,
+              "uuid": uuid
+            }
+          }
+      });
+    });
+
+    newSpaceUUIDs?.forEach((uuid: string) => {
+      transactItems.push({
+        Put: {
+          TableName: TBL_ASSET,
+          Item: { 
+            "hostId": hostId,
+            "uuid": uuid,
+            "category": "SPACE"
+          }
+        }
+      });
+    });
+    
+    const command = new TransactWriteCommand({
+      TransactItems: transactItems
+    });
+
+    const response = await this.ddbDocClient.send(command);
+
+    console.log('assets.dao refreshSpaces response:' + JSON.stringify(response));
+
+    console.log('assets.dao refreshSpaces out');
+
+    return;
+  }
+
   public async deleteSpaces(hostId: string): Promise<any> {
 
     console.log('assets.dao deleteSpaces in:' + hostId);

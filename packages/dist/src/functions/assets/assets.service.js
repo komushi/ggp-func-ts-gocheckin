@@ -65,24 +65,22 @@ class AssetsService {
             return propertyItem;
         });
     }
+    processSpacesShadowDelta(uuid) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service processSpacesShadowDelta in: ' + JSON.stringify({ uuid }));
+            // await this.assetsDao.updateSpace(existingCamera);
+            console.log('assets.service processSpacesShadowDelta out');
+            return;
+        });
+    }
     processSpacesShadow(deltaShadowSpaces, desiredShadowSpaces) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service processSpacesShadow in: ' + JSON.stringify({ deltaShadowSpaces, desiredShadowSpaces }));
-            const promises = Object.keys(deltaShadowSpaces).map((uuid) => __awaiter(this, void 0, void 0, function* () {
-                const classicShadowSpace = desiredShadowSpaces[uuid];
-                if (classicShadowSpace) {
-                    try {
-                        // await this.assetsDao.deleteSpaces(process.env.HOST_ID);
-                    }
-                    catch (err) {
-                        return { uuid, message: err.message, stack: err.stack };
-                    }
-                    return { uuid };
-                }
-            }));
-            const results = yield Promise.allSettled(promises);
-            console.log('assets.service processSpacesShadow results:' + JSON.stringify(results));
+            const newSpaceUUIDs = Object.keys(deltaShadowSpaces).filter(uuid => deltaShadowSpaces[uuid].action == 'UPDATE');
+            const removedSpaceUUIDs = Object.keys(deltaShadowSpaces).filter(uuid => deltaShadowSpaces[uuid].action == 'REMOVE');
+            yield this.assetsDao.refreshSpaces(process.env.HOST_ID, newSpaceUUIDs, removedSpaceUUIDs);
             console.log('assets.service processSpacesShadow out');
+            return;
         });
     }
     processCamerasShadowDelta(uuid) {
@@ -125,18 +123,6 @@ class AssetsService {
     processCamerasShadowDeleted(uuid) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service processCamerasShadowDeleted in: ' + JSON.stringify({ uuid }));
-            // const getShadowResult = await this.iotService.getShadow({
-            //   thingName: AWS_IOT_THING_NAME,
-            //   shadowName: uuid
-            // });
-            // const delta: NamedShadowCamera = getShadowResult.state.desired;
-            // await this.iotService.deleteShadow({
-            //   thingName: AWS_IOT_THING_NAME,
-            //   shadowName: uuid     
-            // }).catch(err => {
-            //   console.log('processCamerasShadowDeleted deleteShadow err:' + JSON.stringify(err));
-            //   return;
-            // });
             yield this.assetsDao.deleteCamera(process.env.HOST_ID, uuid);
             yield this.iotService.publish({
                 topic: `gocheckin/reset_camera`,
