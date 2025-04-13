@@ -76,8 +76,10 @@ class AssetsService {
     processSpacesShadow(deltaShadowSpaces, desiredShadowSpaces) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service processSpacesShadow in: ' + JSON.stringify({ deltaShadowSpaces, desiredShadowSpaces }));
-            const newSpaceUUIDs = Object.keys(deltaShadowSpaces).filter(uuid => deltaShadowSpaces[uuid].action == 'UPDATE');
-            const removedSpaceUUIDs = Object.keys(deltaShadowSpaces).filter(uuid => deltaShadowSpaces[uuid].action == 'REMOVE');
+            const newSpaceUUIDs = Object.keys(desiredShadowSpaces)
+                .filter(uuid => desiredShadowSpaces[uuid].action == 'UPDATE');
+            const removedSpaceUUIDs = Object.keys(desiredShadowSpaces)
+                .filter(uuid => desiredShadowSpaces[uuid].action == 'REMOVE');
             yield this.assetsDao.refreshSpaces(process.env.HOST_ID, newSpaceUUIDs, removedSpaceUUIDs);
             console.log('assets.service processSpacesShadow out');
             return;
