@@ -20,19 +20,13 @@ const IDX_HOST_PROPERTYCODE = process.env.IDX_HOST_PROPERTYCODE;
 const IDX_EQUIPMENT_ID = process.env.IDX_EQUIPMENT_ID;
 const IDX_EQUIPMENT_NAME = process.env.IDX_EQUIPMENT_NAME;
 const config = {
+    region: 'local',
     endpoint: process.env.DDB_ENDPOINT || 'http://localhost:8080',
+    credentials: {
+        accessKeyId: 'dummy',
+        secretAccessKey: 'dummy'
+    }
 };
-// const config = {
-//   endpoint: {
-//       hostname: process.env.DDB_HOST_NAME,
-//       port: process.env.DDB_PORT,
-//       path: process.env.DDB_PATH,
-//       protocol: process.env.DDB_PROTOCOL
-//   }
-// };
-// const config: DynamoDBClientConfig = {
-//   endpoint: process.env.DDB_ENDPOINT || 'http://localhost:8080',
-// };
 const marshallOptions = {
     // Whether to automatically convert empty strings, blobs, and sets to `null`.
     convertEmptyValues: false,

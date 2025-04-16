@@ -6,7 +6,12 @@ const TBL_RESERVATION = process.env.TBL_RESERVATION;
 const TBL_MEMBER = process.env.TBL_MEMBER;
 
 const config: DynamoDBClientConfig = {
+  region: 'local',
   endpoint: process.env.DDB_ENDPOINT || 'http://localhost:8080',
+  credentials: {
+    accessKeyId: 'dummy',
+    secretAccessKey: 'dummy'
+  }
 };
 
 const marshallOptions = {

@@ -15,7 +15,12 @@ const lib_dynamodb_1 = require("@aws-sdk/lib-dynamodb");
 const TBL_RESERVATION = process.env.TBL_RESERVATION;
 const TBL_MEMBER = process.env.TBL_MEMBER;
 const config = {
+    region: 'local',
     endpoint: process.env.DDB_ENDPOINT || 'http://localhost:8080',
+    credentials: {
+        accessKeyId: 'dummy',
+        secretAccessKey: 'dummy'
+    }
 };
 const marshallOptions = {
     // Whether to automatically convert empty strings, blobs, and sets to `null`.
