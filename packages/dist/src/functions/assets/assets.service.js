@@ -145,10 +145,10 @@ class AssetsService {
                 const classicShadowCamera = desiredShadowCameras[uuid];
                 if (classicShadowCamera) {
                     try {
-                        if (classicShadowCamera.action == 'UPDATE') {
+                        if (classicShadowCamera.action === 'UPDATE') {
                             yield this.processCamerasShadowDelta(uuid);
                         }
-                        else {
+                        else if (classicShadowCamera.action === 'REMOVE') {
                             yield this.processCamerasShadowDeleted(uuid);
                         }
                     }

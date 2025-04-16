@@ -170,9 +170,9 @@ export class AssetsService {
       const classicShadowCamera: ClassicShadowCamera = desiredShadowCameras[uuid];
       if (classicShadowCamera) {
         try {
-          if (classicShadowCamera.action == 'UPDATE') {
+          if (classicShadowCamera.action === 'UPDATE') {
             await this.processCamerasShadowDelta(uuid);
-          } else {
+          } else if (classicShadowCamera.action === 'REMOVE') {
             await this.processCamerasShadowDeleted(uuid);
           }
   

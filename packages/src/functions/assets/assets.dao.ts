@@ -9,7 +9,12 @@ const IDX_EQUIPMENT_NAME = process.env.IDX_EQUIPMENT_NAME;
 const IDX_HOST_PROPERTYCODE = process.env.IDX_HOST_PROPERTYCODE;
 
 const config: DynamoDBClientConfig = {
+  region: 'local',
   endpoint: process.env.DDB_ENDPOINT || 'http://localhost:8080',
+  credentials: {
+    accessKeyId: 'dummy',
+    secretAccessKey: 'dummy'
+  }
 };
 
 const marshallOptions = {
