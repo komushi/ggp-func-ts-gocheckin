@@ -119,6 +119,9 @@ export class AssetsService {
       existingCamera.rtsp = delta.rtsp;
       existingCamera.onvif = delta.onvif;
       existingCamera.locks = delta.locks;
+      existingCamera.layoutId = delta.layoutId;
+      existingCamera.position = delta.position;
+      existingCamera.inSpaces = delta.inSpaces;
       existingCamera.lastUpdateOn = delta.lastUpdateOn;
     } else {
       existingCamera = delta;
@@ -228,6 +231,9 @@ export class AssetsService {
         locks: {},
         isDetecting: false,
         isRecording: false,
+        inSpaces: [],
+        layoutId: 0,
+        position: 0,
         lastUpdateOn: (new Date).toISOString()
       }
 

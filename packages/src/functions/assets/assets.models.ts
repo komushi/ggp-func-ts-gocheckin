@@ -35,6 +35,9 @@ export interface NamedShadowCamera {
     locks: GoCheckInLocks;
     isRecording: boolean;
     isDetecting: boolean;
+    inSpaces: string[];
+    layoutId: number;
+    position: number;
     lastUpdateOn: string;
 }
 
