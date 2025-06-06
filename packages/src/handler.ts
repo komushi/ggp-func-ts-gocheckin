@@ -10,27 +10,28 @@ const reservationsService = new ReservationsService();
 
 // const deltaPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/update/delta$`);
 // const deletePattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/delete/accepted$`);
-const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
-const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
+// const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
+// const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
 
 const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/`);
 // const z2mEventPattern = new RegExp(`^\\zigbee2mqtt\/bridge\/event$`);
 
-exports.function_handler = async function(event, context) {
-    console.log('context: ' + context.clientContext.Custom.subject);
+exports.function_handler = async function (event, context) {
+	console.log('context: ' + context.clientContext.Custom.subject);
 
-	if (initPattern.test(context.clientContext.Custom.subject)) {
-    	console.log('init_db event: ' + JSON.stringify(event));
+	// if (initPattern.test(context.clientContext.Custom.subject)) {
+	if (context.clientContext.Custom.subject == `gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db`) {
+		console.log('init_db event: ' + JSON.stringify(event));
 
 		await initializationService.createTables();
 
-	} else if (discoverCamerasPattern.test(context.clientContext.Custom.subject)) {
-    	console.log('discover_cameras event: ' + JSON.stringify(event));
+	} else if (context.clientContext.Custom.subject == `gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras`) {
+		console.log('discover_cameras event: ' + JSON.stringify(event));
 
 		await assetsService.discoverCameras(process.env.HOST_ID);
 
-    } else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
-    	console.log('classic shadow event delta: ' + JSON.stringify(event));
+	} else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
+		console.log('classic shadow event delta: ' + JSON.stringify(event));
 
 		// if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
 		// 	setTimeout(async () => {
@@ -44,7 +45,7 @@ exports.function_handler = async function(event, context) {
 		await processClassicShadow(event);
 
 	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
-   		console.log('scanner_detected event: ' + JSON.stringify(event));
+		console.log('scanner_detected event: ' + JSON.stringify(event));
 
 		await assetsService.refreshScanner(event);
 	} else if (context.clientContext.Custom.subject == `gocheckin/member_detected`) {
@@ -59,8 +60,8 @@ exports.function_handler = async function(event, context) {
 		} else if (context.clientContext.Custom.subject == 'zigbee2mqtt/bridge/response/device/remove') {
 			await assetsService.removeZigbee(event);
 		}
-		
- 	} else if (context.clientContext.Custom.subject == `zigbee2mqtt/bridge/event`) {
+
+	} else if (context.clientContext.Custom.subject == `zigbee2mqtt/bridge/event`) {
 		console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
 
 		await assetsService.discoverZigbee(event);
@@ -68,7 +69,7 @@ exports.function_handler = async function(event, context) {
 
 };
 
-const processClassicShadow = async function(event) {
+const processClassicShadow = async function (event) {
 	console.log('processClassicShadow in event: ' + JSON.stringify(event));
 
 	const getShadowResult = await iotService.getShadow({
@@ -94,7 +95,7 @@ const processClassicShadow = async function(event) {
 
 	if (getShadowResult.state.desired.property) {
 		process.env.PROPERTY_CODE = getShadowResult.state.desired.property.propertyCode;
-		
+
 		await assetsService.saveProperty(getShadowResult.state.desired.host.hostId, getShadowResult.state.desired.property).catch(err => {
 			console.error('saveProperty error:' + err.message);
 			throw err;
@@ -151,14 +152,14 @@ setInterval(async () => {
 
 
 setInterval(async () => {
-    try {
-		
+	try {
+
 		await assetsService.discoverCameras(process.env.HOST_ID);
 
-    } catch (err) {
-        console.error(err.name);
-        console.error(err.message);
-        console.error(err.stack);
-        console.trace();
-    } 
+	} catch (err) {
+		console.error(err.name);
+		console.error(err.message);
+		console.error(err.stack);
+		console.trace();
+	}
 }, 300000);

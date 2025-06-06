@@ -28,6 +28,8 @@ class InitializationService {
     intializeEnvVar() {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('initialization.service intializeEnvVar in');
+            let errName = '';
+            let errMessage = '';
             try {
                 if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST) {
                     const result = yield this.assetsService.getHost();
@@ -47,12 +49,25 @@ class InitializationService {
                 }
             }
             catch (err) {
+                errName = err.name;
+                errMessage = err.message;
                 console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
                 console.error('err.name:' + err.name);
                 console.error('err.message:' + err.message);
                 console.error('err.stack:' + err.stack);
                 console.trace();
                 console.error('!!!!!!error happened at intializeEnvVar!!!!!!');
+            }
+            finally {
+                if (errName.includes('ResourceNotFoundException')) {
+                    yield this.createTables().catch(err => {
+                        console.error('!!!!!!error happened at intializeEnvVar createTables!!!!!!');
+                        console.error('err.name:' + err.name);
+                        console.error('err.message:' + err.message);
+                        console.error('err.stack:' + err.stack);
+                        console.trace();
+                    });
+                }
             }
             console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
             console.log('after intializeEnvVar IDENTTITY_ID:' + process.env.IDENTTITY_ID);
