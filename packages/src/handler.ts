@@ -8,18 +8,11 @@ const iotService = new IotService();
 const assetsService = new AssetsService();
 const reservationsService = new ReservationsService();
 
-// const deltaPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/update/delta$`);
-// const deletePattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/delete/accepted$`);
-// const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
-// const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
-
 const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/`);
-// const z2mEventPattern = new RegExp(`^\\zigbee2mqtt\/bridge\/event$`);
 
 exports.function_handler = async function (event, context) {
 	console.log('context: ' + context.clientContext.Custom.subject);
 
-	// if (initPattern.test(context.clientContext.Custom.subject)) {
 	if (context.clientContext.Custom.subject == `gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db`) {
 		console.log('init_db event: ' + JSON.stringify(event));
 
@@ -143,7 +136,7 @@ setTimeout(async () => {
 	await initializationService.intializeEnvVar();
 }, 1000);
 
-
+/*
 setInterval(async () => {
 	if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
 		await initializationService.intializeEnvVar();
@@ -163,3 +156,4 @@ setInterval(async () => {
 		console.trace();
 	}
 }, 300000);
+*/

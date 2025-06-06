@@ -17,16 +17,10 @@ const initializationService = new initialization_service_1.InitializationService
 const iotService = new iot_service_1.IotService();
 const assetsService = new assets_service_1.AssetsService();
 const reservationsService = new reservations_service_1.ReservationsService();
-// const deltaPattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/update/delta$`);
-// const deletePattern = new RegExp(`^\\$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/name/([^/]+)/delete/accepted$`);
-// const initPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db$`);
-// const discoverCamerasPattern = new RegExp(`^\\gocheckin/${process.env.AWS_IOT_THING_NAME}/discover_cameras$`);
 const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/`);
-// const z2mEventPattern = new RegExp(`^\\zigbee2mqtt\/bridge\/event$`);
 exports.function_handler = function (event, context) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log('context: ' + context.clientContext.Custom.subject);
-        // if (initPattern.test(context.clientContext.Custom.subject)) {
         if (context.clientContext.Custom.subject == `gocheckin/${process.env.AWS_IOT_THING_NAME}/init_db`) {
             console.log('init_db event: ' + JSON.stringify(event));
             yield initializationService.createTables();
@@ -132,19 +126,24 @@ const processClassicShadow = function (event) {
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
     yield initializationService.intializeEnvVar();
 }), 1000);
-setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
+/*
+setInterval(async () => {
     if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
-        yield initializationService.intializeEnvVar();
+        await initializationService.intializeEnvVar();
     }
-}), 10000);
-setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
+}, 10000);
+
+
+setInterval(async () => {
     try {
-        yield assetsService.discoverCameras(process.env.HOST_ID);
-    }
-    catch (err) {
+
+        await assetsService.discoverCameras(process.env.HOST_ID);
+
+    } catch (err) {
         console.error(err.name);
         console.error(err.message);
         console.error(err.stack);
         console.trace();
     }
-}), 300000);
+}, 300000);
+*/ 
