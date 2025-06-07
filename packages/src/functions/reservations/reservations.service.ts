@@ -1,5 +1,4 @@
 const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
-const STAGE = process.env.STAGE;
 
 const ACTION_UPDATE = 'UPDATE';
 const ACTION_REMOVE = 'REMOVE';

@@ -31,10 +31,9 @@ class InitializationService {
             let errName = '';
             let errMessage = '';
             try {
-                if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST) {
+                if (!process.env.HOST_ID || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST) {
                     const result = yield this.assetsService.getHost();
                     process.env.HOST_ID = result.hostId;
-                    process.env.STAGE = result.stage;
                     process.env.IDENTTITY_ID = result.identityId;
                     process.env.CRED_PROVIDER_HOST = result.credProviderHost;
                 }
@@ -71,7 +70,6 @@ class InitializationService {
             }
             console.log('after intializeEnvVar HOST_ID:' + process.env.HOST_ID);
             console.log('after intializeEnvVar IDENTTITY_ID:' + process.env.IDENTTITY_ID);
-            console.log('after intializeEnvVar STAGE:' + process.env.STAGE);
             console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
             console.log('after intializeEnvVar CRED_PROVIDER_HOST:' + process.env.CRED_PROVIDER_HOST);
             console.log('initialization.service intializeEnvVar out');

@@ -14,7 +14,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReservationsService = void 0;
 const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
-const STAGE = process.env.STAGE;
 const ACTION_UPDATE = 'UPDATE';
 const ACTION_REMOVE = 'REMOVE';
 const reservations_dao_1 = require("./reservations.dao");

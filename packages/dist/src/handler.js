@@ -31,14 +31,6 @@ exports.function_handler = function (event, context) {
         }
         else if (context.clientContext.Custom.subject == `$aws/things/${process.env.AWS_IOT_THING_NAME}/shadow/update/delta`) {
             console.log('classic shadow event delta: ' + JSON.stringify(event));
-            // if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
-            // 	setTimeout(async () => {
-            // 		await initializationService.intializeEnvVar();
-            // 		await processClassicShadow(event);
-            // 	}, 10000);
-            // } else {
-            // 	await processClassicShadow(event);
-            // }
             yield processClassicShadow(event);
         }
         else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
@@ -72,7 +64,6 @@ const processClassicShadow = function (event) {
         });
         if (getShadowResult.state.desired.host) {
             process.env.HOST_ID = getShadowResult.state.desired.host.hostId;
-            process.env.STAGE = getShadowResult.state.desired.host.stage;
             process.env.IDENTTITY_ID = getShadowResult.state.desired.host.identityId;
             process.env.CRED_PROVIDER_HOST = getShadowResult.state.desired.host.credProviderHost;
             yield assetsService.saveHost({
@@ -127,7 +118,7 @@ setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
     yield initializationService.intializeEnvVar();
 }), 1000);
 setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
-    if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
+    if (!process.env.HOST_ID || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
         yield initializationService.intializeEnvVar();
     }
 }), 300000);
