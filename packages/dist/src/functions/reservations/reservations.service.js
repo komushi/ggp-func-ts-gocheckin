@@ -60,7 +60,7 @@ class ReservationsService {
                 };
             });
             yield this.iotService.publish({
-                topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_reset`,
+                topic: `gocheckin/${AWS_IOT_THING_NAME}/reservation_reset`,
                 payload: JSON.stringify({
                     listingId: classicShadowReservation.listingId,
                     reservationCode: reservationCode,
@@ -92,7 +92,7 @@ class ReservationsService {
                 };
             });
             yield this.iotService.publish({
-                topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_deployed`,
+                topic: `gocheckin/${AWS_IOT_THING_NAME}/reservation_deployed`,
                 payload: JSON.stringify({
                     listingId: classicShadowReservation.listingId,
                     reservationCode: reservationCode,

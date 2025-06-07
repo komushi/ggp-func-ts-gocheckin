@@ -134,7 +134,7 @@ class AssetsService {
                 payload: JSON.stringify({})
             });
             yield this.iotService.publish({
-                topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_removed`,
+                topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/camera_removed`,
                 payload: JSON.stringify({ uuid: uuid })
             });
             console.log('assets.service processCamerasShadowDeleted out');
@@ -219,7 +219,7 @@ class AssetsService {
                 }
                 yield this.assetsDao.updateCamera(cameraItem);
                 yield this.iotService.publish({
-                    topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
+                    topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
                     payload: JSON.stringify(cameraItem)
                 });
             })));
@@ -251,7 +251,7 @@ class AssetsService {
             }
             yield this.assetsDao.createScanner(scannerItem);
             yield this.iotService.publish({
-                topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/scanner_detected`,
+                topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/scanner_detected`,
                 payload: JSON.stringify(scannerItem)
             });
             console.log('assets.service refreshScanner out');
@@ -292,7 +292,7 @@ class AssetsService {
                             };
                             yield this.assetsDao.updateLock(z2mLock);
                             yield this.iotService.publish({
-                                topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
+                                topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
                                 payload: JSON.stringify(z2mLock)
                             });
                         }
@@ -313,7 +313,7 @@ class AssetsService {
                 z2mLocks[0].lastUpdateOn = (new Date).toISOString();
                 yield this.assetsDao.updateLock(z2mLocks[0]);
                 yield this.iotService.publish({
-                    topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
+                    topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
                     payload: JSON.stringify(z2mLocks[0])
                 });
                 console.log('assets.service renameZigbee out ' + JSON.stringify(z2mLocks[0]));
@@ -330,7 +330,7 @@ class AssetsService {
             if (z2mLocks.length == 1) {
                 yield this.assetsDao.deleteZbLock(process.env.HOST_ID, z2mLocks[0].equipmentId);
                 yield this.iotService.publish({
-                    topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_removed`,
+                    topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/zb_lock_removed`,
                     payload: JSON.stringify(z2mLocks[0])
                 });
             }

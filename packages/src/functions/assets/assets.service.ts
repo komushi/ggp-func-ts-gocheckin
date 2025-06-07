@@ -17,7 +17,7 @@ export class AssetsService {
   private iotService: IotService;
   // private lastMotionTime: number | null = null;
   // private timer: NodeJS.Timeout | null = null;
-  
+
   public constructor() {
     this.assetsDao = new AssetsDao();
     this.iotService = new IotService();
@@ -35,11 +35,11 @@ export class AssetsService {
     return rtn;
   }
 
-  public async saveHost({hostId, identityId, stage, credProviderHost}: {hostId: string, identityId: string, stage: string, credProviderHost: string}): Promise<any> {
+  public async saveHost({ hostId, identityId, stage, credProviderHost }: { hostId: string, identityId: string, stage: string, credProviderHost: string }): Promise<any> {
 
-    console.log('assets.service saveHost in:' + JSON.stringify({hostId, identityId, stage, credProviderHost}));
+    console.log('assets.service saveHost in:' + JSON.stringify({ hostId, identityId, stage, credProviderHost }));
 
-    await this.assetsDao.updateHost({hostId, identityId, stage, credProviderHost});
+    await this.assetsDao.updateHost({ hostId, identityId, stage, credProviderHost });
 
     console.log('assets.service saveHost out');
 
@@ -47,7 +47,7 @@ export class AssetsService {
   }
 
   public async saveProperty(hostId: string, propertyItem: PropertyItem): Promise<any> {
-    console.log('assets.service saveProperty in: ' + JSON.stringify({hostId, propertyItem}));
+    console.log('assets.service saveProperty in: ' + JSON.stringify({ hostId, propertyItem }));
 
     await this.assetsDao.deleteProperties(hostId);
 
@@ -63,17 +63,17 @@ export class AssetsService {
   }
 
   public async getProperty(hostId: string): Promise<any> {
-    console.log('assets.service getProperty in' + JSON.stringify({hostId}));
+    console.log('assets.service getProperty in' + JSON.stringify({ hostId }));
 
     const propertyItem: PropertyItem = await this.assetsDao.getProperty(hostId);
 
-    console.log('assets.service getProperty out' + JSON.stringify({propertyItem}));
+    console.log('assets.service getProperty out' + JSON.stringify({ propertyItem }));
 
     return propertyItem;
   }
 
   private async processSpacesShadowDelta(uuid: string): Promise<any> {
-    console.log('assets.service processSpacesShadowDelta in: ' + JSON.stringify({uuid}));
+    console.log('assets.service processSpacesShadowDelta in: ' + JSON.stringify({ uuid }));
 
 
     // await this.assetsDao.updateSpace(existingCamera);
@@ -84,7 +84,7 @@ export class AssetsService {
   }
 
   public async processSpacesShadow(deltaShadowSpaces: ClassicShadowSpaces, desiredShadowSpaces: ClassicShadowSpaces): Promise<any> {
-    console.log('assets.service processSpacesShadow in: ' + JSON.stringify({deltaShadowSpaces, desiredShadowSpaces}));
+    console.log('assets.service processSpacesShadow in: ' + JSON.stringify({ deltaShadowSpaces, desiredShadowSpaces }));
 
     const newSpaceUUIDs = Object.keys(desiredShadowSpaces)
       .filter(uuid => desiredShadowSpaces[uuid].action == 'UPDATE');
@@ -100,7 +100,7 @@ export class AssetsService {
   }
 
   private async processCamerasShadowDelta(uuid: string): Promise<any> {
-    console.log('assets.service processCamerasShadowDelta in: ' + JSON.stringify({uuid}));
+    console.log('assets.service processCamerasShadowDelta in: ' + JSON.stringify({ uuid }));
 
     const getShadowResult = await this.iotService.getShadow({
       thingName: AWS_IOT_THING_NAME,
@@ -138,7 +138,7 @@ export class AssetsService {
 
     await this.iotService.publish({
       topic: `gocheckin/reset_camera`,
-      payload: JSON.stringify({cam_ip: existingCamera.localIp})
+      payload: JSON.stringify({ cam_ip: existingCamera.localIp })
     });
 
     console.log('assets.service processCamerasShadowDelta out');
@@ -147,7 +147,7 @@ export class AssetsService {
   }
 
   private async processCamerasShadowDeleted(uuid: string): Promise<any> {
-    console.log('assets.service processCamerasShadowDeleted in: ' + JSON.stringify({uuid}));    
+    console.log('assets.service processCamerasShadowDeleted in: ' + JSON.stringify({ uuid }));
 
     await this.assetsDao.deleteCamera(process.env.HOST_ID, uuid);
 
@@ -155,10 +155,10 @@ export class AssetsService {
       topic: `gocheckin/reset_camera`,
       payload: JSON.stringify({})
     });
-    
+
     await this.iotService.publish({
-      topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_removed`,
-      payload: JSON.stringify({uuid: uuid})
+      topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/camera_removed`,
+      payload: JSON.stringify({ uuid: uuid })
     });
 
     console.log('assets.service processCamerasShadowDeleted out');
@@ -167,7 +167,7 @@ export class AssetsService {
   }
 
   public async processCamerasShadow(deltaShadowCameras: ClassicShadowCameras, desiredShadowCameras: ClassicShadowCameras): Promise<any> {
-    console.log('assets.service processCamerasShadow in: ' + JSON.stringify({deltaShadowCameras, desiredShadowCameras}));
+    console.log('assets.service processCamerasShadow in: ' + JSON.stringify({ deltaShadowCameras, desiredShadowCameras }));
 
     const promises = Object.keys(deltaShadowCameras).map(async (uuid: string) => {
       const classicShadowCamera: ClassicShadowCamera = desiredShadowCameras[uuid];
@@ -178,12 +178,12 @@ export class AssetsService {
           } else if (classicShadowCamera.action === 'REMOVE') {
             await this.processCamerasShadowDeleted(uuid);
           }
-  
-        } catch (err) {
-          return {uuid, action: classicShadowCamera.action, message: err.message, stack: err.stack};
-        } 
 
-        return {uuid, action: classicShadowCamera.action};
+        } catch (err) {
+          return { uuid, action: classicShadowCamera.action, message: err.message, stack: err.stack };
+        }
+
+        return { uuid, action: classicShadowCamera.action };
       }
     });
 
@@ -200,7 +200,7 @@ export class AssetsService {
     const discoveredCameras = await Onvif.startProbe();
 
     await Promise.allSettled(discoveredCameras.map(async (discoveredCamera) => {
-      const uuid = discoveredCamera.urn.split(":").slice(-1)[0] ;
+      const uuid = discoveredCamera.urn.split(":").slice(-1)[0];
       const parsedUrl = new URL(discoveredCamera.xaddrs[0]);
 
       const existingCamera: NamedShadowCamera = await this.assetsDao.getCamera(hostId, uuid);
@@ -251,9 +251,9 @@ export class AssetsService {
         cameraItem.hostPropertyCode = hostPropertyCode;
       }
       await this.assetsDao.updateCamera(cameraItem);
-  
+
       await this.iotService.publish({
-        topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
+        topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/camera_detected`,
         payload: JSON.stringify(cameraItem)
       });
     }));
@@ -266,7 +266,7 @@ export class AssetsService {
   public async refreshScanner(scannerItem: ScannerItem): Promise<any> {
     console.log('assets.service refreshScanner in: ' + JSON.stringify(scannerItem));
 
-    const crtScanner:ScannerItem = await this.assetsDao.getScannerById(scannerItem.equipmentId);
+    const crtScanner: ScannerItem = await this.assetsDao.getScannerById(scannerItem.equipmentId);
 
     if (crtScanner) {
       scannerItem.hostId = process.env.HOST_ID;
@@ -277,7 +277,7 @@ export class AssetsService {
       scannerItem.uuid = crtScanner.uuid;
       scannerItem.lastUpdateOn = (new Date).toISOString();
 
-    } else {                                                                                      
+    } else {
       scannerItem.hostId = process.env.HOST_ID;
       scannerItem.propertyCode = process.env.PROPERTY_CODE;
       scannerItem.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
@@ -286,13 +286,13 @@ export class AssetsService {
       scannerItem.uuid = this.uid.randomUUID(6);
       scannerItem.lastUpdateOn = (new Date).toISOString();
     }
-      
+
     await this.assetsDao.createScanner(scannerItem);
 
-		await this.iotService.publish({
-			topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/scanner_detected`,
+    await this.iotService.publish({
+      topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/scanner_detected`,
       payload: JSON.stringify(scannerItem)
-		});
+    });
 
     console.log('assets.service refreshScanner out');
 
@@ -311,7 +311,7 @@ export class AssetsService {
             ZB_CATS.forEach((zbCat) => {
               if ((process.env[zbCat].split(",")).includes(z2mEvent.data.definition.model)) {
                 category = zbCat;
-                
+
                 if (ZB_CATS_WITH_KEYPAD.includes(zbCat)) {
                   withKeypad = true;
                 }
@@ -333,11 +333,11 @@ export class AssetsService {
               state: false,
               lastUpdateOn: (new Date).toISOString()
             }
-            
+
             await this.assetsDao.updateLock(z2mLock);
 
             await this.iotService.publish({
-              topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
+              topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
               payload: JSON.stringify(z2mLock)
             });
           }
@@ -351,7 +351,7 @@ export class AssetsService {
     return;
   }
 
-  
+
   public async renameZigbee(z2mRenamed: Z2mRenamed): Promise<any> {
     console.log('assets.service renameZigbee in: ' + JSON.stringify(z2mRenamed));
 
@@ -361,14 +361,14 @@ export class AssetsService {
       z2mLocks[0].roomCode = z2mRenamed.data.to;
       z2mLocks[0].equipmentName = `${z2mRenamed.data.to}`;
       z2mLocks[0].lastUpdateOn = (new Date).toISOString();
-      
+
       await this.assetsDao.updateLock(z2mLocks[0]);
 
       await this.iotService.publish({
-        topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
+        topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/zb_lock_detected`,
         payload: JSON.stringify(z2mLocks[0])
       });
-  
+
       console.log('assets.service renameZigbee out ' + JSON.stringify(z2mLocks[0]));
 
       return;
@@ -381,14 +381,14 @@ export class AssetsService {
 
   public async removeZigbee(z2mRemoved: Z2mRemoved): Promise<any> {
     console.log('assets.service removeZigbee in: ' + JSON.stringify(z2mRemoved));
-    
+
     const z2mLocks: Z2mLock[] = await this.assetsDao.getZbLockByName(z2mRemoved.data.id);
 
     if (z2mLocks.length == 1) {
       await this.assetsDao.deleteZbLock(process.env.HOST_ID, z2mLocks[0].equipmentId);
 
       await this.iotService.publish({
-        topic: `gocheckin/${process.env.STAGE}/${process.env.AWS_IOT_THING_NAME}/zb_lock_removed`,
+        topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/zb_lock_removed`,
         payload: JSON.stringify(z2mLocks[0])
       });
     }
@@ -411,7 +411,7 @@ export class AssetsService {
         const z2mLock: Z2mLock = await this.assetsDao.getZbLockById(equipmentId);
         if (z2mLock) {
           let payload = {};
-  
+
           if (z2mLock.state) {
             payload = {
               'state': 'ON'
@@ -423,10 +423,10 @@ export class AssetsService {
             };
             z2mLock.state = true;
           }
-  
+
           await this.iotService.publish({
             topic: `zigbee2mqtt/${z2mLock.equipmentName}/set`,
-              payload: JSON.stringify(payload)
+            payload: JSON.stringify(payload)
           });
 
           await this.assetsDao.updateLock(z2mLock);
@@ -444,6 +444,6 @@ export class AssetsService {
     return;
   }
 
-  
+
 
 }

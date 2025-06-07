@@ -15,14 +15,14 @@ export class ReservationsService {
 
   private reservationsDao: ReservationsDao;
   private iotService: IotService;
-  
+
   public constructor() {
     this.reservationsDao = new ReservationsDao();
     this.iotService = new IotService();
   }
 
   public async processShadow(deltaShadowReservations: ClassicShadowReservations, desiredShadowReservations: ClassicShadowReservations): Promise<any> {
-    console.log('reservations.service processShadow in: ' + JSON.stringify({deltaShadowReservations, desiredShadowReservations}));
+    console.log('reservations.service processShadow in: ' + JSON.stringify({ deltaShadowReservations, desiredShadowReservations }));
 
     const promises = Object.keys(deltaShadowReservations).map(async (reservationsCode: string) => {
       const classicShadowReservation: ClassicShadowReservation = desiredShadowReservations[reservationsCode];
@@ -30,16 +30,16 @@ export class ReservationsService {
         try {
           if (classicShadowReservation.action == ACTION_REMOVE) {
             await this.processShadowDeleted(classicShadowReservation, reservationsCode);
-            
+
           } else if (classicShadowReservation.action == ACTION_UPDATE) {
             await this.processShadowDelta(classicShadowReservation, reservationsCode);
           }
-  
-        } catch (err) {
-          return {reservationsCode, action: classicShadowReservation.action, message: err.message, stack: err.stack};
-        } 
 
-        return {reservationsCode, action: classicShadowReservation.action};
+        } catch (err) {
+          return { reservationsCode, action: classicShadowReservation.action, message: err.message, stack: err.stack };
+        }
+
+        return { reservationsCode, action: classicShadowReservation.action };
       }
     });
 
@@ -51,7 +51,7 @@ export class ReservationsService {
   }
 
   private async processShadowDeleted(classicShadowReservation: ClassicShadowReservation, reservationCode: string): Promise<any> {
-    console.log('reservations.service processShadowDeleted in: ' + JSON.stringify({classicShadowReservation, reservationCode}));
+    console.log('reservations.service processShadowDeleted in: ' + JSON.stringify({ classicShadowReservation, reservationCode }));
 
     const syncResult = await this.clearReservation(reservationCode, classicShadowReservation.listingId).catch(err => {
       console.log('reservations.service processShadowDeleted clearReservation err:' + JSON.stringify(err));
@@ -61,7 +61,7 @@ export class ReservationsService {
     });
 
     await this.iotService.publish({
-      topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_reset`,
+      topic: `gocheckin/${AWS_IOT_THING_NAME}/reservation_reset`,
       payload: JSON.stringify({
         listingId: classicShadowReservation.listingId,
         reservationCode: reservationCode,
@@ -78,7 +78,7 @@ export class ReservationsService {
   }
 
   private async processShadowDelta(classicShadowReservation: ClassicShadowReservation, reservationCode: string): Promise<any> {
-    console.log('reservations.service processShadowDelta in: ' + JSON.stringify({classicShadowReservation, reservationCode}));
+    console.log('reservations.service processShadowDelta in: ' + JSON.stringify({ classicShadowReservation, reservationCode }));
 
     const getShadowResult = await this.iotService.getShadow({
       thingName: AWS_IOT_THING_NAME,
@@ -101,7 +101,7 @@ export class ReservationsService {
     });
 
     await this.iotService.publish({
-      topic: `gocheckin/${process.env.STAGE}/${AWS_IOT_THING_NAME}/reservation_deployed`,
+      topic: `gocheckin/${AWS_IOT_THING_NAME}/reservation_deployed`,
       payload: JSON.stringify({
         listingId: classicShadowReservation.listingId,
         reservationCode: reservationCode,
@@ -138,7 +138,7 @@ export class ReservationsService {
     await this.reservationsDao.updateReservation(delta.reservation);
 
     const responsesEmbedding = await Promise.all(Array.from(Object.values(delta.members)).map(async (memberItem: MemberItem) => {
-      console.warn('reservations.service before recognise:' + JSON.stringify({reservationCode: memberItem.reservationCode, memberNo: memberItem.memberNo}));
+      console.warn('reservations.service before recognise:' + JSON.stringify({ reservationCode: memberItem.reservationCode, memberNo: memberItem.memberNo }));
       const response: AxiosResponse<MemberItem> = await axios.post("http://localhost:7777/recognise", memberItem);
       const responseData: MemberItem = response.data;
       return responseData;
@@ -163,7 +163,7 @@ export class ReservationsService {
 
   private async clearReservation(reservationCode: string, listingId: string): Promise<any> {
 
-    console.log('reservations.service clearReservation in: ' + JSON.stringify({reservationCode, listingId}));
+    console.log('reservations.service clearReservation in: ' + JSON.stringify({ reservationCode, listingId }));
 
 
     // delete local ddb reservation
@@ -178,7 +178,7 @@ export class ReservationsService {
 
     await this.iotService.deleteShadow({
       thingName: AWS_IOT_THING_NAME,
-      shadowName: reservationCode     
+      shadowName: reservationCode
     }).catch(err => {
       console.log('removeReservation deleteShadow err:' + JSON.stringify(err));
       return;
@@ -192,7 +192,7 @@ export class ReservationsService {
     console.log('reservations.service clearReservation out');
 
     return { clearRequest: true };
-    
+
   }
 
 }
