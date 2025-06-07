@@ -136,12 +136,12 @@ setTimeout(async () => {
 	await initializationService.intializeEnvVar();
 }, 1000);
 
-/*
+
 setInterval(async () => {
 	if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
 		await initializationService.intializeEnvVar();
 	}
-}, 10000);
+}, 300000);
 
 
 setInterval(async () => {
@@ -156,4 +156,3 @@ setInterval(async () => {
 		console.trace();
 	}
 }, 300000);
-*/

@@ -126,24 +126,19 @@ const processClassicShadow = function (event) {
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
     yield initializationService.intializeEnvVar();
 }), 1000);
-/*
-setInterval(async () => {
+setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
     if (!process.env.HOST_ID || !process.env.STAGE || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
-        await initializationService.intializeEnvVar();
+        yield initializationService.intializeEnvVar();
     }
-}, 10000);
-
-
-setInterval(async () => {
+}), 300000);
+setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
     try {
-
-        await assetsService.discoverCameras(process.env.HOST_ID);
-
-    } catch (err) {
+        yield assetsService.discoverCameras(process.env.HOST_ID);
+    }
+    catch (err) {
         console.error(err.name);
         console.error(err.message);
         console.error(err.stack);
         console.trace();
     }
-}, 300000);
-*/ 
+}), 300000);
