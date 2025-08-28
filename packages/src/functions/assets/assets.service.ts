@@ -266,7 +266,7 @@ export class AssetsService {
   public async refreshScanner(scannerItem: ScannerItem): Promise<any> {
     console.log('assets.service refreshScanner in: ' + JSON.stringify(scannerItem));
 
-    const crtScanner: ScannerItem = await this.assetsDao.getScannerById(scannerItem.equipmentId);
+    const crtScanner: ScannerItem = await this.assetsDao.getScannerById(scannerItem.assetId);
 
     if (crtScanner) {
       scannerItem.hostId = process.env.HOST_ID;

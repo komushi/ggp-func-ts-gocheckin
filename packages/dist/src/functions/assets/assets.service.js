@@ -230,7 +230,7 @@ class AssetsService {
     refreshScanner(scannerItem) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service refreshScanner in: ' + JSON.stringify(scannerItem));
-            const crtScanner = yield this.assetsDao.getScannerById(scannerItem.equipmentId);
+            const crtScanner = yield this.assetsDao.getScannerById(scannerItem.assetId);
             if (crtScanner) {
                 scannerItem.hostId = process.env.HOST_ID;
                 scannerItem.propertyCode = process.env.PROPERTY_CODE;

@@ -33,7 +33,7 @@ const translateConfig = { marshallOptions, unmarshallOptions };
 export class ReservationsDao {
 
   private ddbDocClient: DynamoDBDocumentClient;
-  
+
   public constructor() {
     const client: DynamoDBClient = new DynamoDBClient(config);
     this.ddbDocClient = DynamoDBDocumentClient.from(client, translateConfig);
@@ -43,18 +43,18 @@ export class ReservationsDao {
   public async getMember(reservationCode: string, memberNo: number, attributes: string[]): Promise<MemberItem>;
   public async getMember(reservationCode: string, memberNo: number, attributes?: string[]): Promise<MemberItem> {
 
-    console.log('reservations.dao getMember in' + JSON.stringify({reservationCode, memberNo, attributes}));
+    console.log('reservations.dao getMember in' + JSON.stringify({ reservationCode, memberNo, attributes }));
 
     const command = new QueryCommand({
       TableName: TBL_MEMBER,
       ProjectionExpression: attributes?.join(),
       KeyConditionExpression: 'reservationCode = :pk AND memberNo = :rk',
-      ExpressionAttributeValues: {':pk': reservationCode, ':rk': memberNo}
+      ExpressionAttributeValues: { ':pk': reservationCode, ':rk': memberNo }
     });
 
     const result = await this.ddbDocClient.send(command).catch(error => {
-        console.log('reservations.dao getMember error:' + JSON.stringify(error))
-        throw error;
+      console.log('reservations.dao getMember error:' + JSON.stringify(error))
+      throw error;
     });
 
     console.log('reservations.dao getMember out' + JSON.stringify(result.Items[0]));
@@ -66,18 +66,18 @@ export class ReservationsDao {
   public async getMembers(reservationCode: string, attributes: string[]): Promise<MemberItem[]>;
   public async getMembers(reservationCode: string, attributes?: string[]): Promise<MemberItem[]> {
 
-    console.log('reservations.dao getMembers in' + JSON.stringify({reservationCode}));
+    console.log('reservations.dao getMembers in' + JSON.stringify({ reservationCode }));
 
     const command = new QueryCommand({
       TableName: TBL_MEMBER,
       ProjectionExpression: attributes?.join(),
       KeyConditionExpression: 'reservationCode = :pk',
-      ExpressionAttributeValues: {':pk': reservationCode}
+      ExpressionAttributeValues: { ':pk': reservationCode }
     });
 
     const result = await this.ddbDocClient.send(command).catch(error => {
-        console.log('reservations.dao getMembers: error:' + JSON.stringify(error))
-        throw error;
+      console.log('reservations.dao getMembers: error:' + JSON.stringify(error))
+      throw error;
     });
 
     console.log('reservations.dao getMembers out' + JSON.stringify(result.Items));
@@ -93,10 +93,10 @@ export class ReservationsDao {
     const params = memberItems.map(record => {
       return {
         Put: {
-            TableName: TBL_MEMBER,
-            Item: record
-          }
+          TableName: TBL_MEMBER,
+          Item: record
         }
+      }
     });
 
     const command = new TransactWriteCommand({
@@ -104,8 +104,8 @@ export class ReservationsDao {
     });
 
     await this.ddbDocClient.send(command).catch(error => {
-        console.log('reservations.dao updateMembers: error:' + JSON.stringify(error))
-        throw error;
+      console.log('reservations.dao updateMembers: error:' + JSON.stringify(error))
+      throw error;
     });
 
     console.log('reservations.dao updateMembers out');
@@ -113,7 +113,7 @@ export class ReservationsDao {
     return;
   };
 
-  
+
   public async deleteMembers(memberItems: MemberItem[]): Promise<any> {
 
     console.log('reservations.dao deleteMembers in memberItems.length:' + memberItems.length);
@@ -130,7 +130,7 @@ export class ReservationsDao {
 
     await Promise.all(params.map(async (param) => {
       const command = new DeleteCommand(param);
-      return await this.ddbDocClient.send(command); 
+      return await this.ddbDocClient.send(command);
 
     }));
 
@@ -140,9 +140,9 @@ export class ReservationsDao {
   };
 
 
-  public async deleteReservation({listingId, reservationCode}: {listingId: string, reservationCode: string}): Promise<any> {
+  public async deleteReservation({ listingId, reservationCode }: { listingId: string, reservationCode: string }): Promise<any> {
 
-    console.log('reservations.dao deleteReservation in:' + JSON.stringify({listingId, reservationCode}));
+    console.log('reservations.dao deleteReservation in:' + JSON.stringify({ listingId, reservationCode }));
 
     const param = {
       TableName: TBL_RESERVATION,
@@ -177,8 +177,8 @@ export class ReservationsDao {
     });
 
     await this.ddbDocClient.send(command).catch(error => {
-        console.log('reservations.dao updateReservation: error:' + JSON.stringify(error))
-        throw error;
+      console.log('reservations.dao updateReservation: error:' + JSON.stringify(error))
+      throw error;
     });
 
     console.log('reservations.dao updateReservation out');
@@ -187,14 +187,14 @@ export class ReservationsDao {
   };
 
 
-  public async getReservation({reservationCode, listingId}): Promise<any> {
+  public async getReservation({ reservationCode, listingId }): Promise<any> {
 
-    console.log('reservations.dao getReservation in' + JSON.stringify({reservationCode, listingId}));
+    console.log('reservations.dao getReservation in' + JSON.stringify({ reservationCode, listingId }));
 
     const command = new QueryCommand({
       TableName: TBL_RESERVATION,
       KeyConditionExpression: 'listingId = :pk and reservationCode = :rk',
-      ExpressionAttributeValues: {':pk': listingId, ':rk': reservationCode}
+      ExpressionAttributeValues: { ':pk': listingId, ':rk': reservationCode }
     });
 
     const result = await this.ddbDocClient.send(command);

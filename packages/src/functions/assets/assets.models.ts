@@ -75,8 +75,8 @@ export interface ScannerItem {
     propertyCode: string;
     hostPropertyCode: string;
     category: string;
-    equipmentId: string;
-    equipmentName: string;
+    assetId: string;
+    assetName: string;
     coreName: string;
     localIp: string;
     longitude: string;
