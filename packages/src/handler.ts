@@ -35,7 +35,11 @@ exports.function_handler = async function (event, context) {
 	} else if (context.clientContext.Custom.subject == `gocheckin/member_detected`) {
 		console.log('member_detected event: ' + JSON.stringify(event));
 
-		await assetsService.unlockZbLock(event);
+		await assetsService.unlockByMemberDetected(event);
+	} else if (context.clientContext.Custom.subject == `gocheckin/${process.env.AWS_IOT_THING_NAME}/unlock_zb_lock`) {
+		console.log('unlock_zb_lock event: ' + JSON.stringify(event));
+
+		await assetsService.unlockZbLock(event.assetId);
 	} else if (z2mResponsePattern.test(context.clientContext.Custom.subject)) {
 		console.log('z2mResponsePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
 

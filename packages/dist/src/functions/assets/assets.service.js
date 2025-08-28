@@ -338,42 +338,50 @@ class AssetsService {
             return;
         });
     }
-    unlockZbLock(memberDetectedItem) {
+    unlockZbLock(assetId) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service unlockZbLock in: ' + JSON.stringify(memberDetectedItem));
+            console.log('assets.service unlockZbLock in assetId: ' + assetId);
+            const z2mLock = yield this.assetsDao.getZbLockById(assetId);
+            if (z2mLock) {
+                let payload = {};
+                if (z2mLock.state) {
+                    payload = {
+                        'state': 'ON'
+                    };
+                    z2mLock.state = false;
+                }
+                else {
+                    payload = {
+                        'state': 'OFF'
+                    };
+                    z2mLock.state = true;
+                }
+                yield this.iotService.publish({
+                    topic: `zigbee2mqtt/${z2mLock.assetName}/set`,
+                    payload: JSON.stringify(payload)
+                });
+                yield this.assetsDao.updateLock(z2mLock);
+            }
+            console.log('assets.service unlockZbLock out');
+            return;
+        });
+    }
+    unlockByMemberDetected(memberDetectedItem) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service unlockByMemberDetected in: ' + JSON.stringify(memberDetectedItem));
             const cameraItem = yield this.assetsDao.getCamera(memberDetectedItem.hostId, memberDetectedItem.assetId);
-            console.log(`assets.service unlockZbLock locks: ${JSON.stringify(cameraItem.locks)}`);
+            console.log(`assets.service unlockByMemberDetected locks: ${JSON.stringify(cameraItem.locks)}`);
             let zbLockPromises = [];
             if (cameraItem.locks) {
                 zbLockPromises = Object.keys(cameraItem.locks).map((assetId) => __awaiter(this, void 0, void 0, function* () {
-                    const z2mLock = yield this.assetsDao.getZbLockById(assetId);
-                    if (z2mLock) {
-                        let payload = {};
-                        if (z2mLock.state) {
-                            payload = {
-                                'state': 'ON'
-                            };
-                            z2mLock.state = false;
-                        }
-                        else {
-                            payload = {
-                                'state': 'OFF'
-                            };
-                            z2mLock.state = true;
-                        }
-                        yield this.iotService.publish({
-                            topic: `zigbee2mqtt/${z2mLock.assetName}/set`,
-                            payload: JSON.stringify(payload)
-                        });
-                        yield this.assetsDao.updateLock(z2mLock);
-                    }
+                    yield this.unlockZbLock(assetId);
                 }));
             }
             const results = yield Promise.allSettled(zbLockPromises);
             results.forEach((result) => {
-                console.log(`assets.service unlockZbLock promises result: ${JSON.stringify(result)}`);
+                console.log(`assets.service unlockByMemberDetected promises result: ${JSON.stringify(result)}`);
             });
-            console.log('assets.service unlockZbLock out');
+            console.log('assets.service unlockByMemberDetected out');
             return;
         });
     }
