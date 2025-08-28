@@ -35,15 +35,15 @@ const unmarshallOptions = {
 const translateConfig = { marshallOptions, unmarshallOptions };
 
 export class InitializationDao {
-	private ddbDocClient: DynamoDBDocumentClient;
-	
-	public constructor() {
-		const client: DynamoDBClient = new DynamoDBClient(config);
-		this.ddbDocClient = DynamoDBDocumentClient.from(client, translateConfig);
-	}
+  private ddbDocClient: DynamoDBDocumentClient;
 
-	public async createTables(): Promise<any> {
-		console.log(`initialization.dao createTables in`);
+  public constructor() {
+    const client: DynamoDBClient = new DynamoDBClient(config);
+    this.ddbDocClient = DynamoDBDocumentClient.from(client, translateConfig);
+  }
+
+  public async createTables(): Promise<any> {
+    console.log(`initialization.dao createTables in`);
 
     const hostDeleteCmd = new DeleteTableCommand({
       TableName: TBL_HOST
@@ -130,11 +130,11 @@ export class InitializationDao {
           AttributeType: 'S'
         },
         {
-          AttributeName: 'equipmentId',
+          AttributeName: 'assetId',
           AttributeType: 'S'
         },
         {
-          AttributeName: 'equipmentName',
+          AttributeName: 'assetName',
           AttributeType: 'S'
         },
         {
@@ -151,7 +151,7 @@ export class InitializationDao {
           IndexName: IDX_EQUIPMENT_ID,
           KeySchema: [
             {
-              AttributeName: 'equipmentId',
+              AttributeName: 'assetId',
               KeyType: 'HASH'
             }
           ],
@@ -187,7 +187,7 @@ export class InitializationDao {
           IndexName: IDX_EQUIPMENT_NAME,
           KeySchema: [
             {
-              AttributeName: 'equipmentName',
+              AttributeName: 'assetName',
               KeyType: 'HASH'
             }
           ],
@@ -220,10 +220,10 @@ export class InitializationDao {
 
     console.log('initialization.dao createTables createResults:' + JSON.stringify(createResults));
 
-		console.log(`initialization.dao createTables out`);
+    console.log(`initialization.dao createTables out`);
 
-		return;
-	};
+    return;
+  };
 
 }
 

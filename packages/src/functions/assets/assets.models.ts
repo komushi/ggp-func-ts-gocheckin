@@ -1,12 +1,12 @@
 export interface Space {
-	hostId: string;
-	uuid: string;
-	propertyCode: string;
-	hostPropertyCode: string;
-	coreName: string;
-    equipmentName: string;
-	category: string;
-	layoutId: number;
+    hostId: string;
+    uuid: string;
+    propertyCode: string;
+    hostPropertyCode: string;
+    coreName: string;
+    assetName: string;
+    category: string;
+    layoutId: number;
 }
 
 
@@ -25,8 +25,8 @@ export interface NamedShadowCamera {
     hostPropertyCode: string;
     category: string;
     coreName: string;
-    equipmentId: string;
-    equipmentName: string;
+    assetId: string;
+    assetName: string;
     localIp: string;
     username: string;
     password: string;
@@ -42,13 +42,13 @@ export interface NamedShadowCamera {
 }
 
 export interface GoCheckInLock {
-    equipmentId: string;
-    equipmentName: string;
+    assetId: string;
+    assetName: string;
     withKeypad: boolean;
 }
 
 export interface GoCheckInLocks {
-    [equipmentId: string]: GoCheckInLock;
+    [assetId: string]: GoCheckInLock;
 }
 
 export interface ClassicShadowSpace {
@@ -108,7 +108,7 @@ export interface Z2mEvent {
     };
     type: string;
 }
-  
+
 // Hierarchical Interfaces (More Granular)
 interface DeviceDefinition {
     description: string;
@@ -155,7 +155,7 @@ interface DeviceOption {
     value_off: boolean;
     value_on: boolean;
 }
-  
+
 export interface Z2mRenamed {
     data: {
         from: string;
@@ -190,8 +190,8 @@ export interface Z2mLock {
     propertyCode: string
     hostPropertyCode: string;
     coreName: string;
-    equipmentName: string;
-    equipmentId: string;
+    assetName: string;
+    assetId: string;
     roomCode?: string;
     withKeypad: boolean;
     category: string;
@@ -206,8 +206,8 @@ export interface MemberDetectedItem {
     propertyCode: string;
     hostPropertyCode: string;
     coreName: string;
-    equipmentId: string;
-    equipmentName: string;
+    assetId: string;
+    assetName: string;
     cameraIp: string;
     reservationCode: string;
     listingId: string;

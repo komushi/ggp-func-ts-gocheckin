@@ -181,8 +181,8 @@ class AssetsService {
                     hostPropertyCode: `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`,
                     category: 'CAMERA',
                     coreName: process.env.AWS_IOT_THING_NAME,
-                    equipmentId: uuid,
-                    equipmentName: discoveredCamera.name,
+                    assetId: uuid,
+                    assetName: discoveredCamera.name,
                     localIp: parsedUrl.hostname,
                     username: '',
                     password: '',
@@ -280,8 +280,8 @@ class AssetsService {
                                 uuid: z2mEvent.data.ieee_address,
                                 hostPropertyCode: `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`,
                                 propertyCode: process.env.PROPERTY_CODE,
-                                equipmentId: z2mEvent.data.ieee_address,
-                                equipmentName: z2mEvent.data.friendly_name,
+                                assetId: z2mEvent.data.ieee_address,
+                                assetName: z2mEvent.data.friendly_name,
                                 coreName: process.env.AWS_IOT_THING_NAME,
                                 withKeypad: withKeypad,
                                 category: category,
@@ -309,7 +309,7 @@ class AssetsService {
             const z2mLocks = yield this.assetsDao.getZbLockByName(z2mRenamed.data.from);
             if (z2mLocks.length == 1) {
                 z2mLocks[0].roomCode = z2mRenamed.data.to;
-                z2mLocks[0].equipmentName = `${z2mRenamed.data.to}`;
+                z2mLocks[0].assetName = `${z2mRenamed.data.to}`;
                 z2mLocks[0].lastUpdateOn = (new Date).toISOString();
                 yield this.assetsDao.updateLock(z2mLocks[0]);
                 yield this.iotService.publish({
@@ -328,7 +328,7 @@ class AssetsService {
             console.log('assets.service removeZigbee in: ' + JSON.stringify(z2mRemoved));
             const z2mLocks = yield this.assetsDao.getZbLockByName(z2mRemoved.data.id);
             if (z2mLocks.length == 1) {
-                yield this.assetsDao.deleteZbLock(process.env.HOST_ID, z2mLocks[0].equipmentId);
+                yield this.assetsDao.deleteZbLock(process.env.HOST_ID, z2mLocks[0].assetId);
                 yield this.iotService.publish({
                     topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/zb_lock_removed`,
                     payload: JSON.stringify(z2mLocks[0])
@@ -341,12 +341,12 @@ class AssetsService {
     unlockZbLock(memberDetectedItem) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service unlockZbLock in: ' + JSON.stringify(memberDetectedItem));
-            const cameraItem = yield this.assetsDao.getCamera(memberDetectedItem.hostId, memberDetectedItem.equipmentId);
+            const cameraItem = yield this.assetsDao.getCamera(memberDetectedItem.hostId, memberDetectedItem.assetId);
             console.log(`assets.service unlockZbLock locks: ${JSON.stringify(cameraItem.locks)}`);
             let zbLockPromises = [];
             if (cameraItem.locks) {
-                zbLockPromises = Object.keys(cameraItem.locks).map((equipmentId) => __awaiter(this, void 0, void 0, function* () {
-                    const z2mLock = yield this.assetsDao.getZbLockById(equipmentId);
+                zbLockPromises = Object.keys(cameraItem.locks).map((assetId) => __awaiter(this, void 0, void 0, function* () {
+                    const z2mLock = yield this.assetsDao.getZbLockById(assetId);
                     if (z2mLock) {
                         let payload = {};
                         if (z2mLock.state) {
@@ -362,7 +362,7 @@ class AssetsService {
                             z2mLock.state = true;
                         }
                         yield this.iotService.publish({
-                            topic: `zigbee2mqtt/${z2mLock.equipmentName}/set`,
+                            topic: `zigbee2mqtt/${z2mLock.assetName}/set`,
                             payload: JSON.stringify(payload)
                         });
                         yield this.assetsDao.updateLock(z2mLock);

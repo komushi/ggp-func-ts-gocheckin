@@ -36,23 +36,23 @@ const translateConfig = { marshallOptions, unmarshallOptions };
 export class AssetsDao {
 
   private ddbDocClient: DynamoDBDocumentClient;
-  
+
   public constructor() {
     const client: DynamoDBClient = new DynamoDBClient(config);
     this.ddbDocClient = DynamoDBDocumentClient.from(client, translateConfig);
   }
 
   public async getProperty(hostId: string): Promise<any> {
-    console.log('assets.dao getProperty in' + JSON.stringify({hostId}));
+    console.log('assets.dao getProperty in' + JSON.stringify({ hostId }));
 
     const response = await this.ddbDocClient.send(
       new QueryCommand({
         TableName: TBL_ASSET,
         KeyConditionExpression: '#hkey = :hkey',
         FilterExpression: '#category = :category',
-        ExpressionAttributeNames : {
-            '#hkey' : 'hostId',
-            '#category': 'category'
+        ExpressionAttributeNames: {
+          '#hkey': 'hostId',
+          '#category': 'category'
         },
         ExpressionAttributeValues: {
           ':hkey': hostId,
@@ -86,7 +86,7 @@ export class AssetsDao {
       }
     }];
 
-    const response = await this.ddbDocClient.send(new TransactWriteCommand({TransactItems: params}));
+    const response = await this.ddbDocClient.send(new TransactWriteCommand({ TransactItems: params }));
 
     console.log('assets.dao createProperty response:' + JSON.stringify(response));
 
@@ -104,9 +104,9 @@ export class AssetsDao {
         TableName: TBL_ASSET,
         KeyConditionExpression: '#hkey = :hkey',
         FilterExpression: '#category = :category',
-        ExpressionAttributeNames : {
-            '#hkey' : 'hostId',
-            '#category': 'category'
+        ExpressionAttributeNames: {
+          '#hkey': 'hostId',
+          '#category': 'category'
         },
         ExpressionAttributeValues: {
           ':hkey': hostId,
@@ -126,7 +126,7 @@ export class AssetsDao {
         }
       };
 
-      return await this.ddbDocClient.send(new DeleteCommand(param)); 
+      return await this.ddbDocClient.send(new DeleteCommand(param));
 
     }));
 
@@ -142,24 +142,24 @@ export class AssetsDao {
   public async getCamera(hostId: string, uuid: string, attributes: string[]): Promise<any>;
   public async getCamera(hostId: string, uuid: string, attributes?: string[]): Promise<any> {
 
-    console.log(`assets.dao getCamera in: ${JSON.stringify({hostId, uuid, attributes})}`);
+    console.log(`assets.dao getCamera in: ${JSON.stringify({ hostId, uuid, attributes })}`);
 
     const data = await this.ddbDocClient.send(
       new GetCommand({
-				TableName: TBL_ASSET,
-				AttributesToGet: attributes,
-				Key: {
+        TableName: TBL_ASSET,
+        AttributesToGet: attributes,
+        Key: {
           hostId,
           uuid
         }
-			})
+      })
     );
 
     console.log(`assets.dao getCamera out: ${JSON.stringify(data.Item)}`);
 
     return data.Item as NamedShadowCamera;
 
-    
+
   }
 
   public async updateCamera(cameraItem: NamedShadowCamera): Promise<any> {
@@ -172,7 +172,7 @@ export class AssetsDao {
       }
     }];
 
-    const response = await this.ddbDocClient.send(new TransactWriteCommand({TransactItems: params}));
+    const response = await this.ddbDocClient.send(new TransactWriteCommand({ TransactItems: params }));
 
     console.log('assets.dao updateCamera response:' + JSON.stringify(response));
 
@@ -191,9 +191,9 @@ export class AssetsDao {
         IndexName: IDX_HOST_PROPERTYCODE,
         KeyConditionExpression: '#hkey = :hkey',
         FilterExpression: '#category = :category',
-        ExpressionAttributeNames : {
-            '#hkey' : 'hostPropertyCode',
-            '#category': 'category'
+        ExpressionAttributeNames: {
+          '#hkey': 'hostPropertyCode',
+          '#category': 'category'
         },
         ExpressionAttributeValues: {
           ':hkey': hostPropertyCode,
@@ -209,7 +209,7 @@ export class AssetsDao {
 
   public async deleteCamera(hostId: string, uuid: string): Promise<any> {
 
-    console.log('assets.dao deleteCamera in:' + JSON.stringify({hostId, uuid}));
+    console.log('assets.dao deleteCamera in:' + JSON.stringify({ hostId, uuid }));
 
     const param = {
       TableName: TBL_ASSET,
@@ -219,7 +219,7 @@ export class AssetsDao {
       }
     };
 
-    const deleteResponse =  await this.ddbDocClient.send(new DeleteCommand(param)); 
+    const deleteResponse = await this.ddbDocClient.send(new DeleteCommand(param));
 
     console.log('assets.dao deleteCamera delete response:' + JSON.stringify(deleteResponse));
 
@@ -243,7 +243,7 @@ export class AssetsDao {
         }
       };
 
-      return await this.ddbDocClient.send(new DeleteCommand(param)); 
+      return await this.ddbDocClient.send(new DeleteCommand(param));
 
     }));
 
@@ -254,11 +254,11 @@ export class AssetsDao {
     return;
   }
 
-  public async getScannerById(equipmentId: string): Promise<any>;
-  public async getScannerById(equipmentId: string, attributes: string[]): Promise<any>;
-  public async getScannerById(equipmentId: string, attributes?: string[]): Promise<any> {
+  public async getScannerById(assetId: string): Promise<any>;
+  public async getScannerById(assetId: string, attributes: string[]): Promise<any>;
+  public async getScannerById(assetId: string, attributes?: string[]): Promise<any> {
 
-    console.log(`assets.dao getScannerById in: ${JSON.stringify({equipmentId, attributes})}`);
+    console.log(`assets.dao getScannerById in: ${JSON.stringify({ assetId, attributes })}`);
 
     const data = await this.ddbDocClient.send(
       new QueryCommand({
@@ -266,11 +266,11 @@ export class AssetsDao {
         IndexName: IDX_EQUIPMENT_ID,
         ProjectionExpression: attributes?.join(),
         KeyConditionExpression: '#hkey = :hkey',
-        ExpressionAttributeNames : {
-            '#hkey' : 'equipmentId'
+        ExpressionAttributeNames: {
+          '#hkey': 'assetId'
         },
         ExpressionAttributeValues: {
-          ':hkey': equipmentId
+          ':hkey': assetId
         }
       })
     );
@@ -285,7 +285,7 @@ export class AssetsDao {
 
       return;
     }
-    
+
   }
 
   public async getScanners(hostId: string): Promise<any> {
@@ -297,9 +297,9 @@ export class AssetsDao {
         TableName: TBL_ASSET,
         KeyConditionExpression: '#hkey = :hkey',
         FilterExpression: '#category = :category',
-        ExpressionAttributeNames : {
-            '#hkey' : 'hostId',
-            '#category': 'category'
+        ExpressionAttributeNames: {
+          '#hkey': 'hostId',
+          '#category': 'category'
         },
         ExpressionAttributeValues: {
           ':hkey': hostId,
@@ -324,7 +324,7 @@ export class AssetsDao {
       }
     }];
 
-    const response = await this.ddbDocClient.send(new TransactWriteCommand({TransactItems: params}));
+    const response = await this.ddbDocClient.send(new TransactWriteCommand({ TransactItems: params }));
 
     console.log('assets.dao createScanner response:' + JSON.stringify(response));
 
@@ -348,7 +348,7 @@ export class AssetsDao {
         }
       };
 
-      return await this.ddbDocClient.send(new DeleteCommand(param)); 
+      return await this.ddbDocClient.send(new DeleteCommand(param));
 
     }));
 
@@ -360,9 +360,9 @@ export class AssetsDao {
   }
 
 
-  public async updateHost({hostId, identityId, stage, credProviderHost}: {hostId: string, identityId: string, stage: string, credProviderHost: string}): Promise<any> {
+  public async updateHost({ hostId, identityId, stage, credProviderHost }: { hostId: string, identityId: string, stage: string, credProviderHost: string }): Promise<any> {
 
-    console.log('assets.dao updateHost in:' + JSON.stringify({hostId, identityId, stage, credProviderHost}));
+    console.log('assets.dao updateHost in:' + JSON.stringify({ hostId, identityId, stage, credProviderHost }));
 
     if (!hostId) {
       console.log('assets.dao updateHost out');
@@ -380,7 +380,7 @@ export class AssetsDao {
       TransactItems: params
     });
 
-    const response = await this.ddbDocClient.send(command);  
+    const response = await this.ddbDocClient.send(command);
 
     console.log('assets.dao updateHost response:' + JSON.stringify(response));
 
@@ -395,8 +395,8 @@ export class AssetsDao {
     console.log('assets.dao getHost in');
 
     const scanParam = {
-      TableName : TBL_HOST,
-      PageSize : 1
+      TableName: TBL_HOST,
+      PageSize: 1
     };
 
     const scanCmd = new ScanCommand(scanParam);
@@ -405,7 +405,7 @@ export class AssetsDao {
 
     let response;
     if (scanResult.Items && scanResult.Items.length > 0) {
-      response = scanResult.Items[0];    
+      response = scanResult.Items[0];
     }
 
     if (!response) {
@@ -427,9 +427,9 @@ export class AssetsDao {
         TableName: TBL_ASSET,
         KeyConditionExpression: '#hkey = :hkey',
         FilterExpression: '#category = :category',
-        ExpressionAttributeNames : {
-            '#hkey' : 'hostId',
-            '#category': 'category'
+        ExpressionAttributeNames: {
+          '#hkey': 'hostId',
+          '#category': 'category'
         },
         ExpressionAttributeValues: {
           ':hkey': hostId,
@@ -446,20 +446,20 @@ export class AssetsDao {
 
   public async refreshSpaces(hostId: string, newSpaceUUIDs: string[], removedSpaceUUIDs: string[]): Promise<any> {
 
-    console.log('assets.dao refreshSpaces in:' + JSON.stringify({hostId, newSpaceUUIDs, removedSpaceUUIDs}));
+    console.log('assets.dao refreshSpaces in:' + JSON.stringify({ hostId, newSpaceUUIDs, removedSpaceUUIDs }));
 
     const transactItems = [];
-    
+
     removedSpaceUUIDs?.forEach((uuid: string) => {
       transactItems.push({
-        Delete: 
-          {
-            TableName: TBL_ASSET,
-            Key: {
-              "hostId": hostId,
-              "uuid": uuid
-            }
+        Delete:
+        {
+          TableName: TBL_ASSET,
+          Key: {
+            "hostId": hostId,
+            "uuid": uuid
           }
+        }
       });
     });
 
@@ -467,7 +467,7 @@ export class AssetsDao {
       transactItems.push({
         Put: {
           TableName: TBL_ASSET,
-          Item: { 
+          Item: {
             "hostId": hostId,
             "uuid": uuid,
             "category": "SPACE"
@@ -475,7 +475,7 @@ export class AssetsDao {
         }
       });
     });
-    
+
     const command = new TransactWriteCommand({
       TransactItems: transactItems
     });
@@ -504,7 +504,7 @@ export class AssetsDao {
         }
       };
 
-      return await this.ddbDocClient.send(new DeleteCommand(param)); 
+      return await this.ddbDocClient.send(new DeleteCommand(param));
 
     }));
 
@@ -525,7 +525,7 @@ export class AssetsDao {
       }
     }];
 
-    const response = await this.ddbDocClient.send(new TransactWriteCommand({TransactItems: params}));
+    const response = await this.ddbDocClient.send(new TransactWriteCommand({ TransactItems: params }));
 
     console.log('assets.dao updateLock response:' + JSON.stringify(response));
 
@@ -538,17 +538,17 @@ export class AssetsDao {
   public async getZbLock(hostId: string, uuid: string, attributes: string[]): Promise<any>;
   public async getZbLock(hostId: string, uuid: string, attributes?: string[]): Promise<any> {
 
-    console.log(`assets.dao getZbLock in: ${JSON.stringify({hostId, uuid, attributes})}`);
+    console.log(`assets.dao getZbLock in: ${JSON.stringify({ hostId, uuid, attributes })}`);
 
     const data = await this.ddbDocClient.send(
       new GetCommand({
-				TableName: TBL_ASSET,
-				AttributesToGet: attributes,
-				Key: {
+        TableName: TBL_ASSET,
+        AttributesToGet: attributes,
+        Key: {
           hostId,
           uuid
         }
-			})
+      })
     );
 
     console.log(`assets.dao getZbLock out: ${JSON.stringify(data.Item)}`);
@@ -556,11 +556,11 @@ export class AssetsDao {
     return data.Item as Z2mLock;
   }
 
-  public async getZbLockById(equipmentId: string): Promise<any>;
-  public async getZbLockById(equipmentId: string, attributes: string[]): Promise<any>;
-  public async getZbLockById(equipmentId: string, attributes?: string[]): Promise<any> {
+  public async getZbLockById(assetId: string): Promise<any>;
+  public async getZbLockById(assetId: string, attributes: string[]): Promise<any>;
+  public async getZbLockById(assetId: string, attributes?: string[]): Promise<any> {
 
-    console.log(`assets.dao getZbLockById in: ${JSON.stringify({equipmentId, attributes})}`);
+    console.log(`assets.dao getZbLockById in: ${JSON.stringify({ assetId, attributes })}`);
 
     const data = await this.ddbDocClient.send(
       new QueryCommand({
@@ -568,11 +568,11 @@ export class AssetsDao {
         IndexName: IDX_EQUIPMENT_ID,
         ProjectionExpression: attributes?.join(),
         KeyConditionExpression: '#hkey = :hkey',
-        ExpressionAttributeNames : {
-            '#hkey' : 'equipmentId'
+        ExpressionAttributeNames: {
+          '#hkey': 'assetId'
         },
         ExpressionAttributeValues: {
-          ':hkey': equipmentId
+          ':hkey': assetId
         }
       })
     );
@@ -588,9 +588,9 @@ export class AssetsDao {
     }
   }
 
-  public async getZbLockByName(equipmentName: string): Promise<any> {
+  public async getZbLockByName(assetName: string): Promise<any> {
 
-    console.log('assets.dao getZbLockByName in:' + equipmentName);
+    console.log('assets.dao getZbLockByName in:' + assetName);
 
     const response = await this.ddbDocClient.send(
       new QueryCommand({
@@ -598,12 +598,12 @@ export class AssetsDao {
         IndexName: IDX_EQUIPMENT_NAME,
         KeyConditionExpression: '#en = :en',
         FilterExpression: '#category = :category',
-        ExpressionAttributeNames : {
-            '#en' : 'equipmentName',
-            '#category': 'category'
+        ExpressionAttributeNames: {
+          '#en': 'assetName',
+          '#category': 'category'
         },
         ExpressionAttributeValues: {
-          ':en': equipmentName,
+          ':en': assetName,
           ':category': 'LOCK'
         }
       })
@@ -616,7 +616,7 @@ export class AssetsDao {
 
   public async deleteZbLock(hostId: string, uuid: string): Promise<any> {
 
-    console.log('assets.dao deleteZbLock in:' + JSON.stringify({hostId, uuid}));
+    console.log('assets.dao deleteZbLock in:' + JSON.stringify({ hostId, uuid }));
 
     const param = {
       TableName: TBL_ASSET,
@@ -626,7 +626,7 @@ export class AssetsDao {
       }
     };
 
-    const deleteResponse =  await this.ddbDocClient.send(new DeleteCommand(param)); 
+    const deleteResponse = await this.ddbDocClient.send(new DeleteCommand(param));
 
     console.log('assets.dao deleteZbLock delete response:' + JSON.stringify(deleteResponse));
 

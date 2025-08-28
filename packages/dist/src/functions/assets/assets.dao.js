@@ -203,20 +203,20 @@ class AssetsDao {
             return;
         });
     }
-    getScannerById(equipmentId, attributes) {
+    getScannerById(assetId, attributes) {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            console.log(`assets.dao getScannerById in: ${JSON.stringify({ equipmentId, attributes })}`);
+            console.log(`assets.dao getScannerById in: ${JSON.stringify({ assetId, attributes })}`);
             const data = yield this.ddbDocClient.send(new lib_dynamodb_1.QueryCommand({
                 TableName: TBL_ASSET,
                 IndexName: IDX_EQUIPMENT_ID,
                 ProjectionExpression: attributes === null || attributes === void 0 ? void 0 : attributes.join(),
                 KeyConditionExpression: '#hkey = :hkey',
                 ExpressionAttributeNames: {
-                    '#hkey': 'equipmentId'
+                    '#hkey': 'assetId'
                 },
                 ExpressionAttributeValues: {
-                    ':hkey': equipmentId
+                    ':hkey': assetId
                 }
             }));
             if (((_a = data.Items) === null || _a === void 0 ? void 0 : _a.length) > 0) {
@@ -430,20 +430,20 @@ class AssetsDao {
             return data.Item;
         });
     }
-    getZbLockById(equipmentId, attributes) {
+    getZbLockById(assetId, attributes) {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            console.log(`assets.dao getZbLockById in: ${JSON.stringify({ equipmentId, attributes })}`);
+            console.log(`assets.dao getZbLockById in: ${JSON.stringify({ assetId, attributes })}`);
             const data = yield this.ddbDocClient.send(new lib_dynamodb_1.QueryCommand({
                 TableName: TBL_ASSET,
                 IndexName: IDX_EQUIPMENT_ID,
                 ProjectionExpression: attributes === null || attributes === void 0 ? void 0 : attributes.join(),
                 KeyConditionExpression: '#hkey = :hkey',
                 ExpressionAttributeNames: {
-                    '#hkey': 'equipmentId'
+                    '#hkey': 'assetId'
                 },
                 ExpressionAttributeValues: {
-                    ':hkey': equipmentId
+                    ':hkey': assetId
                 }
             }));
             if (((_a = data.Items) === null || _a === void 0 ? void 0 : _a.length) > 0) {
@@ -456,20 +456,20 @@ class AssetsDao {
             }
         });
     }
-    getZbLockByName(equipmentName) {
+    getZbLockByName(assetName) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.dao getZbLockByName in:' + equipmentName);
+            console.log('assets.dao getZbLockByName in:' + assetName);
             const response = yield this.ddbDocClient.send(new lib_dynamodb_1.QueryCommand({
                 TableName: TBL_ASSET,
                 IndexName: IDX_EQUIPMENT_NAME,
                 KeyConditionExpression: '#en = :en',
                 FilterExpression: '#category = :category',
                 ExpressionAttributeNames: {
-                    '#en': 'equipmentName',
+                    '#en': 'assetName',
                     '#category': 'category'
                 },
                 ExpressionAttributeValues: {
-                    ':en': equipmentName,
+                    ':en': assetName,
                     ':category': 'LOCK'
                 }
             }));

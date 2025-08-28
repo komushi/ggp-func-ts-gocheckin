@@ -125,11 +125,11 @@ class InitializationDao {
                         AttributeType: 'S'
                     },
                     {
-                        AttributeName: 'equipmentId',
+                        AttributeName: 'assetId',
                         AttributeType: 'S'
                     },
                     {
-                        AttributeName: 'equipmentName',
+                        AttributeName: 'assetName',
                         AttributeType: 'S'
                     },
                     {
@@ -146,7 +146,7 @@ class InitializationDao {
                         IndexName: IDX_EQUIPMENT_ID,
                         KeySchema: [
                             {
-                                AttributeName: 'equipmentId',
+                                AttributeName: 'assetId',
                                 KeyType: 'HASH'
                             }
                         ],
@@ -182,7 +182,7 @@ class InitializationDao {
                         IndexName: IDX_EQUIPMENT_NAME,
                         KeySchema: [
                             {
-                                AttributeName: 'equipmentName',
+                                AttributeName: 'assetName',
                                 KeyType: 'HASH'
                             }
                         ],
