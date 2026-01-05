@@ -199,6 +199,16 @@ export interface Z2mLock {
     model: string;
     state: boolean;
     lastUpdateOn: string;
+    cameras?: Z2mLockCameras;
+}
+
+export interface Z2mLockCamera {
+    assetId: string;
+    localIp: string;
+}
+
+export interface Z2mLockCameras {
+    [assetId: string]: Z2mLockCamera;
 }
 
 export interface MemberDetectedItem {
