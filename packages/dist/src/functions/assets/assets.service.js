@@ -94,6 +94,9 @@ class AssetsService {
             });
             const delta = getShadowResult.state.desired;
             let existingCamera = yield this.assetsDao.getCamera(process.env.HOST_ID, uuid);
+            // Capture old locks before updating (for bidirectional sync)
+            const oldLocks = (existingCamera === null || existingCamera === void 0 ? void 0 : existingCamera.locks) || {};
+            const newLocks = delta.locks || {};
             if (existingCamera) {
                 existingCamera.username = delta.username;
                 existingCamera.password = delta.password;
@@ -111,6 +114,18 @@ class AssetsService {
                 existingCamera = delta;
             }
             yield this.assetsDao.updateCamera(existingCamera);
+            // Sync lock camera references (bidirectional relationship)
+            // 1. Remove camera from locks that are no longer associated
+            const oldLockIds = Object.keys(oldLocks);
+            const newLockIds = Object.keys(newLocks);
+            const removedLockIds = oldLockIds.filter(id => !newLockIds.includes(id));
+            for (const lockAssetId of removedLockIds) {
+                yield this.removeCameraFromLock(lockAssetId, existingCamera.assetId);
+            }
+            // 2. Add/update camera in locks that are associated
+            for (const lockAssetId of newLockIds) {
+                yield this.syncLockCameraReference(lockAssetId, existingCamera);
+            }
             // Update the named shadow
             yield this.iotService.updateReportedShadow({
                 thingName: AWS_IOT_THING_NAME,
@@ -128,6 +143,14 @@ class AssetsService {
     processCamerasShadowDeleted(uuid) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service processCamerasShadowDeleted in: ' + JSON.stringify({ uuid }));
+            // Get camera before deletion to know which locks to clean up
+            const camera = yield this.assetsDao.getCamera(process.env.HOST_ID, uuid);
+            // Clean up lock camera references (bidirectional relationship)
+            if (camera && camera.locks) {
+                for (const lockAssetId of Object.keys(camera.locks)) {
+                    yield this.removeCameraFromLock(lockAssetId, camera.assetId);
+                }
+            }
             yield this.assetsDao.deleteCamera(process.env.HOST_ID, uuid);
             yield this.iotService.publish({
                 topic: `gocheckin/reset_camera`,
@@ -139,6 +162,51 @@ class AssetsService {
             });
             console.log('assets.service processCamerasShadowDeleted out');
             return;
+        });
+    }
+    syncLockCameraReference(lockAssetId, camera) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(`assets.service syncLockCameraReference in: ${JSON.stringify({ lockAssetId, cameraAssetId: camera.assetId })}`);
+            // 1. Get the lock record
+            const lock = yield this.assetsDao.getZbLockById(lockAssetId);
+            if (!lock) {
+                console.log(`assets.service syncLockCameraReference out - lock not found: ${lockAssetId}`);
+                return;
+            }
+            // 2. Initialize cameras object if not exists
+            if (!lock.cameras) {
+                lock.cameras = {};
+            }
+            // 3. Check if camera needs to be added or updated
+            const existing = lock.cameras[camera.assetId];
+            if (!existing || existing.localIp !== camera.localIp) {
+                // Add or update camera reference
+                lock.cameras[camera.assetId] = {
+                    assetId: camera.assetId,
+                    localIp: camera.localIp
+                };
+                yield this.assetsDao.updateLock(lock);
+                console.log(`assets.service syncLockCameraReference ${existing ? 'updated' : 'added'} camera ${camera.assetId} in lock ${lockAssetId}`);
+            }
+            console.log(`assets.service syncLockCameraReference out`);
+        });
+    }
+    removeCameraFromLock(lockAssetId, cameraAssetId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(`assets.service removeCameraFromLock in: ${JSON.stringify({ lockAssetId, cameraAssetId })}`);
+            // 1. Get the lock record
+            const lock = yield this.assetsDao.getZbLockById(lockAssetId);
+            if (!lock) {
+                console.log(`assets.service removeCameraFromLock out - lock not found: ${lockAssetId}`);
+                return;
+            }
+            // 2. Check if camera exists in lock's cameras
+            if (lock.cameras && lock.cameras[cameraAssetId]) {
+                delete lock.cameras[cameraAssetId];
+                yield this.assetsDao.updateLock(lock);
+                console.log(`assets.service removeCameraFromLock removed camera ${cameraAssetId} from lock ${lockAssetId}`);
+            }
+            console.log(`assets.service removeCameraFromLock out`);
         });
     }
     processCamerasShadow(deltaShadowCameras, desiredShadowCameras) {
