@@ -9,6 +9,7 @@ const assetsService = new AssetsService();
 const reservationsService = new ReservationsService();
 
 const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/`);
+const z2mOccupancyPattern = new RegExp(`^zigbee2mqtt\/(.+)\/occupancy$`);
 
 exports.function_handler = async function (event, context) {
 	console.log('context: ' + context.clientContext.Custom.subject);
@@ -53,6 +54,18 @@ exports.function_handler = async function (event, context) {
 		console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
 
 		await assetsService.discoverZigbee(event);
+	} else if (z2mOccupancyPattern.test(context.clientContext.Custom.subject)) {
+		const match = context.clientContext.Custom.subject.match(z2mOccupancyPattern);
+		const lockAssetName = match ? match[1] : null;
+
+		console.log('z2mOccupancyPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
+
+		if (event.occupancy === true && lockAssetName) {
+			await assetsService.handleLockTouchEvent({
+				lockAssetName: lockAssetName,
+				occupancy: event.occupancy
+			});
+		}
 	}
 
 };

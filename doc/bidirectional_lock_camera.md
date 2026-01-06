@@ -294,7 +294,7 @@ public async handleLockTouchEvent(event: LockOccupancyEvent): Promise<any> {
     for (const cameraAssetId of Object.keys(lock.cameras)) {
         const camera = lock.cameras[cameraAssetId];
         await this.iotService.publish({
-            topic: `gocheckin/${AWS_IOT_THING_NAME}/trigger_detection`,
+            topic: `gocheckin/trigger_detection`,
             payload: JSON.stringify({ cam_ip: camera.localIp })
         });
     }
@@ -338,4 +338,8 @@ The `cameras` object is stored as a Map attribute in DynamoDB. Maximum item size
 
 ## Related Documentation
 
+### ggp-func-ts-gocheckin
+- [Lock Occupancy Handler](./lock_occupancy_handler.md) - Event handler implementation (✅ DONE)
+
+### ggp-func-py-gocheckin
 - [Lock-Triggered Face Detection](../../ggp-func-py-gocheckin/doc/lock_triggered_detection.md) - Main feature documentation

@@ -597,14 +597,15 @@ export class AssetsDao {
         TableName: TBL_ASSET,
         IndexName: IDX_EQUIPMENT_NAME,
         KeyConditionExpression: '#en = :en',
-        FilterExpression: '#category = :category',
+        FilterExpression: '#category IN (:catLock, :catKeypadLock)',
         ExpressionAttributeNames: {
           '#en': 'assetName',
           '#category': 'category'
         },
         ExpressionAttributeValues: {
           ':en': assetName,
-          ':category': 'LOCK'
+          ':catLock': 'LOCK',
+          ':catKeypadLock': 'KEYPAD_LOCK'
         }
       })
     );

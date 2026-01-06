@@ -453,5 +453,36 @@ class AssetsService {
             return;
         });
     }
+    handleLockTouchEvent(event) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service handleLockTouchEvent in: ' + JSON.stringify(event));
+            // 1. Look up lock by friendly name
+            const z2mLocks = yield this.assetsDao.getZbLockByName(event.lockAssetName);
+            if (z2mLocks.length === 0) {
+                console.log(`assets.service handleLockTouchEvent out - lock not found: ${event.lockAssetName}`);
+                return;
+            }
+            const lock = z2mLocks[0];
+            // 2. Use lock.cameras directly (populated by syncLockCameraReference)
+            if (!lock.cameras || Object.keys(lock.cameras).length === 0) {
+                console.log(`assets.service handleLockTouchEvent out - no cameras for lock: ${lock.assetId}`);
+                return;
+            }
+            // 3. Trigger face detection on each camera
+            const triggerPromises = Object.keys(lock.cameras).map((cameraAssetId) => __awaiter(this, void 0, void 0, function* () {
+                const camera = lock.cameras[cameraAssetId];
+                console.log(`assets.service handleLockTouchEvent triggering for camera: ${camera.localIp}`);
+                yield this.iotService.publish({
+                    topic: `gocheckin/trigger_detection`,
+                    payload: JSON.stringify({ cam_ip: camera.localIp })
+                });
+                return { cameraIp: camera.localIp, status: 'triggered' };
+            }));
+            const results = yield Promise.allSettled(triggerPromises);
+            console.log('assets.service handleLockTouchEvent results: ' + JSON.stringify(results));
+            console.log('assets.service handleLockTouchEvent out');
+            return;
+        });
+    }
 }
 exports.AssetsService = AssetsService;

@@ -211,6 +211,11 @@ export interface Z2mLockCameras {
     [assetId: string]: Z2mLockCamera;
 }
 
+export interface LockOccupancyEvent {
+    lockAssetName: string;  // Friendly name from zigbee2mqtt (e.g., "DC006")
+    occupancy: boolean;     // Sensor state
+}
+
 export interface MemberDetectedItem {
     hostId: string;
     propertyCode: string;

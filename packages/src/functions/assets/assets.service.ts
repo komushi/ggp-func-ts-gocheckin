@@ -2,7 +2,7 @@ const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
 const ZB_CATS = process.env.ZB_CATS.split(",");
 const ZB_CATS_WITH_KEYPAD = process.env.ZB_CAT_WITH_KEYPAD.split(",");
 
-import { MemberDetectedItem, Z2mRemoved, Z2mRenamed, Z2mLock, Z2mEvent, PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras, ClassicShadowSpaces, ClassicShadowSpace } from './assets.models';
+import { MemberDetectedItem, Z2mRemoved, Z2mRenamed, Z2mLock, Z2mEvent, PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras, ClassicShadowSpaces, ClassicShadowSpace, LockOccupancyEvent } from './assets.models';
 import { AssetsDao } from './assets.dao';
 import { IotService } from '../iot/iot.service';
 
@@ -538,6 +538,44 @@ export class AssetsService {
     return;
   }
 
+  public async handleLockTouchEvent(event: LockOccupancyEvent): Promise<any> {
+    console.log('assets.service handleLockTouchEvent in: ' + JSON.stringify(event));
 
+    // 1. Look up lock by friendly name
+    const z2mLocks: Z2mLock[] = await this.assetsDao.getZbLockByName(event.lockAssetName);
+
+    if (z2mLocks.length === 0) {
+      console.log(`assets.service handleLockTouchEvent out - lock not found: ${event.lockAssetName}`);
+      return;
+    }
+
+    const lock = z2mLocks[0];
+
+    // 2. Use lock.cameras directly (populated by syncLockCameraReference)
+    if (!lock.cameras || Object.keys(lock.cameras).length === 0) {
+      console.log(`assets.service handleLockTouchEvent out - no cameras for lock: ${lock.assetId}`);
+      return;
+    }
+
+    // 3. Trigger face detection on each camera
+    const triggerPromises = Object.keys(lock.cameras).map(async (cameraAssetId: string) => {
+      const camera = lock.cameras[cameraAssetId];
+      console.log(`assets.service handleLockTouchEvent triggering for camera: ${camera.localIp}`);
+
+      await this.iotService.publish({
+        topic: `gocheckin/trigger_detection`,
+        payload: JSON.stringify({ cam_ip: camera.localIp })
+      });
+
+      return { cameraIp: camera.localIp, status: 'triggered' };
+    });
+
+    const results = await Promise.allSettled(triggerPromises);
+    console.log('assets.service handleLockTouchEvent results: ' + JSON.stringify(results));
+
+    console.log('assets.service handleLockTouchEvent out');
+
+    return;
+  }
 
 }
