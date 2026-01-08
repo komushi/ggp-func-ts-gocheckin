@@ -26,7 +26,7 @@ The following must be implemented before this handler (see [Bidirectional Lock-C
 | `LockOccupancyEvent` interface | ✅ DONE | Event model for occupancy handler |
 | `handleLockTouchEvent()` | ✅ DONE | Publishes trigger_detection for each camera |
 | `handler.ts` occupancy pattern | ✅ DONE | Handles `zigbee2mqtt/+/occupancy` topic |
-| `function.conf` inputTopics | ✅ DONE | Add `zigbee2mqtt/+/occupancy` |
+| `zigbee2mqtt/#` subscription | Manual | Configured manually in Greengrass (not via function.conf) |
 | `function.conf` outputTopics | ✅ DONE | Add `trigger_detection` topic |
 
 ---
@@ -135,6 +135,8 @@ public async handleLockTouchEvent(event: LockOccupancyEvent): Promise<any> {
     const results = await Promise.allSettled(triggerPromises);
     console.log('assets.service handleLockTouchEvent results: ' + JSON.stringify(results));
 
+    console.log('assets.service handleLockTouchEvent out');
+
     return;
 }
 ```
@@ -174,39 +176,34 @@ Add the handler in `function_handler()` (in the topic matching chain):
 
 ---
 
-### 4. function.conf - Update Topics
+### 4. Zigbee2mqtt Subscription (Manual Configuration)
 
-Update the `inputTopics` to include the occupancy topic:
+The `zigbee2mqtt/#` wildcard subscription is **manually configured** in AWS Greengrass, not via `function.conf`. This subscription enables the TS component to receive all zigbee2mqtt messages.
 
-```hocon
-inputTopics = [
-    "$aws/things/"${AWS_IOT_THING_NAME}"/shadow/name/+/update/delta",
-    "$aws/things/"${AWS_IOT_THING_NAME}"/shadow/update/delta",
-    "gocheckin/member_detected",
-    "zigbee2mqtt/bridge/event",
-    "zigbee2mqtt/bridge/response/device/rename",
-    "zigbee2mqtt/bridge/response/device/remove",
-    "zigbee2mqtt/+/occupancy"
-]
+**Why manual configuration?**
+- Greengrass v1 requires explicit subscriptions for Lambda functions
+- The `zigbee2mqtt/#` wildcard is configured once to cover all device topics
+- `handler.ts` filters specific patterns (bridge events, occupancy, etc.)
+
+**handler.ts topic filtering:**
+```typescript
+// Existing patterns for zigbee2mqtt
+const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/`);
+const z2mOccupancyPattern = new RegExp(`^zigbee2mqtt\/(.+)\/occupancy$`);
+
+// In function_handler():
+// - zigbee2mqtt/bridge/event → discoverZigbee()
+// - zigbee2mqtt/bridge/response/device/rename → renameZigbee()
+// - zigbee2mqtt/bridge/response/device/remove → removeZigbee()
+// - zigbee2mqtt/{lockName}/occupancy → handleLockTouchEvent()
 ```
 
-Update the `outputTopics` to include the trigger_detection topic:
+### 5. function.conf - Update outputTopics
+
+Add `gocheckin/trigger_detection` to the `outputTopics`:
 
 ```hocon
-outputTopics = [
-    "$aws/things/"${AWS_IOT_THING_NAME}"/shadow/name/+/update",
-    "$aws/things/"${AWS_IOT_THING_NAME}"/shadow/name/+/get",
-    "$aws/things/"${AWS_IOT_THING_NAME}"/shadow/update",
-    "gocheckin/"${AWS_IOT_THING_NAME}"/camera_detected",
-    "gocheckin/"${AWS_IOT_THING_NAME}"/scanner_detected",
-    "gocheckin/"${AWS_IOT_THING_NAME}"/zb_lock_detected",
-    "gocheckin/"${AWS_IOT_THING_NAME}"/zb_lock_removed",
-    "gocheckin/"${AWS_IOT_THING_NAME}"/camera_removed",
-    "gocheckin/fetch_cameras",
-    "gocheckin/reset_camera",
-    "zigbee2mqtt/+/set",
-    "gocheckin/trigger_detection"
-]
+outputTopics = ["gocheckin/fetch_cameras", "gocheckin/reset_camera", "gocheckin/trigger_detection"]
 ```
 
 ---
@@ -215,9 +212,11 @@ outputTopics = [
 
 ### Input Topic
 
-| Topic | Publisher | Payload |
-|-------|-----------|---------|
-| `zigbee2mqtt/{lockAssetName}/occupancy` | zigbee2mqtt | `{ "occupancy": true }` |
+| Topic | Publisher | Subscription | Payload |
+|-------|-----------|--------------|---------|
+| `zigbee2mqtt/{lockAssetName}/occupancy` | zigbee2mqtt | `zigbee2mqtt/#` (manual) | `{ "occupancy": true }` |
+
+> **Note:** The subscription `zigbee2mqtt/#` is manually configured in AWS Greengrass. It is NOT added to `function.conf` inputTopics. The `handler.ts` uses regex patterns to filter and route specific topics.
 
 ### Output Topic
 
@@ -279,7 +278,9 @@ outputTopics = [
 | `packages/src/functions/assets/assets.models.ts` | Add `LockOccupancyEvent` interface |
 | `packages/src/functions/assets/assets.service.ts` | Add `handleLockTouchEvent()` method |
 | `packages/src/handler.ts` | Add `z2mOccupancyPattern` and handler |
-| `function.conf` | Add input/output topics |
+| `function.conf` | Add `gocheckin/trigger_detection` to outputTopics |
+
+> **Note:** The `zigbee2mqtt/#` subscription is configured manually in AWS Greengrass, not via `function.conf`.
 
 ---
 

@@ -484,27 +484,13 @@ export class AssetsService {
     const z2mLock: Z2mLock = await this.assetsDao.getZbLockById(assetId);
 
     if (z2mLock) {
-      let payload = {};
-
-      if (z2mLock.state) {
-        payload = {
-          'state': 'ON'
-        };
-        z2mLock.state = false;
-      } else {
-        payload = {
-          'state': 'OFF'
-        };
-        z2mLock.state = true;
-      }
-
+      // Send TOGGLE command - let zigbee2mqtt handle the state
       await this.iotService.publish({
         topic: `zigbee2mqtt/${z2mLock.assetName}/set`,
-        payload: JSON.stringify(payload)
+        payload: JSON.stringify({ state: 'TOGGLE' })
       });
 
-      await this.assetsDao.updateLock(z2mLock);
-
+      console.log(`assets.service unlockZbLock sent TOGGLE to: ${z2mLock.assetName}`);
     }
 
     console.log('assets.service unlockZbLock out');
