@@ -45,6 +45,7 @@ export interface GoCheckInLock {
     assetId: string;
     assetName: string;
     withKeypad: boolean;
+    category: string;  // 'LOCK' (legacy) or 'KEYPAD_LOCK' (has occupancy sensor)
 }
 
 export interface GoCheckInLocks {
@@ -232,4 +233,6 @@ export interface MemberDetectedItem {
     recordTime: string;
     checkInImgKey: string;
     propertyImgKey: string;
+    onvifTriggered?: boolean;           // true if ONVIF motion triggered detection
+    occupancyTriggeredLocks?: string[]; // specific lock IDs from occupancy triggers
 }

@@ -1,291 +1,95 @@
-# Lock Occupancy Handler
+# Lock Occupancy Handler (TypeScript)
 
 ## Overview
 
-This document describes the implementation of the lock occupancy event handler in the TypeScript component. When a Zigbee lock's occupancy sensor is triggered, this handler looks up associated cameras and publishes `trigger_detection` messages to start face detection.
-
-## Prerequisites
-
-The following must be implemented before this handler (see [Bidirectional Lock-Camera Reference](./bidirectional_lock_camera.md)):
-
-| Component | Status |
-|-----------|--------|
-| `Z2mLockCamera`, `Z2mLockCameras` interfaces | ✅ DONE |
-| `Z2mLock.cameras` field | ✅ DONE |
-| `syncLockCameraReference()` | ✅ DONE |
-| `removeCameraFromLock()` | ✅ DONE |
-| `processCamerasShadowDelta()` bidirectional sync | ✅ DONE |
-| `processCamerasShadowDeleted()` cleanup | ✅ DONE |
-
----
+Handles Zigbee lock occupancy events and publishes `trigger_detection` / `stop_detection` messages to the Python component. For Python implementation, see [lock_triggered_detection.md](../../ggp-func-py-gocheckin/doc/lock_triggered_detection.md).
 
 ## Implementation Status
 
-| Component | Status | Description |
-|-----------|--------|-------------|
-| `LockOccupancyEvent` interface | ✅ DONE | Event model for occupancy handler |
-| `handleLockTouchEvent()` | ✅ DONE | Publishes trigger_detection for each camera |
-| `handler.ts` occupancy pattern | ✅ DONE | Handles `zigbee2mqtt/+/occupancy` topic |
-| `zigbee2mqtt/#` subscription | Manual | Configured manually in Greengrass (not via function.conf) |
-| `function.conf` outputTopics | ✅ DONE | Add `trigger_detection` topic |
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Prerequisites** ([bidirectional_lock_camera.md](./bidirectional_lock_camera.md)) | ✅ DONE | `Z2mLockCameras`, `syncLockCameraReference()`, etc. |
+| `LockOccupancyEvent` interface | ✅ DONE | `assets.models.ts:215-218` |
+| `handleLockTouchEvent()` | ✅ DONE | `assets.service.ts:527` - publishes `trigger_detection` with `lock_asset_id` |
+| `handleLockStopEvent()` | ✅ DONE | `assets.service.ts:559` - publishes `stop_detection` |
+| `z2mOccupancyPattern` + handler | ✅ DONE | `handler.ts:12,57-76` - handles both `occupancy:true` and `occupancy:false` |
+| `function.conf` topics | ✅ DONE | Both `trigger_detection` and `stop_detection` in outputTopics |
+| `unlockByMemberDetected()` selective | ✅ DONE | `assets.service.ts:378` - selective unlock with fallback |
+| `MemberDetectedItem` new fields | ✅ DONE | `assets.models.ts:236-237` - `onvifTriggered`, `occupancyTriggeredLocks` |
+| `GoCheckInLock.category` field | ✅ DONE | `assets.models.ts:48` - required for selective unlock |
 
 ---
 
-## Flow Diagram
+## Flow Diagrams
 
+### Occupancy:true (Start Detection)
 ```
-zigbee2mqtt/{lockAssetName}/occupancy
-Payload: { "occupancy": true }
-         │
-         ▼
-handler.ts (function_handler)
-         │
-         ├─── z2mOccupancyPattern.test(topic)
-         │
-         └─── if (event.occupancy === true)
-                   │
-                   ▼
-              assetsService.handleLockTouchEvent({
-                  lockAssetName: "DC006",
-                  occupancy: true
-              })
-                   │
-                   ▼
-              getZbLockByName(lockAssetName)
-                   │
-                   ▼
-              Use lock.cameras{} directly
-                   │
-                   ▼
-              For each camera in lock.cameras:
-                   │
-                   ▼
-              iotService.publish({
-                  topic: "gocheckin/trigger_detection",
-                  payload: { cam_ip: camera.localIp }
-              })
-                   │
-                   ▼
-              Python component receives trigger_detection
-              → starts face detection
+zigbee2mqtt/{lockAssetName}/occupancy { "occupancy": true }
+    → handler.ts: z2mOccupancyPattern.test()
+    → assetsService.handleLockTouchEvent()
+    → getZbLockByName() → lock.cameras
+    → iotService.publish("gocheckin/trigger_detection", { cam_ip, lock_asset_id })
 ```
 
----
-
-## Code Changes
-
-### 1. assets.models.ts - Add LockOccupancyEvent
-
-Add the following interface:
-
-```typescript
-export interface LockOccupancyEvent {
-    lockAssetName: string;  // Friendly name from zigbee2mqtt (e.g., "DC006")
-    occupancy: boolean;     // Sensor state
-}
+### Occupancy:false (Stop Detection)
+```
+zigbee2mqtt/{lockAssetName}/occupancy { "occupancy": false }
+    → handler.ts: z2mOccupancyPattern.test()
+    → assetsService.handleLockStopEvent()
+    → iotService.publish("gocheckin/stop_detection", { cam_ip, lock_asset_id })
 ```
 
-**Location:** After the `Z2mLockCameras` interface (around line 212)
-
----
-
-### 2. assets.service.ts - Add handleLockTouchEvent()
-
-Add the following import to the imports section:
-
-```typescript
-import { ..., LockOccupancyEvent } from './assets.models';
+### Unlock Flow (member_detected)
 ```
-
-Add the following method to the `AssetsService` class:
-
-```typescript
-public async handleLockTouchEvent(event: LockOccupancyEvent): Promise<any> {
-    console.log('assets.service handleLockTouchEvent in: ' + JSON.stringify(event));
-
-    // 1. Look up lock by friendly name
-    const z2mLocks: Z2mLock[] = await this.assetsDao.getZbLockByName(event.lockAssetName);
-
-    if (z2mLocks.length === 0) {
-        console.log(`assets.service handleLockTouchEvent out - lock not found: ${event.lockAssetName}`);
-        return;
-    }
-
-    const lock = z2mLocks[0];
-
-    // 2. Use lock.cameras directly (populated by syncLockCameraReference)
-    if (!lock.cameras || Object.keys(lock.cameras).length === 0) {
-        console.log(`assets.service handleLockTouchEvent out - no cameras for lock: ${lock.assetId}`);
-        return;
-    }
-
-    // 3. Trigger face detection on each camera
-    const triggerPromises = Object.keys(lock.cameras).map(async (cameraAssetId: string) => {
-        const camera = lock.cameras[cameraAssetId];
-        console.log(`assets.service handleLockTouchEvent triggering for camera: ${camera.localIp}`);
-
-        await this.iotService.publish({
-            topic: `gocheckin/trigger_detection`,
-            payload: JSON.stringify({ cam_ip: camera.localIp })
-        });
-
-        return { cameraIp: camera.localIp, status: 'triggered' };
-    });
-
-    const results = await Promise.allSettled(triggerPromises);
-    console.log('assets.service handleLockTouchEvent results: ' + JSON.stringify(results));
-
-    console.log('assets.service handleLockTouchEvent out');
-
-    return;
-}
-```
-
-**Location:** After `unlockByMemberDetected()` method (around line 459)
-
----
-
-### 3. handler.ts - Add Occupancy Event Handler
-
-Add the regex pattern at the top of the file (with other patterns):
-
-```typescript
-const z2mOccupancyPattern = new RegExp(`^zigbee2mqtt\/(.+)\/occupancy$`);
-```
-
-Add the handler in `function_handler()` (in the topic matching chain):
-
-```typescript
-} else if (z2mOccupancyPattern.test(context.clientContext.Custom.subject)) {
-    const match = context.clientContext.Custom.subject.match(z2mOccupancyPattern);
-    const lockAssetName = match ? match[1] : null;
-
-    console.log('z2mOccupancyPattern topic: ' + context.clientContext.Custom.subject
-                + ' event: ' + JSON.stringify(event));
-
-    if (event.occupancy === true && lockAssetName) {
-        await assetsService.handleLockTouchEvent({
-            lockAssetName: lockAssetName,
-            occupancy: event.occupancy
-        });
-    }
-}
-```
-
-**Location:** Add as a new `else if` branch in the topic matching chain
-
----
-
-### 4. Zigbee2mqtt Subscription (Manual Configuration)
-
-The `zigbee2mqtt/#` wildcard subscription is **manually configured** in AWS Greengrass, not via `function.conf`. This subscription enables the TS component to receive all zigbee2mqtt messages.
-
-**Why manual configuration?**
-- Greengrass v1 requires explicit subscriptions for Lambda functions
-- The `zigbee2mqtt/#` wildcard is configured once to cover all device topics
-- `handler.ts` filters specific patterns (bridge events, occupancy, etc.)
-
-**handler.ts topic filtering:**
-```typescript
-// Existing patterns for zigbee2mqtt
-const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/`);
-const z2mOccupancyPattern = new RegExp(`^zigbee2mqtt\/(.+)\/occupancy$`);
-
-// In function_handler():
-// - zigbee2mqtt/bridge/event → discoverZigbee()
-// - zigbee2mqtt/bridge/response/device/rename → renameZigbee()
-// - zigbee2mqtt/bridge/response/device/remove → removeZigbee()
-// - zigbee2mqtt/{lockName}/occupancy → handleLockTouchEvent()
-```
-
-### 5. function.conf - Update outputTopics
-
-Add `gocheckin/trigger_detection` to the `outputTopics`:
-
-```hocon
-outputTopics = ["gocheckin/fetch_cameras", "gocheckin/reset_camera", "gocheckin/trigger_detection"]
+gocheckin/member_detected { assetId, onvifTriggered, occupancyTriggeredLocks }
+    → unlockByMemberDetected()
+    → if occupancyTriggeredLocks.length > 0: unlock specific locks
+    → if onvifTriggered: unlock legacy locks (category !== 'KEYPAD_LOCK')
+    → if no context: fallback to unlock all (legacy behavior)
 ```
 
 ---
 
 ## MQTT Topics
 
-### Input Topic
-
-| Topic | Publisher | Subscription | Payload |
-|-------|-----------|--------------|---------|
-| `zigbee2mqtt/{lockAssetName}/occupancy` | zigbee2mqtt | `zigbee2mqtt/#` (manual) | `{ "occupancy": true }` |
-
-> **Note:** The subscription `zigbee2mqtt/#` is manually configured in AWS Greengrass. It is NOT added to `function.conf` inputTopics. The `handler.ts` uses regex patterns to filter and route specific topics.
-
-### Output Topic
-
-| Topic | Subscriber | Payload |
-|-------|------------|---------|
-| `gocheckin/trigger_detection` | Python component | `{ "cam_ip": "192.168.1.x" }` |
+| Topic | Direction | Payload |
+|-------|-----------|---------|
+| `zigbee2mqtt/{lock}/occupancy` | Input | `{ "occupancy": true/false }` |
+| `gocheckin/member_detected` | Input | `{ assetId, onvifTriggered, occupancyTriggeredLocks, ... }` |
+| `gocheckin/trigger_detection` | Output | `{ "cam_ip": "...", "lock_asset_id": "..." }` |
+| `gocheckin/stop_detection` | Output | `{ "cam_ip": "...", "lock_asset_id": "..." }` |
 
 ---
 
-## Edge Cases
+## Selective Unlock Logic
 
-| Scenario | Behavior |
-|----------|----------|
-| Lock not found by assetName | No detection triggered, warning logged |
-| Lock has no cameras associated | No detection triggered, warning logged |
-| Lock has multiple cameras | Detection triggered on ALL cameras |
-| `occupancy: false` received | Ignored (only `true` triggers) |
-| Lock assetName contains special chars | Regex captures full name between slashes |
+| Trigger | member_detected Fields | Unlock Behavior |
+|---------|------------------------|-----------------|
+| Occupancy sensor | `occupancyTriggeredLocks: [lockId]` | Unlock specific lock only |
+| ONVIF motion | `onvifTriggered: true` | Unlock legacy locks (`withKeypad !== true`) |
+| Both (merged) | Both fields set | Unlock legacy + specific locks |
+| No context | Both undefined/empty | Fallback: unlock all camera locks |
 
----
+**Lock Sensor Flag (`withKeypad`):**
+- `withKeypad: true` → has occupancy sensor, requires occupancy trigger to unlock
+- `withKeypad: false` or missing → legacy lock, unlocks via ONVIF motion
 
-## Testing
-
-### Manual Test Steps
-
-1. **Verify lock-camera association:**
-   ```bash
-   # Check if lock has cameras in DynamoDB
-   aws dynamodb scan --table-name iot-ggv2-component-asset \
-     --filter-expression "category = :cat" \
-     --expression-attribute-values '{":cat":{"S":"LOCK"}}'
-   ```
-
-2. **Simulate occupancy event:**
-   ```bash
-   # Publish test message to zigbee2mqtt topic
-   mosquitto_pub -h localhost -t "zigbee2mqtt/DC006/occupancy" \
-     -m '{"occupancy": true}'
-   ```
-
-3. **Verify trigger_detection published:**
-   ```bash
-   # Subscribe to trigger_detection topic
-   mosquitto_sub -h localhost -t "gocheckin/trigger_detection"
-   ```
-
-4. **Check Python component logs:**
-   ```bash
-   # Verify face detection started
-   tail -f /greengrass/v2/logs/ggp-func-py-gocheckin.log | grep trigger_detection
-   ```
+**Note:** `camera.locks` is enriched with `withKeypad` from local `Z2mLock` records in `processCamerasShadowDelta()`.
 
 ---
 
-## Files to Modify
+## Files Modified
 
-| File | Change |
-|------|--------|
-| `packages/src/functions/assets/assets.models.ts` | Add `LockOccupancyEvent` interface |
-| `packages/src/functions/assets/assets.service.ts` | Add `handleLockTouchEvent()` method |
-| `packages/src/handler.ts` | Add `z2mOccupancyPattern` and handler |
-| `function.conf` | Add `gocheckin/trigger_detection` to outputTopics |
-
-> **Note:** The `zigbee2mqtt/#` subscription is configured manually in AWS Greengrass, not via `function.conf`.
+| File | Changes |
+|------|---------|
+| `assets.models.ts` | Added `category` to `GoCheckInLock`, added `onvifTriggered`/`occupancyTriggeredLocks` to `MemberDetectedItem` |
+| `assets.service.ts` | Added `handleLockStopEvent()`, updated `handleLockTouchEvent()` to include `lock_asset_id`, updated `unlockByMemberDetected()` with selective logic |
+| `handler.ts` | Added `occupancy:false` branch |
+| `function.conf` | Added `stop_detection` to outputTopics |
 
 ---
 
 ## Related Documentation
 
-- [Bidirectional Lock-Camera Reference](./bidirectional_lock_camera.md) - Prerequisite: lock→camera data model (✅ DONE)
-- [Lock-Triggered Face Detection](../../ggp-func-py-gocheckin/doc/lock_triggered_detection.md) - Main feature documentation
-- [ONVIF Notifications](../../ggp-func-py-gocheckin/doc/onvif_notifications.md) - Original motion handling (now recording only)
+- [Bidirectional Lock-Camera Reference](./bidirectional_lock_camera.md)
+- [Python: Lock-Triggered Detection](../../ggp-func-py-gocheckin/doc/lock_triggered_detection.md)

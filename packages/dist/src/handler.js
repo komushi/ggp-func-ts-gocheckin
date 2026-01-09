@@ -63,11 +63,19 @@ exports.function_handler = function (event, context) {
             const match = context.clientContext.Custom.subject.match(z2mOccupancyPattern);
             const lockAssetName = match ? match[1] : null;
             console.log('z2mOccupancyPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
-            if (event.occupancy === true && lockAssetName) {
-                yield assetsService.handleLockTouchEvent({
-                    lockAssetName: lockAssetName,
-                    occupancy: event.occupancy
-                });
+            if (lockAssetName) {
+                if (event.occupancy === true) {
+                    yield assetsService.handleLockTouchEvent({
+                        lockAssetName: lockAssetName,
+                        occupancy: event.occupancy
+                    });
+                }
+                else if (event.occupancy === false) {
+                    yield assetsService.handleLockStopEvent({
+                        lockAssetName: lockAssetName,
+                        occupancy: event.occupancy
+                    });
+                }
             }
         }
     });

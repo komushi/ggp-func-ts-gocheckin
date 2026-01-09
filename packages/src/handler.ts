@@ -60,11 +60,18 @@ exports.function_handler = async function (event, context) {
 
 		console.log('z2mOccupancyPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
 
-		if (event.occupancy === true && lockAssetName) {
-			await assetsService.handleLockTouchEvent({
-				lockAssetName: lockAssetName,
-				occupancy: event.occupancy
-			});
+		if (lockAssetName) {
+			if (event.occupancy === true) {
+				await assetsService.handleLockTouchEvent({
+					lockAssetName: lockAssetName,
+					occupancy: event.occupancy
+				});
+			} else if (event.occupancy === false) {
+				await assetsService.handleLockStopEvent({
+					lockAssetName: lockAssetName,
+					occupancy: event.occupancy
+				});
+			}
 		}
 	}
 

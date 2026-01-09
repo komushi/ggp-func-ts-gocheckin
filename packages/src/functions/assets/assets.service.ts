@@ -131,6 +131,24 @@ export class AssetsService {
       existingCamera = delta;
     }
 
+    // Enrich camera.locks with withKeypad from local lock records
+    // Shadow only provides assetName, but we need withKeypad for selective unlock logic
+    if (existingCamera.locks) {
+      for (const lockAssetId of Object.keys(existingCamera.locks)) {
+        const lockRecord: Z2mLock = await this.assetsDao.getZbLockById(lockAssetId);
+        if (lockRecord) {
+          existingCamera.locks[lockAssetId].withKeypad = lockRecord.withKeypad;
+          existingCamera.locks[lockAssetId].assetId = lockAssetId;
+          console.log(`assets.service processCamerasShadowDelta enriched lock ${lockAssetId} with withKeypad=${lockRecord.withKeypad}`);
+        } else {
+          // Lock not found in local DB, default to legacy (withKeypad=false)
+          existingCamera.locks[lockAssetId].withKeypad = false;
+          existingCamera.locks[lockAssetId].assetId = lockAssetId;
+          console.log(`assets.service processCamerasShadowDelta lock ${lockAssetId} not found, defaulting withKeypad=false`);
+        }
+      }
+    }
+
     await this.assetsDao.updateCamera(existingCamera);
 
     // Sync lock camera references (bidirectional relationship)
@@ -503,15 +521,44 @@ export class AssetsService {
 
     const cameraItem: NamedShadowCamera = await this.assetsDao.getCamera(memberDetectedItem.hostId, memberDetectedItem.assetId);
 
+    if (!cameraItem?.locks) {
+      console.log('assets.service unlockByMemberDetected out - no locks for camera');
+      return;
+    }
+
     console.log(`assets.service unlockByMemberDetected locks: ${JSON.stringify(cameraItem.locks)}`);
 
-    let zbLockPromises = [];
-    if (cameraItem.locks) {
-      zbLockPromises = Object.keys(cameraItem.locks).map(async (assetId) => {
+    const zbLockPromises: Promise<void>[] = [];
 
-        await this.unlockZbLock(assetId);
+    // 1. Unlock specific locks from occupancy triggers
+    if (memberDetectedItem.occupancyTriggeredLocks && memberDetectedItem.occupancyTriggeredLocks.length > 0) {
+      for (const lockAssetId of memberDetectedItem.occupancyTriggeredLocks) {
+        console.log(`assets.service unlockByMemberDetected - unlocking specific lock: ${lockAssetId}`);
+        zbLockPromises.push(this.unlockZbLock(lockAssetId));
+      }
+    }
 
-      });
+    // 2. Unlock legacy locks if ONVIF motion triggered
+    if (memberDetectedItem.onvifTriggered) {
+      for (const [lockAssetId, lockInfo] of Object.entries(cameraItem.locks)) {
+        // withKeypad=true means has occupancy sensor → skip (requires occupancy trigger)
+        if (lockInfo.withKeypad === true) {
+          console.log(`assets.service unlockByMemberDetected - skipping sensor-enabled lock: ${lockAssetId}`);
+          continue;
+        }
+        // withKeypad=false or undefined means legacy → unlock
+        console.log(`assets.service unlockByMemberDetected - unlocking legacy lock: ${lockAssetId}`);
+        zbLockPromises.push(this.unlockZbLock(lockAssetId));
+      }
+    }
+
+    // 3. Fallback: if no trigger context provided, unlock all locks (legacy behavior)
+    if (!memberDetectedItem.onvifTriggered &&
+        (!memberDetectedItem.occupancyTriggeredLocks || memberDetectedItem.occupancyTriggeredLocks.length === 0)) {
+      console.log('assets.service unlockByMemberDetected - no trigger context, using legacy behavior (unlock all)');
+      for (const lockAssetId of Object.keys(cameraItem.locks)) {
+        zbLockPromises.push(this.unlockZbLock(lockAssetId));
+      }
     }
 
     const results = await Promise.allSettled(zbLockPromises);
@@ -550,7 +597,7 @@ export class AssetsService {
 
       await this.iotService.publish({
         topic: `gocheckin/trigger_detection`,
-        payload: JSON.stringify({ cam_ip: camera.localIp })
+        payload: JSON.stringify({ cam_ip: camera.localIp, lock_asset_id: lock.assetId })
       });
 
       return { cameraIp: camera.localIp, status: 'triggered' };
@@ -560,6 +607,46 @@ export class AssetsService {
     console.log('assets.service handleLockTouchEvent results: ' + JSON.stringify(results));
 
     console.log('assets.service handleLockTouchEvent out');
+
+    return;
+  }
+
+  public async handleLockStopEvent(event: LockOccupancyEvent): Promise<any> {
+    console.log('assets.service handleLockStopEvent in: ' + JSON.stringify(event));
+
+    // 1. Look up lock by friendly name
+    const z2mLocks: Z2mLock[] = await this.assetsDao.getZbLockByName(event.lockAssetName);
+
+    if (z2mLocks.length === 0) {
+      console.log(`assets.service handleLockStopEvent out - lock not found: ${event.lockAssetName}`);
+      return;
+    }
+
+    const lock = z2mLocks[0];
+
+    // 2. Use lock.cameras directly (populated by syncLockCameraReference)
+    if (!lock.cameras || Object.keys(lock.cameras).length === 0) {
+      console.log(`assets.service handleLockStopEvent out - no cameras for lock: ${lock.assetId}`);
+      return;
+    }
+
+    // 3. Send stop_detection for each camera
+    const stopPromises = Object.keys(lock.cameras).map(async (cameraAssetId: string) => {
+      const camera = lock.cameras[cameraAssetId];
+      console.log(`assets.service handleLockStopEvent stopping for camera: ${camera.localIp}`);
+
+      await this.iotService.publish({
+        topic: `gocheckin/stop_detection`,
+        payload: JSON.stringify({ cam_ip: camera.localIp, lock_asset_id: lock.assetId })
+      });
+
+      return { cameraIp: camera.localIp, status: 'stop_sent' };
+    });
+
+    const results = await Promise.allSettled(stopPromises);
+    console.log('assets.service handleLockStopEvent results: ' + JSON.stringify(results));
+
+    console.log('assets.service handleLockStopEvent out');
 
     return;
   }
