@@ -18,7 +18,7 @@ const iotService = new iot_service_1.IotService();
 const assetsService = new assets_service_1.AssetsService();
 const reservationsService = new reservations_service_1.ReservationsService();
 const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/`);
-const z2mOccupancyPattern = new RegExp(`^zigbee2mqtt\/(.+)\/occupancy$`);
+const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/([^\/]+)$`);
 exports.function_handler = function (event, context) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log('context: ' + context.clientContext.Custom.subject);
@@ -59,20 +59,24 @@ exports.function_handler = function (event, context) {
             console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
             yield assetsService.discoverZigbee(event);
         }
-        else if (z2mOccupancyPattern.test(context.clientContext.Custom.subject)) {
-            const match = context.clientContext.Custom.subject.match(z2mOccupancyPattern);
-            const lockAssetName = match ? match[1] : null;
-            console.log('z2mOccupancyPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
-            if (lockAssetName) {
+        else if (z2mDevicePattern.test(context.clientContext.Custom.subject)) {
+            const match = context.clientContext.Custom.subject.match(z2mDevicePattern);
+            const deviceName = match ? match[1] : null;
+            // Skip bridge messages
+            if (deviceName === 'bridge')
+                return;
+            console.log('z2mDevicePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
+            // Handle occupancy attribute if present
+            if (deviceName && 'occupancy' in event) {
                 if (event.occupancy === true) {
                     yield assetsService.handleLockTouchEvent({
-                        lockAssetName: lockAssetName,
+                        lockAssetName: deviceName,
                         occupancy: event.occupancy
                     });
                 }
                 else if (event.occupancy === false) {
                     yield assetsService.handleLockStopEvent({
-                        lockAssetName: lockAssetName,
+                        lockAssetName: deviceName,
                         occupancy: event.occupancy
                     });
                 }

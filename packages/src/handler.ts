@@ -9,7 +9,7 @@ const assetsService = new AssetsService();
 const reservationsService = new ReservationsService();
 
 const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/`);
-const z2mOccupancyPattern = new RegExp(`^zigbee2mqtt\/(.+)\/occupancy$`);
+const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/([^\/]+)$`);
 
 exports.function_handler = async function (event, context) {
 	console.log('context: ' + context.clientContext.Custom.subject);
@@ -54,21 +54,25 @@ exports.function_handler = async function (event, context) {
 		console.log('z2mEventPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
 
 		await assetsService.discoverZigbee(event);
-	} else if (z2mOccupancyPattern.test(context.clientContext.Custom.subject)) {
-		const match = context.clientContext.Custom.subject.match(z2mOccupancyPattern);
-		const lockAssetName = match ? match[1] : null;
+	} else if (z2mDevicePattern.test(context.clientContext.Custom.subject)) {
+		const match = context.clientContext.Custom.subject.match(z2mDevicePattern);
+		const deviceName = match ? match[1] : null;
 
-		console.log('z2mOccupancyPattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
+		// Skip bridge messages
+		if (deviceName === 'bridge') return;
 
-		if (lockAssetName) {
+		console.log('z2mDevicePattern topic: ' + context.clientContext.Custom.subject + ' event: ' + JSON.stringify(event));
+
+		// Handle occupancy attribute if present
+		if (deviceName && 'occupancy' in event) {
 			if (event.occupancy === true) {
 				await assetsService.handleLockTouchEvent({
-					lockAssetName: lockAssetName,
+					lockAssetName: deviceName,
 					occupancy: event.occupancy
 				});
 			} else if (event.occupancy === false) {
 				await assetsService.handleLockStopEvent({
-					lockAssetName: lockAssetName,
+					lockAssetName: deviceName,
 					occupancy: event.occupancy
 				});
 			}
