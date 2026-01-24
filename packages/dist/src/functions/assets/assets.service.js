@@ -470,13 +470,14 @@ class AssetsService {
                     zbLockPromises.push(this.unlockZbLock(lockAssetId));
                 }
             }
-            // 3. Fallback: if no trigger context provided, unlock all locks (legacy behavior)
+            // 3. No trigger context: fail safely - do NOT unlock anything
+            // Security: "unlock all" fallback was removed because it's a security risk.
+            // If context is empty due to race condition, unlocking all locks could unlock
+            // rooms the user doesn't have access to. Instead, fail safely by not unlocking.
             if (!memberDetectedItem.onvifTriggered &&
                 (!memberDetectedItem.occupancyTriggeredLocks || memberDetectedItem.occupancyTriggeredLocks.length === 0)) {
-                console.log('assets.service unlockByMemberDetected - no trigger context, using legacy behavior (unlock all)');
-                for (const lockAssetId of Object.keys(cameraItem.locks)) {
-                    zbLockPromises.push(this.unlockZbLock(lockAssetId));
-                }
+                console.warn('assets.service unlockByMemberDetected - no trigger context, skipping unlock (security)');
+                // DO NOT unlock anything - fail safe
             }
             const results = yield Promise.allSettled(zbLockPromises);
             results.forEach((result) => {
