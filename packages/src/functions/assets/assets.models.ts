@@ -83,6 +83,7 @@ export interface ScannerItem {
     longitude: string;
     latitude: string;
     lastUpdateOn: string;
+    inferenceBackend?: string;  // 'hailo' | 'insightface' - auto-detected at startup
 }
 
 interface RTSP {
