@@ -503,7 +503,6 @@ export class AssetsService {
     const z2mLocks: Z2mLock[] = await this.assetsDao.getZbLockByName(z2mRenamed.data.from);
 
     if (z2mLocks.length == 1) {
-      z2mLocks[0].roomCode = z2mRenamed.data.to;
       z2mLocks[0].assetName = `${z2mRenamed.data.to}`;
       z2mLocks[0].lastUpdateOn = (new Date).toISOString();
 
