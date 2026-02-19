@@ -77,6 +77,14 @@ exports.function_handler = async function (event, context) {
 				});
 			}
 		}
+
+		// Handle action attribute if present (LOCK_BUTTON click)
+		if (deviceName && 'action' in event) {
+			await assetsService.handleButtonClickEvent({
+				lockAssetName: deviceName,
+				action: event.action
+			});
+		}
 	}
 
 };

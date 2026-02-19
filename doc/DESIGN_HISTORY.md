@@ -40,17 +40,21 @@ This document traces the evolution of the lock-triggered detection system across
 
 **Depends on**: Phase 1 (bidirectional references), Phase 2 (occupancy handler)
 
-**Problem**: MAG001AC locks have no occupancy sensor. With the py_handler Phase 0A refactor, P2 cameras (cameras with locks) reject ONVIF triggers. These locks need a GreenPower_2 button as a trigger source.
+**Problem**: MAG001AC locks have no occupancy sensor. With the py_handler Phase 0A refactor, P2 cameras (cameras with locks) reject ONVIF triggers. These locks need GreenPower_2 buttons as trigger sources. Two button types are needed:
+- **Entry button** (outside): triggers face detection before unlock
+- **Exit button** (inside): unlocks directly without detection
 
 **Change**:
-- Cloud shadow adds `companions` array to camera lock entries, linking LOCK_BUTTON devices to their parent LOCK
-- `processCamerasShadowDelta()` enrichment: `withKeypad = lockRecord.withKeypad || companions.length > 0`
-- `Z2mLock` gets `companionOf` (on button) and `companions` (on parent lock)
-- `handler.ts` routes `action` events to new `handleButtonClickEvent()`, which resolves `companionOf` → parent lock → `trigger_detection` with parent's assetId
+- Cloud shadow adds `entryButtons` and `exitButtons` arrays to camera lock entries
+- `processCamerasShadowDelta()` enrichment: `withKeypad = lockRecord.withKeypad || entryButtons.length > 0`
+- `Z2mLock` gets `companionOf` (parent lock ID) and `buttonType` (`ENTRY` or `EXIT`)
+- `handler.ts` routes `action` events to `handleButtonClickEvent()`, which:
+  - Entry button → `trigger_detection` with parent lock's assetId
+  - Exit button → `unlockZbLock()` directly (no detection)
 
-**py_handler contract**: Always receives `{ cam_ip, lock_asset_id }` — no knowledge of buttons, companions, or device categories. ONVIF has nothing to do with lock actions.
+**py_handler contract**: Always receives `{ cam_ip, lock_asset_id }` — no knowledge of buttons, button types, or device categories.
 
-**Result**: MAG001AC + GreenPower_2 button works identically to KEYPAD_LOCK with built-in sensor. No py_handler changes needed.
+**Result**: MAG001AC + GreenPower_2 entry button works identically to KEYPAD_LOCK. Exit button provides direct unlock for inside/exit use. No py_handler changes needed.
 
 ## Data Model Evolution
 

@@ -4,7 +4,12 @@
 
 MAG001AC (magnetic lock, category=`LOCK`) has no occupancy sensor. Currently `withKeypad=false`, which in the old code meant ONVIF motion triggered detection. With the Phase 0A refactor, P2 cameras (cameras with locks) reject ONVIF triggers entirely — detection only starts via occupancy events.
 
-GreenPower_2 (category=`LOCK_BUTTON`) is a battery-free Zigbee button that sends **action events** (not occupancy). It needs to be associated with a LOCK so that a button press triggers the same face detection flow as `occupancy=true`.
+GreenPower_2 (category=`LOCK_BUTTON`) is a battery-free Zigbee button that sends **action events** (not occupancy). It needs to be associated with a LOCK so that a button press triggers actions. There are **two types** of companion buttons:
+
+| Button Type | Location | Behavior on Press |
+|-------------|----------|-------------------|
+| **Entry Button** | Outside / Entry side | Triggers face detection → Face match → Unlock |
+| **Exit Button** | Inside / Behind door | Unlocks immediately (no detection) |
 
 ## Current State
 
@@ -55,6 +60,8 @@ if (deviceName && 'occupancy' in event) {
 ### Association Gap
 
 LOCK_BUTTON is its own Z2mLock record. The camera's `.locks` map (from cloud) references the LOCK (MAG001AC), not the LOCK_BUTTON. The cloud manages lock-camera associations. Even if we handle the button click event locally, there's no path from LOCK_BUTTON → camera without resolving the parent LOCK.
+
+Additionally, we need to distinguish button types to route entry buttons to face detection and exit buttons to direct unlock.
 
 ## Current Example: Camera-Lock Association
 
@@ -135,9 +142,9 @@ Note: The cloud shadow only sends `assetName` in the lock entry. `withKeypad` is
 
 ### LOCK_BUTTON as Companion Device
 
-The LOCK_BUTTON ↔ LOCK association is managed from the cloud via device shadow, same as camera-lock associations. The cloud sets `companions` on the camera's lock entry, ggp-func-ts-gocheckin processes it to local DynamoDB.
+The LOCK_BUTTON ↔ LOCK association is managed from the cloud via device shadow, same as camera-lock associations. The cloud sets `entryButtons` and/or `exitButtons` arrays on the camera's lock entry, ggp-func-ts-gocheckin processes it to local DynamoDB.
 
-### Target State: Shadow with LOCK_BUTTON Companion
+### Target State: Shadow with LOCK_BUTTON Companions
 
 ```json
 // Named shadow: neoseed_Core / ea9a49f2-c236-4d6d-b82f-a0725a03f614
@@ -154,7 +161,8 @@ The LOCK_BUTTON ↔ LOCK association is managed from the cloud via device shadow
       "locks": {
         "0xe4b323fffeb4b614": {
           "assetName": "MAG002",
-          "companions": ["0x00_greenpower_button_1"]
+          "entryButtons": ["0x00_greenpower_button_1"],
+          "exitButtons": ["0x00_greenpower_button_2"]
         }
       },
       "lastUpdateOn": "2026-02-18T12:00:00.000Z"
@@ -163,7 +171,9 @@ The LOCK_BUTTON ↔ LOCK association is managed from the cloud via device shadow
 }
 ```
 
-The only change from the current shadow: `companions` array added to the lock entry, containing the LOCK_BUTTON's assetId (its Zigbee IEEE address assigned at pairing).
+Two separate arrays distinguish button purposes:
+- `entryButtons`: LOCK_BUTTON assetIds that trigger face detection before unlock
+- `exitButtons`: LOCK_BUTTON assetIds that unlock directly (no detection)
 
 ### Target State: Local DynamoDB After Processing
 
@@ -182,15 +192,16 @@ The only change from the current shadow: `companions` array added to the lock en
       "assetId": "0xe4b323fffeb4b614",
       "assetName": "MAG002",
       "withKeypad": true,
-      "companions": ["0x00_greenpower_button_1"]
+      "entryButtons": ["0x00_greenpower_button_1"],
+      "exitButtons": ["0x00_greenpower_button_2"]
     }
   }
 }
 ```
 
-`withKeypad` is now `true` because the lock has a companion device.
+`withKeypad` is now `true` because the lock has entry buttons (companion devices that trigger detection).
 
-**Lock record** (MAG001AC — updated with companions):
+**Lock record** (MAG001AC — updated with button associations):
 ```json
 {
   "hostId": "rulin",
@@ -200,7 +211,8 @@ The only change from the current shadow: `companions` array added to the lock en
   "assetName": "MAG002",
   "model": "MAG001AC",
   "withKeypad": false,
-  "companions": ["0x00_greenpower_button_1"],
+  "entryButtons": ["0x00_greenpower_button_1"],
+  "exitButtons": ["0x00_greenpower_button_2"],
   "cameras": {
     "ea9a49f2-c236-4d6d-b82f-a0725a03f614": {
       "assetId": "ea9a49f2-c236-4d6d-b82f-a0725a03f614",
@@ -210,9 +222,9 @@ The only change from the current shadow: `companions` array added to the lock en
 }
 ```
 
-Note: `withKeypad` stays `false` on the lock record itself (MAG001AC has no built-in sensor). The enrichment logic checks `companions.length > 0` to override `withKeypad=true` on the camera's lock entry.
+Note: `withKeypad` stays `false` on the lock record itself (MAG001AC has no built-in sensor). The enrichment logic checks `entryButtons.length > 0` to override `withKeypad=true` on the camera's lock entry.
 
-**LOCK_BUTTON record** (from Zigbee discovery + companionOf set during shadow processing):
+**LOCK_BUTTON record - Entry Button** (from Zigbee discovery + companionOf/buttonType set during shadow processing):
 ```json
 {
   "hostId": "rulin",
@@ -222,27 +234,44 @@ Note: `withKeypad` stays `false` on the lock record itself (MAG001AC has no buil
   "assetName": "DoorButton1",
   "model": "GreenPower_2",
   "withKeypad": true,
-  "companionOf": "0xe4b323fffeb4b614"
+  "companionOf": "0xe4b323fffeb4b614",
+  "buttonType": "ENTRY"
+}
+```
+
+**LOCK_BUTTON record - Exit Button**:
+```json
+{
+  "hostId": "rulin",
+  "assetId": "0x00_greenpower_button_2",
+  "uuid": "0x00_greenpower_button_2",
+  "category": "LOCK_BUTTON",
+  "assetName": "ExitButton1",
+  "model": "GreenPower_2",
+  "withKeypad": true,
+  "companionOf": "0xe4b323fffeb4b614",
+  "buttonType": "EXIT"
 }
 ```
 
 ### Processing Flow
 
 ```
-Cloud UI: associate GreenPower_2 button with MAG001AC lock
+Cloud UI: associate GreenPower_2 buttons with MAG001AC lock (as entry or exit)
     ↓
-Cloud: update camera named shadow — adds companions to lock entry
+Cloud: update camera named shadow — adds entryButtons/exitButtons to lock entry
     ↓
 ggp-func-ts-gocheckin: processCamerasShadowDelta()
-    ├── enriches withKeypad: companions.length > 0 → true
+    ├── enriches withKeypad: entryButtons.length > 0 → true
     ├── writes camera to gocheckin_asset (withKeypad=true)
-    ├── syncs companions to Z2mLock (MAG001AC) record
-    ├── sets companionOf on Z2mLock (GreenPower_2) record
+    ├── syncs entryButtons/exitButtons to Z2mLock (MAG001AC) record
+    ├── sets companionOf + buttonType on each Z2mLock (GreenPower_2) record
     └── publishes gocheckin/reset_camera
     ↓
 py_handler: reloads camera config — sees withKeypad=true
     ↓
-Runtime: button click → handleButtonClickEvent() → companionOf → parent lock → trigger_detection
+Runtime (Entry button): button click → handleButtonClickEvent() → buttonType=ENTRY → trigger_detection
+Runtime (Exit button): button click → handleButtonClickEvent() → buttonType=EXIT → unlockZbLock() directly
 ```
 
 ### GoCheckInLock Model Change
@@ -254,13 +283,18 @@ export interface GoCheckInLock {
     assetName: string;
     withKeypad: boolean;
     category?: string;
-    companions?: string[];  // NEW: assetIds of companion devices (LOCK_BUTTON)
+    entryButtons?: string[];  // NEW: LOCK_BUTTONs that trigger detection before unlock
+    exitButtons?: string[];   // NEW: LOCK_BUTTONs that unlock directly (no detection)
 }
+
+export type ButtonType = 'ENTRY' | 'EXIT';
 
 export interface Z2mLock {
     // ... existing fields ...
-    companionOf?: string;    // assetId of parent lock (set on LOCK_BUTTON)
-    companions?: string[];   // assetIds of companion devices (set on parent LOCK)
+    companionOf?: string;     // assetId of parent lock (set on LOCK_BUTTON)
+    buttonType?: ButtonType;  // NEW: ENTRY or EXIT (set on LOCK_BUTTON)
+    entryButtons?: string[];  // assetIds of entry buttons (set on parent LOCK)
+    exitButtons?: string[];   // assetIds of exit buttons (set on parent LOCK)
 }
 ```
 
@@ -274,16 +308,18 @@ if (existingCamera.locks) {
         const lockRecord: Z2mLock = await this.assetsDao.getZbLockById(lockAssetId);
         const lockEntry = existingCamera.locks[lockAssetId];
 
-        // Propagate companions from shadow to lock record
-        if (lockEntry.companions && lockEntry.companions.length > 0) {
-            // Sync companions to Z2mLock record
-            await this.syncCompanions(lockAssetId, lockEntry.companions);
+        // Propagate button associations from shadow to lock record
+        const entryButtons = lockEntry.entryButtons || [];
+        const exitButtons = lockEntry.exitButtons || [];
+        if (entryButtons.length > 0 || exitButtons.length > 0) {
+            // Sync button associations to Z2mLock records
+            await this.syncButtonAssociations(lockAssetId, entryButtons, exitButtons);
         }
 
         if (lockRecord) {
-            // withKeypad = true if lock has built-in sensor OR has companion devices
-            const hasCompanion = lockEntry.companions && lockEntry.companions.length > 0;
-            existingCamera.locks[lockAssetId].withKeypad = lockRecord.withKeypad || hasCompanion;
+            // withKeypad = true if lock has built-in sensor OR has entry buttons
+            const hasEntryButtons = entryButtons.length > 0;
+            existingCamera.locks[lockAssetId].withKeypad = lockRecord.withKeypad || hasEntryButtons;
             existingCamera.locks[lockAssetId].assetId = lockAssetId;
         } else {
             existingCamera.locks[lockAssetId].withKeypad = false;
@@ -332,15 +368,29 @@ public async handleButtonClickEvent(event: LockButtonEvent): Promise<any> {
         return;
     }
     const parentLock = await this.assetsDao.getZbLockById(button.companionOf);
-    if (!parentLock || !parentLock.cameras) {
-        console.log(`handleButtonClickEvent - parent lock or cameras not found: ${button.companionOf}`);
+    if (!parentLock) {
+        console.log(`handleButtonClickEvent - parent lock not found: ${button.companionOf}`);
         return;
     }
 
-    // 3. Trigger detection using parent lock's cameras and parent lock's assetId
+    // 3. Handle based on button type
+    if (button.buttonType === 'EXIT') {
+        // Exit button: unlock directly without detection
+        console.log(`handleButtonClickEvent EXIT button - unlocking: ${parentLock.assetId}`);
+        await this.unlockZbLock(parentLock);
+        console.log('assets.service handleButtonClickEvent out (EXIT)');
+        return;
+    }
+
+    // Entry button (default): trigger detection using parent lock's cameras
+    if (!parentLock.cameras) {
+        console.log(`handleButtonClickEvent - parent lock has no cameras: ${button.companionOf}`);
+        return;
+    }
+
     const triggerPromises = Object.keys(parentLock.cameras).map(async (cameraAssetId: string) => {
         const camera = parentLock.cameras[cameraAssetId];
-        console.log(`handleButtonClickEvent triggering for camera: ${camera.localIp}`);
+        console.log(`handleButtonClickEvent ENTRY triggering for camera: ${camera.localIp}`);
 
         await this.iotService.publish({
             topic: 'gocheckin/trigger_detection',
@@ -351,7 +401,7 @@ public async handleButtonClickEvent(event: LockButtonEvent): Promise<any> {
     });
 
     await Promise.allSettled(triggerPromises);
-    console.log('assets.service handleButtonClickEvent out');
+    console.log('assets.service handleButtonClickEvent out (ENTRY)');
 }
 ```
 
@@ -365,33 +415,47 @@ export interface LockButtonEvent {
 }
 ```
 
-### Shadow Processing for Companion Association
+### Shadow Processing for Button Associations
 
 When the cloud sends the LOCK_BUTTON ↔ LOCK association via shadow:
 
 ```typescript
 // assets.service.ts — new or extended shadow handler
-private async processCompanionAssociation(buttonAssetId: string, parentLockAssetId: string): Promise<void> {
-    // 1. Set companionOf on the LOCK_BUTTON record
-    const button = await this.assetsDao.getZbLockById(buttonAssetId);
-    if (button) {
-        button.companionOf = parentLockAssetId;
-        await this.assetsDao.updateLock(button);
-    }
-
-    // 2. Add to companions array on parent LOCK
+private async syncButtonAssociations(
+    parentLockAssetId: string,
+    entryButtons: string[],
+    exitButtons: string[]
+): Promise<void> {
+    // 1. Update parent LOCK record with button arrays
     const parentLock = await this.assetsDao.getZbLockById(parentLockAssetId);
     if (parentLock) {
-        if (!parentLock.companions) parentLock.companions = [];
-        if (!parentLock.companions.includes(buttonAssetId)) {
-            parentLock.companions.push(buttonAssetId);
-        }
+        parentLock.entryButtons = entryButtons;
+        parentLock.exitButtons = exitButtons;
         await this.assetsDao.updateLock(parentLock);
     }
 
-    // 3. Re-enrich camera locks (withKeypad now true for parent)
-    //    Camera shadow will be re-processed, or trigger explicit re-sync
-    if (parentLock?.cameras) {
+    // 2. Set companionOf + buttonType on each entry button
+    for (const buttonAssetId of entryButtons) {
+        const button = await this.assetsDao.getZbLockById(buttonAssetId);
+        if (button) {
+            button.companionOf = parentLockAssetId;
+            button.buttonType = 'ENTRY';
+            await this.assetsDao.updateLock(button);
+        }
+    }
+
+    // 3. Set companionOf + buttonType on each exit button
+    for (const buttonAssetId of exitButtons) {
+        const button = await this.assetsDao.getZbLockById(buttonAssetId);
+        if (button) {
+            button.companionOf = parentLockAssetId;
+            button.buttonType = 'EXIT';
+            await this.assetsDao.updateLock(button);
+        }
+    }
+
+    // 4. Re-enrich camera locks (withKeypad now true if entry buttons exist)
+    if (parentLock?.cameras && entryButtons.length > 0) {
         for (const cameraAssetId of Object.keys(parentLock.cameras)) {
             const camera = await this.assetsDao.getCamera(process.env.HOST_ID, cameraAssetId);
             if (camera?.locks?.[parentLockAssetId]) {
@@ -420,10 +484,11 @@ ONVIF has nothing to do with lock actions in py_handler. The ts handler is the s
 | Zigbee Event | ts handler | py_handler receives |
 |---|---|---|
 | KEYPAD/KEYPAD_LOCK `occupancy: true` | `handleLockTouchEvent()` | `trigger_detection { cam_ip, lock_asset_id }` |
-| LOCK_BUTTON `action: "press_1"` | `handleButtonClickEvent()` → resolve `companionOf` | `trigger_detection { cam_ip, lock_asset_id }` (parent LOCK's ID) |
+| LOCK_BUTTON (Entry) `action: "press_1"` | `handleButtonClickEvent()` → `buttonType=ENTRY` | `trigger_detection { cam_ip, lock_asset_id }` (parent LOCK's ID) |
+| LOCK_BUTTON (Exit) `action: "press_1"` | `handleButtonClickEvent()` → `buttonType=EXIT` → `unlockZbLock()` | **Nothing** (direct unlock, no detection) |
 | KEYPAD/KEYPAD_LOCK `occupancy: false` | `handleLockStopEvent()` | `stop_detection { cam_ip, lock_asset_id }` |
 
-py_handler is guaranteed to receive a specified lock's assetId for every lock-triggered detection. It has no knowledge of device categories, companion relationships, or button vs sensor — that complexity is fully encapsulated in the ts handler.
+py_handler is guaranteed to receive a specified lock's assetId for every lock-triggered detection. It has no knowledge of device categories, companion relationships, button types, or button vs sensor — that complexity is fully encapsulated in the ts handler.
 
 ### Stop Detection Consideration
 
@@ -435,38 +500,47 @@ Unlike KEYPAD which sends `occupancy:false` to stop detection early, LOCK_BUTTON
 
 ### Cloud (outside scope — API/UI)
 
-1. Add ability to associate a LOCK_BUTTON device with a LOCK device
-2. Send association via device shadow update
+1. Add ability to associate LOCK_BUTTON devices with a LOCK device as **entry** or **exit** buttons
+2. Send association via device shadow update with `entryButtons` and `exitButtons` arrays
 
 ### TypeScript (ggp-func-ts-gocheckin)
 
-1. **assets.models.ts**: Add `companionOf?: string` and `companions?: string[]` to Z2mLock, add `LockButtonEvent` interface
+1. **assets.models.ts**: Add `companionOf?: string`, `buttonType?: ButtonType`, `entryButtons?: string[]`, `exitButtons?: string[]` to Z2mLock, add `LockButtonEvent` interface
 2. **function.conf**: Add `LOCK_BUTTON` to `ZB_CAT_WITH_KEYPAD`
 3. **handler.ts**: Add `action` event routing (after line 79)
-4. **assets.service.ts**: Add `handleButtonClickEvent()` method
-5. **assets.service.ts**: Add `processCompanionAssociation()` for shadow-driven association
-6. **assets.service.ts**: Update `processCamerasShadowDelta()` lock enrichment to check `companions`
+4. **assets.service.ts**: Add `handleButtonClickEvent()` method with button type handling
+5. **assets.service.ts**: Add `syncButtonAssociations()` for shadow-driven association
+6. **assets.service.ts**: Update `processCamerasShadowDelta()` lock enrichment to check `entryButtons`
 
 ### Python (ggp-func-py-gocheckin) — No Changes
 
-py_handler already handles `trigger_detection` with `lock_asset_id`. The parent LOCK's assetId is sent, so context tracking, snapshot, and occupancy logic all work unchanged. The `withKeypad=true` enrichment ensures the P2 gate accepts the camera correctly.
+py_handler already handles `trigger_detection` with `lock_asset_id`. The parent LOCK's assetId is sent, so context tracking, snapshot, and occupancy logic all work unchanged. The `withKeypad=true` enrichment ensures the P2 gate accepts the camera correctly. Exit buttons bypass py_handler entirely (direct unlock).
 
 ## Verification
 
+### Entry Button Flow
 1. Pair GreenPower_2 → discovered as `LOCK_BUTTON` with `withKeypad=true`
-2. Cloud associates button with MAG001AC → shadow update → local DB updated
-3. MAG001AC's camera lock entry gets `withKeypad=true` (via companion check)
-4. Press button → `{"action": "press_1"}` → `handleButtonClickEvent()` → resolves `companionOf` → parent lock's cameras → `trigger_detection` with parent's assetId
-5. py_handler receives trigger, starts detection, timer expires naturally
-6. Face match → `occupancyTriggeredLocks` contains parent LOCK's assetId → correct unlock target
+2. Cloud associates button as **entry** button with MAG001AC → shadow update → local DB updated
+3. Button record has `companionOf` + `buttonType=ENTRY`
+4. MAG001AC's camera lock entry gets `withKeypad=true` (via `entryButtons.length > 0`)
+5. Press entry button → `{"action": "press_1"}` → `handleButtonClickEvent()` → `buttonType=ENTRY` → `trigger_detection` with parent's assetId
+6. py_handler receives trigger, starts detection, timer expires naturally
+7. Face match → `occupancyTriggeredLocks` contains parent LOCK's assetId → correct unlock target
+
+### Exit Button Flow
+1. Pair GreenPower_2 → discovered as `LOCK_BUTTON` with `withKeypad=true`
+2. Cloud associates button as **exit** button with MAG001AC → shadow update → local DB updated
+3. Button record has `companionOf` + `buttonType=EXIT`
+4. Press exit button → `{"action": "press_1"}` → `handleButtonClickEvent()` → `buttonType=EXIT` → `unlockZbLock()` directly
+5. Door unlocks immediately — no detection, no py_handler involvement
 
 ## Files
 
 | File | Repo | Action |
 |------|------|--------|
-| `packages/src/functions/assets/assets.models.ts` | ts | Add `companionOf`, `companions` to Z2mLock; add `LockButtonEvent` |
+| `packages/src/functions/assets/assets.models.ts` | ts | Add `companionOf`, `buttonType`, `entryButtons`, `exitButtons` to Z2mLock; add `LockButtonEvent`, `ButtonType` |
 | `function.conf` | ts | Add LOCK_BUTTON to ZB_CAT_WITH_KEYPAD |
 | `packages/src/handler.ts` | ts | Add `action` event routing |
-| `packages/src/functions/assets/assets.service.ts` | ts | Add `handleButtonClickEvent()`, `processCompanionAssociation()`, update lock enrichment |
-| Cloud API/UI | cloud | Association management (outside scope) |
+| `packages/src/functions/assets/assets.service.ts` | ts | Add `handleButtonClickEvent()` with button type logic, `syncButtonAssociations()`, update lock enrichment |
+| Cloud API/UI | cloud | Entry/Exit button association management (outside scope) |
 | py_handler.py | py | No changes needed |

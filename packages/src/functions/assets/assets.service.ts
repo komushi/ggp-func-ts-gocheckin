@@ -2,7 +2,7 @@ const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
 const ZB_CATS = process.env.ZB_CATS.split(",");
 const ZB_CATS_WITH_KEYPAD = process.env.ZB_CAT_WITH_KEYPAD.split(",");
 
-import { MemberDetectedItem, Z2mRemoved, Z2mRenamed, Z2mLock, Z2mEvent, PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras, ClassicShadowSpaces, ClassicShadowSpace, LockOccupancyEvent } from './assets.models';
+import { MemberDetectedItem, Z2mRemoved, Z2mRenamed, Z2mLock, Z2mEvent, PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras, ClassicShadowSpaces, ClassicShadowSpace, LockOccupancyEvent, LockButtonEvent, ButtonType } from './assets.models';
 import { AssetsDao } from './assets.dao';
 import { IotService } from '../iot/iot.service';
 
@@ -136,12 +136,22 @@ export class AssetsService {
     if (existingCamera.locks) {
       for (const lockAssetId of Object.keys(existingCamera.locks)) {
         const lockRecord: Z2mLock = await this.assetsDao.getZbLockById(lockAssetId);
+        const lockEntry = existingCamera.locks[lockAssetId];
+
+        // Propagate button associations from shadow to lock record
+        const entryButtons = lockEntry.entryButtons || [];
+        const exitButtons = lockEntry.exitButtons || [];
+        if (entryButtons.length > 0 || exitButtons.length > 0) {
+          await this.syncButtonAssociations(lockAssetId, entryButtons, exitButtons);
+        }
+
         if (lockRecord) {
-          existingCamera.locks[lockAssetId].withKeypad = lockRecord.withKeypad;
+          // withKeypad = true if lock has built-in sensor OR has entry buttons
+          const hasEntryButtons = entryButtons.length > 0;
+          existingCamera.locks[lockAssetId].withKeypad = lockRecord.withKeypad || hasEntryButtons;
           existingCamera.locks[lockAssetId].assetId = lockAssetId;
-          console.log(`assets.service processCamerasShadowDelta enriched lock ${lockAssetId} with withKeypad=${lockRecord.withKeypad}`);
+          console.log(`assets.service processCamerasShadowDelta enriched lock ${lockAssetId} with withKeypad=${existingCamera.locks[lockAssetId].withKeypad}`);
         } else {
-          // Lock not found in local DB, default to legacy (withKeypad=false)
           existingCamera.locks[lockAssetId].withKeypad = false;
           existingCamera.locks[lockAssetId].assetId = lockAssetId;
           console.log(`assets.service processCamerasShadowDelta lock ${lockAssetId} not found, defaulting withKeypad=false`);
@@ -262,6 +272,43 @@ export class AssetsService {
     }
 
     console.log(`assets.service removeCameraFromLock out`);
+  }
+
+  private async syncButtonAssociations(parentLockAssetId: string, entryButtons: string[], exitButtons: string[]): Promise<void> {
+    console.log(`assets.service syncButtonAssociations in: ${JSON.stringify({ parentLockAssetId, entryButtons, exitButtons })}`);
+
+    // Update parent lock record with button arrays
+    const parentLock: Z2mLock = await this.assetsDao.getZbLockById(parentLockAssetId);
+    if (parentLock) {
+      parentLock.entryButtons = entryButtons;
+      parentLock.exitButtons = exitButtons;
+      await this.assetsDao.updateLock(parentLock);
+      console.log(`assets.service syncButtonAssociations updated parent lock ${parentLockAssetId}`);
+    }
+
+    // Set companionOf + buttonType on each entry button
+    for (const buttonAssetId of entryButtons) {
+      const buttonRecord: Z2mLock = await this.assetsDao.getZbLockById(buttonAssetId);
+      if (buttonRecord) {
+        buttonRecord.companionOf = parentLockAssetId;
+        buttonRecord.buttonType = 'ENTRY';
+        await this.assetsDao.updateLock(buttonRecord);
+        console.log(`assets.service syncButtonAssociations set ENTRY button ${buttonAssetId} -> lock ${parentLockAssetId}`);
+      }
+    }
+
+    // Set companionOf + buttonType on each exit button
+    for (const buttonAssetId of exitButtons) {
+      const buttonRecord: Z2mLock = await this.assetsDao.getZbLockById(buttonAssetId);
+      if (buttonRecord) {
+        buttonRecord.companionOf = parentLockAssetId;
+        buttonRecord.buttonType = 'EXIT';
+        await this.assetsDao.updateLock(buttonRecord);
+        console.log(`assets.service syncButtonAssociations set EXIT button ${buttonAssetId} -> lock ${parentLockAssetId}`);
+      }
+    }
+
+    console.log(`assets.service syncButtonAssociations out`);
   }
 
   public async processCamerasShadow(deltaShadowCameras: ClassicShadowCameras, desiredShadowCameras: ClassicShadowCameras): Promise<any> {
@@ -648,6 +695,65 @@ export class AssetsService {
     console.log('assets.service handleLockStopEvent results: ' + JSON.stringify(results));
 
     console.log('assets.service handleLockStopEvent out');
+
+    return;
+  }
+
+  public async handleButtonClickEvent(event: LockButtonEvent): Promise<any> {
+    console.log('assets.service handleButtonClickEvent in: ' + JSON.stringify(event));
+
+    // 1. Look up button by friendly name
+    const z2mLocks: Z2mLock[] = await this.assetsDao.getZbLockByName(event.lockAssetName);
+
+    if (z2mLocks.length === 0) {
+      console.log(`assets.service handleButtonClickEvent out - button not found: ${event.lockAssetName}`);
+      return;
+    }
+
+    const button = z2mLocks[0];
+
+    // 2. Verify this is a companion button
+    if (!button.companionOf) {
+      console.log(`assets.service handleButtonClickEvent out - not a companion button: ${button.assetId}`);
+      return;
+    }
+
+    // 3. Resolve parent lock
+    const parentLock: Z2mLock = await this.assetsDao.getZbLockById(button.companionOf);
+    if (!parentLock) {
+      console.log(`assets.service handleButtonClickEvent out - parent lock not found: ${button.companionOf}`);
+      return;
+    }
+
+    // 4. Handle based on button type
+    if (button.buttonType === 'EXIT') {
+      // EXIT button → direct unlock
+      console.log(`assets.service handleButtonClickEvent EXIT button -> unlocking lock ${parentLock.assetId}`);
+      await this.unlockZbLock(parentLock.assetId);
+    } else if (button.buttonType === 'ENTRY') {
+      // ENTRY button → trigger detection on parent lock's cameras
+      if (!parentLock.cameras || Object.keys(parentLock.cameras).length === 0) {
+        console.log(`assets.service handleButtonClickEvent out - no cameras for parent lock: ${parentLock.assetId}`);
+        return;
+      }
+
+      const triggerPromises = Object.keys(parentLock.cameras).map(async (cameraAssetId: string) => {
+        const camera = parentLock.cameras[cameraAssetId];
+        console.log(`assets.service handleButtonClickEvent ENTRY button -> triggering detection for camera: ${camera.localIp}`);
+
+        await this.iotService.publish({
+          topic: `gocheckin/trigger_detection`,
+          payload: JSON.stringify({ cam_ip: camera.localIp, lock_asset_id: parentLock.assetId })
+        });
+
+        return { cameraIp: camera.localIp, status: 'triggered' };
+      });
+
+      const results = await Promise.allSettled(triggerPromises);
+      console.log('assets.service handleButtonClickEvent results: ' + JSON.stringify(results));
+    }
+
+    console.log('assets.service handleButtonClickEvent out');
 
     return;
   }

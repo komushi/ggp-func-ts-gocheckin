@@ -81,6 +81,13 @@ exports.function_handler = function (event, context) {
                     });
                 }
             }
+            // Handle action attribute if present (LOCK_BUTTON click)
+            if (deviceName && 'action' in event) {
+                yield assetsService.handleButtonClickEvent({
+                    lockAssetName: deviceName,
+                    action: event.action
+                });
+            }
         }
     });
 };

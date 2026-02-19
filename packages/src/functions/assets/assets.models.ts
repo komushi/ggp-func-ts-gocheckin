@@ -46,6 +46,8 @@ export interface GoCheckInLock {
     assetName: string;
     withKeypad: boolean;
     category: string;  // 'LOCK' (legacy) or 'KEYPAD_LOCK' (has occupancy sensor)
+    entryButtons?: string[];
+    exitButtons?: string[];
 }
 
 export interface GoCheckInLocks {
@@ -202,6 +204,10 @@ export interface Z2mLock {
     state: boolean;
     lastUpdateOn: string;
     cameras?: Z2mLockCameras;
+    companionOf?: string;
+    buttonType?: ButtonType;
+    entryButtons?: string[];
+    exitButtons?: string[];
 }
 
 export interface Z2mLockCamera {
@@ -216,6 +222,13 @@ export interface Z2mLockCameras {
 export interface LockOccupancyEvent {
     lockAssetName: string;  // Friendly name from zigbee2mqtt (e.g., "DC006")
     occupancy: boolean;     // Sensor state
+}
+
+export type ButtonType = 'ENTRY' | 'EXIT';
+
+export interface LockButtonEvent {
+    lockAssetName: string;
+    action: string;  // "press_1", "press_2", etc.
 }
 
 export interface MemberDetectedItem {

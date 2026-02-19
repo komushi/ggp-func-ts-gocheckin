@@ -463,7 +463,7 @@ class AssetsDao {
                 TableName: TBL_ASSET,
                 IndexName: IDX_EQUIPMENT_NAME,
                 KeyConditionExpression: '#en = :en',
-                FilterExpression: '#category IN (:catLock, :catKeypadLock)',
+                FilterExpression: '#category IN (:catLock, :catKeypadLock, :catLockButton)',
                 ExpressionAttributeNames: {
                     '#en': 'assetName',
                     '#category': 'category'
@@ -471,7 +471,8 @@ class AssetsDao {
                 ExpressionAttributeValues: {
                     ':en': assetName,
                     ':catLock': 'LOCK',
-                    ':catKeypadLock': 'KEYPAD_LOCK'
+                    ':catKeypadLock': 'KEYPAD_LOCK',
+                    ':catLockButton': 'LOCK_BUTTON'
                 }
             }));
             console.log('assets.dao getZbLockByName out:' + JSON.stringify(response.Items));
