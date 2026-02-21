@@ -357,6 +357,63 @@ export class AssetsService {
 
   }
 
+  private async processLockShadowDelta(uuid: string): Promise<any> {
+    console.log('assets.service processLockShadowDelta in: ' + JSON.stringify({ uuid }));
+
+    const getShadowResult = await this.iotService.getShadow({
+      thingName: AWS_IOT_THING_NAME,
+      shadowName: uuid
+    });
+
+    const delta = getShadowResult.state.desired;
+
+    const lock: Z2mLock = await this.assetsDao.getZbLockById(uuid);
+    if (!lock) {
+      console.log(`assets.service processLockShadowDelta out - lock not found: ${uuid}`);
+      return;
+    }
+
+    lock.roomCode = delta.roomCode || undefined;
+    lock.lastUpdateOn = (new Date).toISOString();
+
+    await this.assetsDao.updateLock(lock);
+
+    await this.iotService.updateReportedShadow({
+      thingName: AWS_IOT_THING_NAME,
+      shadowName: uuid,
+      reportedState: delta
+    });
+
+    console.log(`assets.service processLockShadowDelta out - updated ${uuid} roomCode=${lock.roomCode}`);
+
+    return;
+  }
+
+  public async processLocksShadow(deltaShadowLocks: ClassicShadowCameras, desiredShadowLocks: ClassicShadowCameras): Promise<any> {
+    console.log('assets.service processLocksShadow in: ' + JSON.stringify({ deltaShadowLocks, desiredShadowLocks }));
+
+    const promises = Object.keys(deltaShadowLocks).map(async (uuid: string) => {
+      const entry: ClassicShadowCamera = desiredShadowLocks[uuid];
+      if (entry) {
+        try {
+          if (entry.action === 'UPDATE') {
+            await this.processLockShadowDelta(uuid);
+          }
+        } catch (err) {
+          return { uuid, action: entry.action, message: err.message, stack: err.stack };
+        }
+
+        return { uuid, action: entry.action };
+      }
+    });
+
+    const results = await Promise.allSettled(promises);
+    console.log('assets.service processLocksShadow results:' + JSON.stringify(results));
+
+    console.log('assets.service processLocksShadow out');
+
+  }
+
   public async discoverCameras(hostId: string): Promise<any> {
     console.log(`assets.service discoverCameras in hostId: ${hostId}`);
 

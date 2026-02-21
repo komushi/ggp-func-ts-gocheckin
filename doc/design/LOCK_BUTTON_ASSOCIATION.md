@@ -98,7 +98,7 @@ The camera shadow only sends `assetName` in the lock entry. `withKeypad` is enri
 
 When a LOCK_BUTTON is removed from layout (made available), the shadow fields are set to `null`.
 
-**LOCK named shadow** (thingName=coreName, shadowName=lock UUID):
+**LOCK / KEYPAD_LOCK named shadow** (thingName=coreName, shadowName=lock UUID):
 ```json
 // Named shadow: neoseed_Core / 0xe4b323fffeb4b614
 {
@@ -110,7 +110,7 @@ When a LOCK_BUTTON is removed from layout (made available), the shadow fields ar
 }
 ```
 
-The LOCK named shadow syncs cloud-managed fields (like `roomCode` / space assignment) to the edge. Without it, the edge has no mechanism to receive these fields. Lock-camera association is carried by the camera shadow's `locks` map; the edge builds the reverse `lock.cameras` map locally via `syncLockCameraReference()`.
+Both LOCK and KEYPAD_LOCK use the same named shadow structure. The cloud includes both categories in the classic shadow `locks` section. `roomCode` identifies which room/space the lock belongs to — used for security use-cases to show which room's lock has been touched. Lock-camera association is carried by the camera shadow's `locks` map; the edge builds the reverse `lock.cameras` map locally via `syncLockCameraReference()`.
 
 ### Edge Local DynamoDB (gocheckin_asset table)
 
@@ -260,11 +260,17 @@ Cloud UI: associate GreenPower_2 buttons with MAG002 lock (as entry or exit)
     ↓
 Cloud: sets companionOf + buttonType on LOCK_BUTTON DynamoDB record
 Cloud: syncs LOCK_BUTTON named shadow with companionOf/buttonType
+Cloud: syncs LOCK named shadow with roomCode
     ↓
-Edge receives LOCK_BUTTON named shadow delta
+Edge receives classic shadow delta with lockButtons and locks sections
     ↓
-ggp-func-ts-gocheckin: processLockButtonShadowDelta()
-    └── writes companionOf + buttonType to LOCK_BUTTON record in local DynamoDB
+ggp-func-ts-gocheckin: processLockButtonsShadow()
+    └── processLockButtonShadowDelta(uuid) for each LOCK_BUTTON
+        └── writes companionOf + buttonType to LOCK_BUTTON record in local DynamoDB
+
+ggp-func-ts-gocheckin: processLocksShadow()
+    └── processLockShadowDelta(uuid) for each LOCK
+        └── writes roomCode to LOCK record in local DynamoDB
 ```
 
 ### Camera Enrichment Flow
@@ -398,6 +404,24 @@ if (existingCamera.locks) {
 
 `hasEntryButtonsForLock(lockAssetId)` queries `gocheckin_asset` for LOCK_BUTTON records where `companionOf = lockAssetId` and `buttonType = 'ENTRY'`. Returns `true` if any exist.
 
+### assets.service.ts — LOCK Shadow Processing
+
+```typescript
+private async processLockShadowDelta(uuid: string): Promise<any> {
+    const getShadowResult = await this.iotService.getShadow({ thingName, shadowName: uuid });
+    const delta = getShadowResult.state.desired;
+
+    const lock: Z2mLock = await this.assetsDao.getZbLockById(uuid);
+    if (!lock) return;
+
+    lock.roomCode = delta.roomCode || undefined;
+    lock.lastUpdateOn = (new Date).toISOString();
+
+    await this.assetsDao.updateLock(lock);
+    await this.iotService.updateReportedShadow({ thingName, shadowName: uuid, reportedState: delta });
+}
+```
+
 ### assets.dao.ts
 
 - `getZbLockByName()` filter includes `LOCK_BUTTON` category
@@ -415,13 +439,14 @@ The edge does not write association data. `companionOf` and `buttonType` on LOCK
 
 1. Set `companionOf` and `buttonType` on LOCK_BUTTON DynamoDB records when user associates buttons
 2. Sync `companionOf`/`buttonType` to edge via LOCK_BUTTON named shadow
+3. Sync `roomCode` to edge via LOCK named shadow
 
 ### TypeScript (ggp-func-ts-gocheckin)
 
 1. **assets.models.ts**: Add `companionOf?: string`, `buttonType?: ButtonType` to `Z2mLock`; add `LockButtonEvent`, `ButtonType` types. Remove `entryButtons`/`exitButtons` from `GoCheckInLock` and `Z2mLock`.
 2. **function.conf**: Add `LOCK_BUTTON` to `ZB_CAT_WITH_KEYPAD`
-3. **handler.ts**: Add `action` event routing; add LOCK_BUTTON named shadow delta routing
-4. **assets.service.ts**: Add `handleButtonClickEvent()`; update `processCamerasShadowDelta()` to query LOCK_BUTTON records for `withKeypad`; remove `syncButtonAssociations()`
+3. **handler.ts**: Add `action` event routing; add `lockButtons` and `locks` classic shadow routing
+4. **assets.service.ts**: Add `handleButtonClickEvent()`; add `processLockButtonsShadow()`/`processLockButtonShadowDelta()` for LOCK_BUTTON shadow; add `processLocksShadow()`/`processLockShadowDelta()` for LOCK shadow; update `processCamerasShadowDelta()` to query LOCK_BUTTON records for `withKeypad`; remove `syncButtonAssociations()`
 5. **assets.dao.ts**: Update `getZbLockByName()` filter to include `LOCK_BUTTON`; add `hasEntryButtonsForLock()`
 
 ### Python (ggp-func-py-gocheckin) — No Changes

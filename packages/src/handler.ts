@@ -130,6 +130,15 @@ const processClassicShadow = async function (event) {
 		}
 	}
 
+	if (event.state.locks) {
+		if (getShadowResult.state.desired.locks) {
+			await assetsService.processLocksShadow(event.state.locks, getShadowResult.state.desired.locks).catch(err => {
+				console.error('processLocksShadow error:' + err.message);
+				throw err;
+			});
+		}
+	}
+
 	if (event.state.lockButtons) {
 		if (getShadowResult.state.desired.lockButtons) {
 			await assetsService.processLockButtonsShadow(event.state.lockButtons, getShadowResult.state.desired.lockButtons).catch(err => {
