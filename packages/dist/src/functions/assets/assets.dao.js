@@ -479,6 +479,30 @@ class AssetsDao {
             return response.Items;
         });
     }
+    hasEntryButtonsForLock(lockAssetId) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.dao hasEntryButtonsForLock in:' + lockAssetId);
+            const response = yield this.ddbDocClient.send(new lib_dynamodb_1.ScanCommand({
+                TableName: TBL_ASSET,
+                FilterExpression: '#category = :category AND #companionOf = :companionOf AND #buttonType = :buttonType',
+                ExpressionAttributeNames: {
+                    '#category': 'category',
+                    '#companionOf': 'companionOf',
+                    '#buttonType': 'buttonType'
+                },
+                ExpressionAttributeValues: {
+                    ':category': 'LOCK_BUTTON',
+                    ':companionOf': lockAssetId,
+                    ':buttonType': 'ENTRY'
+                },
+                Limit: 1
+            }));
+            const result = ((_a = response.Items) === null || _a === void 0 ? void 0 : _a.length) > 0;
+            console.log('assets.dao hasEntryButtonsForLock out:' + result);
+            return result;
+        });
+    }
     deleteZbLock(hostId, uuid) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.dao deleteZbLock in:' + JSON.stringify({ hostId, uuid }));

@@ -616,6 +616,34 @@ export class AssetsDao {
     return response.Items as Z2mLock[];
   }
 
+  public async hasEntryButtonsForLock(lockAssetId: string): Promise<boolean> {
+
+    console.log('assets.dao hasEntryButtonsForLock in:' + lockAssetId);
+
+    const response = await this.ddbDocClient.send(
+      new ScanCommand({
+        TableName: TBL_ASSET,
+        FilterExpression: '#category = :category AND #companionOf = :companionOf AND #buttonType = :buttonType',
+        ExpressionAttributeNames: {
+          '#category': 'category',
+          '#companionOf': 'companionOf',
+          '#buttonType': 'buttonType'
+        },
+        ExpressionAttributeValues: {
+          ':category': 'LOCK_BUTTON',
+          ':companionOf': lockAssetId,
+          ':buttonType': 'ENTRY'
+        },
+        Limit: 1
+      })
+    );
+
+    const result = response.Items?.length > 0;
+    console.log('assets.dao hasEntryButtonsForLock out:' + result);
+
+    return result;
+  }
+
   public async deleteZbLock(hostId: string, uuid: string): Promise<any> {
 
     console.log('assets.dao deleteZbLock in:' + JSON.stringify({ hostId, uuid }));

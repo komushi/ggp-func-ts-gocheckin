@@ -46,8 +46,6 @@ export interface GoCheckInLock {
     assetName: string;
     withKeypad: boolean;
     category: string;  // 'LOCK' (legacy) or 'KEYPAD_LOCK' (has occupancy sensor)
-    entryButtons?: string[];
-    exitButtons?: string[];
 }
 
 export interface GoCheckInLocks {
@@ -206,8 +204,6 @@ export interface Z2mLock {
     cameras?: Z2mLockCameras;
     companionOf?: string;
     buttonType?: ButtonType;
-    entryButtons?: string[];
-    exitButtons?: string[];
 }
 
 export interface Z2mLockCamera {

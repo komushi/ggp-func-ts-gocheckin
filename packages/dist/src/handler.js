@@ -126,6 +126,14 @@ const processClassicShadow = function (event) {
                 });
             }
         }
+        if (event.state.lockButtons) {
+            if (getShadowResult.state.desired.lockButtons) {
+                yield assetsService.processLockButtonsShadow(event.state.lockButtons, getShadowResult.state.desired.lockButtons).catch(err => {
+                    console.error('processLockButtonsShadow error:' + err.message);
+                    throw err;
+                });
+            }
+        }
         if (event.state.spaces) {
             if (getShadowResult.state.desired.spaces) {
                 yield assetsService.processSpacesShadow(event.state.spaces, getShadowResult.state.desired.spaces).catch(err => {

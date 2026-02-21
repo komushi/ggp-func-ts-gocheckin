@@ -136,18 +136,10 @@ export class AssetsService {
     if (existingCamera.locks) {
       for (const lockAssetId of Object.keys(existingCamera.locks)) {
         const lockRecord: Z2mLock = await this.assetsDao.getZbLockById(lockAssetId);
-        const lockEntry = existingCamera.locks[lockAssetId];
-
-        // Propagate button associations from shadow to lock record
-        const entryButtons = lockEntry.entryButtons || [];
-        const exitButtons = lockEntry.exitButtons || [];
-        if (entryButtons.length > 0 || exitButtons.length > 0) {
-          await this.syncButtonAssociations(lockAssetId, entryButtons, exitButtons);
-        }
 
         if (lockRecord) {
-          // withKeypad = true if lock has built-in sensor OR has entry buttons
-          const hasEntryButtons = entryButtons.length > 0;
+          // withKeypad = true if lock has built-in sensor OR has companion ENTRY buttons
+          const hasEntryButtons = await this.assetsDao.hasEntryButtonsForLock(lockAssetId);
           existingCamera.locks[lockAssetId].withKeypad = lockRecord.withKeypad || hasEntryButtons;
           existingCamera.locks[lockAssetId].assetId = lockAssetId;
           console.log(`assets.service processCamerasShadowDelta enriched lock ${lockAssetId} with withKeypad=${existingCamera.locks[lockAssetId].withKeypad}`);
@@ -274,43 +266,6 @@ export class AssetsService {
     console.log(`assets.service removeCameraFromLock out`);
   }
 
-  private async syncButtonAssociations(parentLockAssetId: string, entryButtons: string[], exitButtons: string[]): Promise<void> {
-    console.log(`assets.service syncButtonAssociations in: ${JSON.stringify({ parentLockAssetId, entryButtons, exitButtons })}`);
-
-    // Update parent lock record with button arrays
-    const parentLock: Z2mLock = await this.assetsDao.getZbLockById(parentLockAssetId);
-    if (parentLock) {
-      parentLock.entryButtons = entryButtons;
-      parentLock.exitButtons = exitButtons;
-      await this.assetsDao.updateLock(parentLock);
-      console.log(`assets.service syncButtonAssociations updated parent lock ${parentLockAssetId}`);
-    }
-
-    // Set companionOf + buttonType on each entry button
-    for (const buttonAssetId of entryButtons) {
-      const buttonRecord: Z2mLock = await this.assetsDao.getZbLockById(buttonAssetId);
-      if (buttonRecord) {
-        buttonRecord.companionOf = parentLockAssetId;
-        buttonRecord.buttonType = 'ENTRY';
-        await this.assetsDao.updateLock(buttonRecord);
-        console.log(`assets.service syncButtonAssociations set ENTRY button ${buttonAssetId} -> lock ${parentLockAssetId}`);
-      }
-    }
-
-    // Set companionOf + buttonType on each exit button
-    for (const buttonAssetId of exitButtons) {
-      const buttonRecord: Z2mLock = await this.assetsDao.getZbLockById(buttonAssetId);
-      if (buttonRecord) {
-        buttonRecord.companionOf = parentLockAssetId;
-        buttonRecord.buttonType = 'EXIT';
-        await this.assetsDao.updateLock(buttonRecord);
-        console.log(`assets.service syncButtonAssociations set EXIT button ${buttonAssetId} -> lock ${parentLockAssetId}`);
-      }
-    }
-
-    console.log(`assets.service syncButtonAssociations out`);
-  }
-
   public async processCamerasShadow(deltaShadowCameras: ClassicShadowCameras, desiredShadowCameras: ClassicShadowCameras): Promise<any> {
     console.log('assets.service processCamerasShadow in: ' + JSON.stringify({ deltaShadowCameras, desiredShadowCameras }));
 
@@ -336,6 +291,69 @@ export class AssetsService {
     console.log('assets.service processCamerasShadow results:' + JSON.stringify(results));
 
     console.log('assets.service processCamerasShadow out');
+
+  }
+
+  private async processLockButtonShadowDelta(uuid: string): Promise<any> {
+    console.log('assets.service processLockButtonShadowDelta in: ' + JSON.stringify({ uuid }));
+
+    const getShadowResult = await this.iotService.getShadow({
+      thingName: AWS_IOT_THING_NAME,
+      shadowName: uuid
+    });
+
+    const delta = getShadowResult.state.desired;
+
+    // Find existing LOCK_BUTTON record by assetId (uuid = assetId for zigbee devices)
+    const lockButton: Z2mLock = await this.assetsDao.getZbLockById(uuid);
+    if (!lockButton) {
+      console.log(`assets.service processLockButtonShadowDelta out - lock button not found: ${uuid}`);
+      return;
+    }
+
+    // Update companionOf and buttonType from shadow
+    lockButton.companionOf = delta.companionOf || undefined;
+    lockButton.buttonType = delta.buttonType || undefined;
+    lockButton.lastUpdateOn = (new Date).toISOString();
+
+    await this.assetsDao.updateLock(lockButton);
+
+    // Report shadow as received
+    await this.iotService.updateReportedShadow({
+      thingName: AWS_IOT_THING_NAME,
+      shadowName: uuid,
+      reportedState: delta
+    });
+
+    console.log(`assets.service processLockButtonShadowDelta out - updated ${uuid} companionOf=${lockButton.companionOf} buttonType=${lockButton.buttonType}`);
+
+    return;
+  }
+
+  public async processLockButtonsShadow(deltaShadowLockButtons: ClassicShadowCameras, desiredShadowLockButtons: ClassicShadowCameras): Promise<any> {
+    console.log('assets.service processLockButtonsShadow in: ' + JSON.stringify({ deltaShadowLockButtons, desiredShadowLockButtons }));
+
+    const promises = Object.keys(deltaShadowLockButtons).map(async (uuid: string) => {
+      const entry: ClassicShadowCamera = desiredShadowLockButtons[uuid];
+      if (entry) {
+        try {
+          if (entry.action === 'UPDATE') {
+            await this.processLockButtonShadowDelta(uuid);
+          }
+          // REMOVE not needed — LOCK_BUTTON record stays (from zigbee discovery),
+          // companionOf/buttonType are cleared via shadow null values
+        } catch (err) {
+          return { uuid, action: entry.action, message: err.message, stack: err.stack };
+        }
+
+        return { uuid, action: entry.action };
+      }
+    });
+
+    const results = await Promise.allSettled(promises);
+    console.log('assets.service processLockButtonsShadow results:' + JSON.stringify(results));
+
+    console.log('assets.service processLockButtonsShadow out');
 
   }
 
