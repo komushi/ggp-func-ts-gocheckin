@@ -306,6 +306,53 @@ class AssetsService {
             console.log('assets.service processLockButtonsShadow out');
         });
     }
+    processLockShadowDelta(uuid) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service processLockShadowDelta in: ' + JSON.stringify({ uuid }));
+            const getShadowResult = yield this.iotService.getShadow({
+                thingName: AWS_IOT_THING_NAME,
+                shadowName: uuid
+            });
+            const delta = getShadowResult.state.desired;
+            const lock = yield this.assetsDao.getZbLockById(uuid);
+            if (!lock) {
+                console.log(`assets.service processLockShadowDelta out - lock not found: ${uuid}`);
+                return;
+            }
+            lock.roomCode = delta.roomCode || undefined;
+            lock.lastUpdateOn = (new Date).toISOString();
+            yield this.assetsDao.updateLock(lock);
+            yield this.iotService.updateReportedShadow({
+                thingName: AWS_IOT_THING_NAME,
+                shadowName: uuid,
+                reportedState: delta
+            });
+            console.log(`assets.service processLockShadowDelta out - updated ${uuid} roomCode=${lock.roomCode}`);
+            return;
+        });
+    }
+    processLocksShadow(deltaShadowLocks, desiredShadowLocks) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('assets.service processLocksShadow in: ' + JSON.stringify({ deltaShadowLocks, desiredShadowLocks }));
+            const promises = Object.keys(deltaShadowLocks).map((uuid) => __awaiter(this, void 0, void 0, function* () {
+                const entry = desiredShadowLocks[uuid];
+                if (entry) {
+                    try {
+                        if (entry.action === 'UPDATE') {
+                            yield this.processLockShadowDelta(uuid);
+                        }
+                    }
+                    catch (err) {
+                        return { uuid, action: entry.action, message: err.message, stack: err.stack };
+                    }
+                    return { uuid, action: entry.action };
+                }
+            }));
+            const results = yield Promise.allSettled(promises);
+            console.log('assets.service processLocksShadow results:' + JSON.stringify(results));
+            console.log('assets.service processLocksShadow out');
+        });
+    }
     discoverCameras(hostId) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log(`assets.service discoverCameras in hostId: ${hostId}`);
