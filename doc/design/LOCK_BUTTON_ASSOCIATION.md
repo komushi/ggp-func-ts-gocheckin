@@ -98,7 +98,19 @@ The camera shadow only sends `assetName` in the lock entry. `withKeypad` is enri
 
 When a LOCK_BUTTON is removed from layout (made available), the shadow fields are set to `null`.
 
-**LOCK** — no named shadow. Lock-camera association is carried by the camera shadow's `locks` map. The edge builds the reverse `lock.cameras` map locally via `syncLockCameraReference()`.
+**LOCK named shadow** (thingName=coreName, shadowName=lock UUID):
+```json
+// Named shadow: neoseed_Core / 0xe4b323fffeb4b614
+{
+  "state": {
+    "desired": {
+      "roomCode": "space-entrance-right"
+    }
+  }
+}
+```
+
+The LOCK named shadow syncs cloud-managed fields (like `roomCode` / space assignment) to the edge. Without it, the edge has no mechanism to receive these fields. Lock-camera association is carried by the camera shadow's `locks` map; the edge builds the reverse `lock.cameras` map locally via `syncLockCameraReference()`.
 
 ### Edge Local DynamoDB (gocheckin_asset table)
 
