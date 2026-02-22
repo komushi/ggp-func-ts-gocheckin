@@ -113,22 +113,13 @@ class AssetsService {
             else {
                 existingCamera = delta;
             }
-            // Enrich camera.locks with withKeypad from local lock records
-            // Shadow only provides assetName, but we need withKeypad for selective unlock logic
+            // Enrich camera.locks with assetId and category from local lock records
             if (existingCamera.locks) {
                 for (const lockAssetId of Object.keys(existingCamera.locks)) {
+                    existingCamera.locks[lockAssetId].assetId = lockAssetId;
                     const lockRecord = yield this.assetsDao.getZbLockById(lockAssetId);
                     if (lockRecord) {
-                        // withKeypad = true if lock has built-in sensor OR has companion ENTRY buttons
-                        const hasEntryButtons = yield this.assetsDao.hasEntryButtonsForLock(lockAssetId);
-                        existingCamera.locks[lockAssetId].withKeypad = lockRecord.withKeypad || hasEntryButtons;
-                        existingCamera.locks[lockAssetId].assetId = lockAssetId;
-                        console.log(`assets.service processCamerasShadowDelta enriched lock ${lockAssetId} with withKeypad=${existingCamera.locks[lockAssetId].withKeypad}`);
-                    }
-                    else {
-                        existingCamera.locks[lockAssetId].withKeypad = false;
-                        existingCamera.locks[lockAssetId].assetId = lockAssetId;
-                        console.log(`assets.service processCamerasShadowDelta lock ${lockAssetId} not found, defaulting withKeypad=false`);
+                        existingCamera.locks[lockAssetId].category = lockRecord.category;
                     }
                 }
             }
@@ -550,34 +541,17 @@ class AssetsService {
             }
             console.log(`assets.service unlockByMemberDetected locks: ${JSON.stringify(cameraItem.locks)}`);
             const zbLockPromises = [];
-            // 1. Unlock specific locks from occupancy triggers
-            if (memberDetectedItem.occupancyTriggeredLocks && memberDetectedItem.occupancyTriggeredLocks.length > 0) {
-                for (const lockAssetId of memberDetectedItem.occupancyTriggeredLocks) {
+            // Unlock specific locks from occupancy/button triggers
+            // Per Decision 28: all locks require a 'clicked' signal (occupancy sensor or button press).
+            // ONVIF motion only starts surveillance-mode detection — it never directly unlocks.
+            if (memberDetectedItem.clickedLocks && memberDetectedItem.clickedLocks.length > 0) {
+                for (const lockAssetId of memberDetectedItem.clickedLocks) {
                     console.log(`assets.service unlockByMemberDetected - unlocking specific lock: ${lockAssetId}`);
                     zbLockPromises.push(this.unlockZbLock(lockAssetId));
                 }
             }
-            // 2. Unlock legacy locks if ONVIF motion triggered
-            if (memberDetectedItem.onvifTriggered) {
-                for (const [lockAssetId, lockInfo] of Object.entries(cameraItem.locks)) {
-                    // withKeypad=true means has occupancy sensor → skip (requires occupancy trigger)
-                    if (lockInfo.withKeypad === true) {
-                        console.log(`assets.service unlockByMemberDetected - skipping sensor-enabled lock: ${lockAssetId}`);
-                        continue;
-                    }
-                    // withKeypad=false or undefined means legacy → unlock
-                    console.log(`assets.service unlockByMemberDetected - unlocking legacy lock: ${lockAssetId}`);
-                    zbLockPromises.push(this.unlockZbLock(lockAssetId));
-                }
-            }
-            // 3. No trigger context: fail safely - do NOT unlock anything
-            // Security: "unlock all" fallback was removed because it's a security risk.
-            // If context is empty due to race condition, unlocking all locks could unlock
-            // rooms the user doesn't have access to. Instead, fail safely by not unlocking.
-            if (!memberDetectedItem.onvifTriggered &&
-                (!memberDetectedItem.occupancyTriggeredLocks || memberDetectedItem.occupancyTriggeredLocks.length === 0)) {
-                console.warn('assets.service unlockByMemberDetected - no trigger context, skipping unlock (security)');
-                // DO NOT unlock anything - fail safe
+            else {
+                console.log('assets.service unlockByMemberDetected - no occupancy locks to unlock (ONVIF-only triggers do not unlock)');
             }
             const results = yield Promise.allSettled(zbLockPromises);
             results.forEach((result) => {

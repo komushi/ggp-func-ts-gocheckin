@@ -46,7 +46,7 @@ Local DynamoDB records must be a simplified version of their cloud counterparts.
 |--------|---------------|----------------|-------------|
 | LOCK_BUTTON | `companionOf`, `buttonType` | Same + zigbee fields (model, vendor, withKeypad) | Local is superset |
 | LOCK | No association data | No association data + `cameras` (edge-only bidirectional sync) | Consistent |
-| CAMERA | `locks` map with `assetName` per lock | Same + enriched `withKeypad`, `assetId`, `category` | Local is enriched version |
+| CAMERA | `locks` map with `assetName` per lock | Same + enriched `assetId`, `category` | Local is enriched version |
 
 Cloud is responsible for setting the association. The edge never writes association data — it only reads it.
 
@@ -81,7 +81,7 @@ Cloud is responsible for setting the association. The edge never writes associat
 }
 ```
 
-The camera shadow only sends `assetName` in the lock entry. `withKeypad` is enriched locally during `processCamerasShadowDelta()`.
+The camera shadow only sends `assetName` in the lock entry. `assetId` and `category` are enriched locally during `processCamerasShadowDelta()`.
 
 **LOCK_BUTTON named shadow** (thingName=coreName, shadowName=button UUID):
 ```json
@@ -136,7 +136,6 @@ Both LOCK and KEYPAD_LOCK use the same named shadow structure. The cloud include
     "0xe4b323fffeb4b614": {
       "assetId": "0xe4b323fffeb4b614",
       "assetName": "MAG002",
-      "withKeypad": true,
       "category": "LOCK"
     }
   },
@@ -147,7 +146,7 @@ Both LOCK and KEYPAD_LOCK use the same named shadow structure. The cloud include
 }
 ```
 
-`withKeypad` is enriched to `true` because a LOCK_BUTTON with `companionOf` pointing to this lock and `buttonType=ENTRY` exists. The edge queries LOCK_BUTTON records to determine this — no `entryButtons`/`exitButtons` arrays on the camera lock entry.
+`category` is enriched from the local lock record. `withKeypad` was removed from camera lock entries per Decision 28 (see `doc/design/REMOVE_WITH_KEYPAD.md`).
 
 **LOCK record** (from Zigbee discovery + bidirectional camera sync):
 ```json
@@ -239,11 +238,7 @@ Unlike KEYPAD which sends `occupancy: false` to stop detection early, LOCK_BUTTO
 
 ### P2 — ONVIF Motion (unconfirmed)
 
-When ONVIF motion arrives at py_handler, it checks `withKeypad` on the camera's lock entries:
-- `withKeypad: true` → Accept — a P1 mechanism (sensor or entry button) exists to confirm
-- `withKeypad: false` → Reject — no confirmation mechanism
-
-In practice, every lock will have either a built-in sensor (KEYPAD_LOCK) or a companion ENTRY button (LOCK_BUTTON), so `withKeypad` will always be `true`. The field is kept as a safety net in case association is not correctly set.
+Per **Decision 28**, ONVIF motion starts surveillance-mode detection but never directly unlocks. The `withKeypad` gate was removed — ONVIF triggers always proceed to detection. Unlocking only happens when a clicked signal (occupancy sensor or button press) provides `clickedLocks` context.
 
 ### ts handler as Translation Boundary
 
@@ -280,12 +275,11 @@ Edge receives camera named shadow delta (locks map with assetName per lock)
     ↓
 ggp-func-ts-gocheckin: processCamerasShadowDelta()
     ├── for each lock in camera.locks:
-    │     query LOCK_BUTTON records where companionOf = lockAssetId AND buttonType = ENTRY
-    │     withKeypad = lockRecord.withKeypad OR hasEntryButtons
-    ├── writes camera to gocheckin_asset (withKeypad=true on lock entry)
+    │     set assetId, query lock record for category
+    ├── writes camera to gocheckin_asset (lock entry has assetId + category)
     └── publishes gocheckin/reset_camera
     ↓
-py_handler: reloads camera config — sees withKeypad=true
+py_handler: reloads camera config
 ```
 
 ---
@@ -299,9 +293,7 @@ py_handler: reloads camera config — sees withKeypad=true
 export interface GoCheckInLock {
     assetId: string;
     assetName: string;
-    withKeypad: boolean;
     category: string;
-    // No entryButtons/exitButtons — withKeypad is derived by querying LOCK_BUTTON records
 }
 
 export type ButtonType = 'ENTRY' | 'EXIT';
@@ -388,21 +380,16 @@ In `processCamerasShadowDelta()`:
 ```typescript
 if (existingCamera.locks) {
     for (const lockAssetId of Object.keys(existingCamera.locks)) {
+        existingCamera.locks[lockAssetId].assetId = lockAssetId;
         const lockRecord: Z2mLock = await this.assetsDao.getZbLockById(lockAssetId);
-
         if (lockRecord) {
-            const hasEntryButtons = await this.assetsDao.hasEntryButtonsForLock(lockAssetId);
-            existingCamera.locks[lockAssetId].withKeypad = lockRecord.withKeypad || hasEntryButtons;
-            existingCamera.locks[lockAssetId].assetId = lockAssetId;
-        } else {
-            existingCamera.locks[lockAssetId].withKeypad = false;
-            existingCamera.locks[lockAssetId].assetId = lockAssetId;
+            existingCamera.locks[lockAssetId].category = lockRecord.category;
         }
     }
 }
 ```
 
-`hasEntryButtonsForLock(lockAssetId)` queries `gocheckin_asset` for LOCK_BUTTON records where `companionOf = lockAssetId` and `buttonType = 'ENTRY'`. Returns `true` if any exist.
+Sets `assetId` and `category` on each lock entry. `withKeypad` was removed per Decision 28 (see `doc/design/REMOVE_WITH_KEYPAD.md`).
 
 ### assets.service.ts — LOCK Shadow Processing
 
@@ -446,8 +433,8 @@ The edge does not write association data. `companionOf` and `buttonType` on LOCK
 1. **assets.models.ts**: Add `companionOf?: string`, `buttonType?: ButtonType` to `Z2mLock`; add `LockButtonEvent`, `ButtonType` types. Remove `entryButtons`/`exitButtons` from `GoCheckInLock` and `Z2mLock`.
 2. **function.conf**: Add `LOCK_BUTTON` to `ZB_CAT_WITH_KEYPAD`
 3. **handler.ts**: Add `action` event routing; add `lockButtons` and `locks` classic shadow routing
-4. **assets.service.ts**: Add `handleButtonClickEvent()`; add `processLockButtonsShadow()`/`processLockButtonShadowDelta()` for LOCK_BUTTON shadow; add `processLocksShadow()`/`processLockShadowDelta()` for LOCK shadow; update `processCamerasShadowDelta()` to query LOCK_BUTTON records for `withKeypad`; remove `syncButtonAssociations()`
-5. **assets.dao.ts**: Update `getZbLockByName()` filter to include `LOCK_BUTTON`; add `hasEntryButtonsForLock()`
+4. **assets.service.ts**: Add `handleButtonClickEvent()`; add `processLockButtonsShadow()`/`processLockButtonShadowDelta()` for LOCK_BUTTON shadow; add `processLocksShadow()`/`processLockShadowDelta()` for LOCK shadow; update `processCamerasShadowDelta()` to enrich `assetId` + `category`; remove `syncButtonAssociations()`
+5. **assets.dao.ts**: Update `getZbLockByName()` filter to include `LOCK_BUTTON`
 
 ### Python (ggp-func-py-gocheckin) — No Changes
 

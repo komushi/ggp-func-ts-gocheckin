@@ -20,7 +20,7 @@ This document traces the evolution of the lock-triggered detection system across
 
 **Change**: `handler.ts` routes `zigbee2mqtt/{device}` events with `occupancy` attribute to `handleLockTouchEvent()` (true) and `handleLockStopEvent()` (false). These publish `gocheckin/trigger_detection` and `gocheckin/stop_detection` with `lock_asset_id` to the Python component.
 
-**Selective unlock**: `unlockByMemberDetected()` uses `occupancyTriggeredLocks` to unlock specific locks, `onvifTriggered` for legacy locks.
+**Selective unlock**: `unlockByMemberDetected()` uses `clickedLocks` to unlock specific locks that received a clicked signal (occupancy sensor or LOCK_BUTTON press). Per Decision 28, ONVIF never directly unlocks.
 
 **Result**: Lock sensors trigger targeted face detection and selective unlock.
 
@@ -61,13 +61,14 @@ This document traces the evolution of the lock-triggered detection system across
 ```
 Phase 1:  Z2mLock += cameras: { [cameraAssetId]: { assetId, localIp } }
 Phase 2:  GoCheckInLock += category
-          MemberDetectedItem += onvifTriggered, occupancyTriggeredLocks
+          MemberDetectedItem += clickedLocks (was occupancyTriggeredLocks)
           + LockOccupancyEvent interface
 Phase 3:  unlockZbLock() uses TOGGLE (Z2mLock.state deprecated)
 Phase 4:  GoCheckInLock += companions: string[]
           Z2mLock += companionOf?: string, companions?: string[]
           + LockButtonEvent interface
-          MemberDetectedItem: onvifTriggered removed (py_handler Phase 0A)
+          GoCheckInLock: withKeypad removed (Decision 28)
+          MemberDetectedItem: onvifTriggered removed (Decision 28)
 ```
 
 ## Shadow Evolution

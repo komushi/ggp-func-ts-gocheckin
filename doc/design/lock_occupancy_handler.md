@@ -15,7 +15,7 @@ Handles Zigbee lock occupancy events and publishes `trigger_detection` / `stop_d
 | `z2mOccupancyPattern` + handler | ✅ DONE | `handler.ts:12,57-76` - handles both `occupancy:true` and `occupancy:false` |
 | `function.conf` topics | ✅ DONE | Both `trigger_detection` and `stop_detection` in outputTopics |
 | `unlockByMemberDetected()` selective | ✅ DONE | `assets.service.ts:378` - selective unlock with fallback |
-| `MemberDetectedItem` new fields | ✅ DONE | `assets.models.ts:236-237` - `onvifTriggered`, `occupancyTriggeredLocks` |
+| `MemberDetectedItem` new fields | ✅ DONE | `assets.models.ts` - `clickedLocks` (was `occupancyTriggeredLocks`; `onvifTriggered` removed per Decision 28) |
 | `GoCheckInLock.category` field | ✅ DONE | `assets.models.ts:48` - required for selective unlock |
 
 ---
@@ -41,11 +41,10 @@ zigbee2mqtt/{lockAssetName}/occupancy { "occupancy": false }
 
 ### Unlock Flow (member_detected)
 ```
-gocheckin/member_detected { assetId, onvifTriggered, occupancyTriggeredLocks }
+gocheckin/member_detected { assetId, clickedLocks }
     → unlockByMemberDetected()
-    → if occupancyTriggeredLocks.length > 0: unlock specific locks
-    → if onvifTriggered: unlock legacy locks (category !== 'KEYPAD_LOCK')
-    → if no context: fallback to unlock all (legacy behavior)
+    → if clickedLocks.length > 0: unlock specific locks
+    → else: no unlock (ONVIF-only triggers do not unlock, per Decision 28)
 ```
 
 ---
@@ -55,7 +54,7 @@ gocheckin/member_detected { assetId, onvifTriggered, occupancyTriggeredLocks }
 | Topic | Direction | Payload |
 |-------|-----------|---------|
 | `zigbee2mqtt/{lock}/occupancy` | Input | `{ "occupancy": true/false }` |
-| `gocheckin/member_detected` | Input | `{ assetId, onvifTriggered, occupancyTriggeredLocks, ... }` |
+| `gocheckin/member_detected` | Input | `{ assetId, clickedLocks, ... }` |
 | `gocheckin/trigger_detection` | Output | `{ "cam_ip": "...", "lock_asset_id": "..." }` |
 | `gocheckin/stop_detection` | Output | `{ "cam_ip": "...", "lock_asset_id": "..." }` |
 
@@ -65,16 +64,10 @@ gocheckin/member_detected { assetId, onvifTriggered, occupancyTriggeredLocks }
 
 | Trigger | member_detected Fields | Unlock Behavior |
 |---------|------------------------|-----------------|
-| Occupancy sensor | `occupancyTriggeredLocks: [lockId]` | Unlock specific lock only |
-| ONVIF motion | `onvifTriggered: true` | Unlock legacy locks (`withKeypad !== true`) |
-| Both (merged) | Both fields set | Unlock legacy + specific locks |
-| No context | Both undefined/empty | Fallback: unlock all camera locks |
+| Clicked event (occupancy sensor or LOCK_BUTTON) | `clickedLocks: [lockId]` | Unlock specific lock(s) |
+| ONVIF motion only | `clickedLocks` empty/undefined | No unlock (surveillance only, per Decision 28) |
 
-**Lock Sensor Flag (`withKeypad`):**
-- `withKeypad: true` → has occupancy sensor, requires occupancy trigger to unlock
-- `withKeypad: false` or missing → legacy lock, unlocks via ONVIF motion
-
-**Note:** `camera.locks` is enriched with `withKeypad` from local `Z2mLock` records in `processCamerasShadowDelta()`.
+Per **Decision 28**, all locks require a "clicked" signal to unlock. ONVIF motion only starts surveillance-mode detection — it never directly unlocks.
 
 ---
 
@@ -82,7 +75,7 @@ gocheckin/member_detected { assetId, onvifTriggered, occupancyTriggeredLocks }
 
 | File | Changes |
 |------|---------|
-| `assets.models.ts` | Added `category` to `GoCheckInLock`, added `onvifTriggered`/`occupancyTriggeredLocks` to `MemberDetectedItem` |
+| `assets.models.ts` | Added `category` to `GoCheckInLock`, added `clickedLocks` to `MemberDetectedItem` (was `occupancyTriggeredLocks`; `onvifTriggered` removed per Decision 28) |
 | `assets.service.ts` | Added `handleLockStopEvent()`, updated `handleLockTouchEvent()` to include `lock_asset_id`, updated `unlockByMemberDetected()` with selective logic |
 | `handler.ts` | Added `occupancy:false` branch |
 | `function.conf` | Added `stop_detection` to outputTopics |
