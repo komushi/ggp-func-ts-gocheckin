@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AssetsService = void 0;
 const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
 const ZB_CATS = process.env.ZB_CATS.split(",");
-const ZB_CATS_WITH_KEYPAD = process.env.ZB_CAT_WITH_KEYPAD.split(",");
 const assets_dao_1 = require("./assets.dao");
 const iot_service_1 = require("../iot/iot.service");
 const short_unique_id_1 = __importDefault(require("short-unique-id"));
@@ -444,13 +443,9 @@ class AssetsService {
                     if (z2mEvent.data.status && z2mEvent.data.status == 'successful') {
                         if (z2mEvent.data.supported) {
                             let category = 'UNKNOWN';
-                            let withKeypad = false;
                             ZB_CATS.forEach((zbCat) => {
                                 if ((process.env[zbCat].split(",")).includes(z2mEvent.data.definition.model)) {
                                     category = zbCat;
-                                    if (ZB_CATS_WITH_KEYPAD.includes(zbCat)) {
-                                        withKeypad = true;
-                                    }
                                 }
                             });
                             const z2mLock = {
@@ -461,7 +456,6 @@ class AssetsService {
                                 assetId: z2mEvent.data.ieee_address,
                                 assetName: z2mEvent.data.friendly_name,
                                 coreName: process.env.AWS_IOT_THING_NAME,
-                                withKeypad: withKeypad,
                                 category: category,
                                 vendor: z2mEvent.data.definition.vendor,
                                 model: z2mEvent.data.definition.model,
