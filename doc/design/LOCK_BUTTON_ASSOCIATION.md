@@ -44,7 +44,7 @@ Local DynamoDB records must be a simplified version of their cloud counterparts.
 
 | Record | Cloud DynamoDB | Local DynamoDB | Relationship |
 |--------|---------------|----------------|-------------|
-| LOCK_BUTTON | `companionOf`, `buttonType` | Same + zigbee fields (model, vendor, withKeypad) | Local is superset |
+| LOCK_BUTTON | `companionOf`, `buttonType` | Same + zigbee fields (model, vendor) | Local is superset |
 | LOCK | No association data | No association data + `cameras` (edge-only bidirectional sync) | Consistent |
 | CAMERA | `locks` map with `assetName` per lock | Same + enriched `assetId`, `category` | Local is enriched version |
 
@@ -158,10 +158,9 @@ Both LOCK and KEYPAD_LOCK use the same named shadow structure. The cloud include
   "coreName": "neoseed_Core",
   "category": "LOCK",
   "assetId": "0xe4b323fffeb4b614",
-  "assetName": "MAG002",
-  "vendor": "TuYa",
+  "assetName": "MAG001",
+  "vendor": "GoCheckIn",
   "model": "MAG001AC",
-  "withKeypad": false,
   "state": false,
   "cameras": {
     "ea9a49f2-c236-4d6d-b82f-a0725a03f614": {
@@ -173,7 +172,7 @@ Both LOCK and KEYPAD_LOCK use the same named shadow structure. The cloud include
 }
 ```
 
-No association data. `withKeypad` stays `false` on the lock record itself (MAG001AC has no built-in sensor). The `withKeypad=true` override happens on the camera's lock entry during enrichment. The `cameras` map is populated by `syncLockCameraReference()` (edge-only bidirectional sync).
+No association data on the lock record. The `cameras` map is populated by `syncLockCameraReference()` (edge-only bidirectional sync).
 
 **LOCK_BUTTON record — Entry Button** (Zigbee discovery + association synced via shadow):
 ```json
@@ -184,15 +183,14 @@ No association data. `withKeypad` stays `false` on the lock record itself (MAG00
   "propertyCode": "prop01",
   "coreName": "neoseed_Core",
   "category": "LOCK_BUTTON",
-  "assetId": "0x00_greenpower_button_1",
-  "assetName": "MAG002_IN",
-  "vendor": "TuYa",
+  "assetId": "0x00000000632afb2f",
+  "assetName": "MAG001_ENTRY",
+  "vendor": "GreenPower_2",
   "model": "GreenPower_2",
-  "withKeypad": true,
   "state": false,
   "companionOf": "0xe4b323fffeb4b614",
   "buttonType": "ENTRY",
-  "lastUpdateOn": "2026-02-20T..."
+  "lastUpdateOn": "2026-02-22T..."
 }
 ```
 
@@ -205,19 +203,18 @@ No association data. `withKeypad` stays `false` on the lock record itself (MAG00
   "propertyCode": "prop01",
   "coreName": "neoseed_Core",
   "category": "LOCK_BUTTON",
-  "assetId": "0x00_greenpower_button_2",
-  "assetName": "MAG002_OUT",
-  "vendor": "TuYa",
+  "assetId": "0x00000000a60beb16",
+  "assetName": "MAG001_EXIT",
+  "vendor": "GreenPower_2",
   "model": "GreenPower_2",
-  "withKeypad": true,
   "state": false,
   "companionOf": "0xe4b323fffeb4b614",
   "buttonType": "EXIT",
-  "lastUpdateOn": "2026-02-20T..."
+  "lastUpdateOn": "2026-02-22T..."
 }
 ```
 
-`companionOf` and `buttonType` are synced via LOCK_BUTTON named shadow from the cloud. The edge reads them at runtime. `withKeypad` is `true` because `LOCK_BUTTON` is in `ZB_CAT_WITH_KEYPAD` (set at Zigbee discovery time).
+`companionOf` and `buttonType` are synced via LOCK_BUTTON named shadow from the cloud. The edge reads them at runtime via `processLockButtonShadowDelta()`.
 
 ---
 
@@ -314,13 +311,6 @@ export interface Z2mLock {
 ---
 
 ## Code Changes
-
-### function.conf
-
-```conf
-# Add LOCK_BUTTON to ZB_CAT_WITH_KEYPAD so buttons get withKeypad=true on discovery
-ZB_CAT_WITH_KEYPAD = "KEYPAD,KEYPAD_LOCK,LOCK_BUTTON"
-```
 
 ### handler.ts
 
@@ -431,10 +421,9 @@ The edge does not write association data. `companionOf` and `buttonType` on LOCK
 ### TypeScript (ggp-func-ts-gocheckin)
 
 1. **assets.models.ts**: Add `companionOf?: string`, `buttonType?: ButtonType` to `Z2mLock`; add `LockButtonEvent`, `ButtonType` types. Remove `entryButtons`/`exitButtons` from `GoCheckInLock` and `Z2mLock`.
-2. **function.conf**: Add `LOCK_BUTTON` to `ZB_CAT_WITH_KEYPAD`
-3. **handler.ts**: Add `action` event routing; add `lockButtons` and `locks` classic shadow routing
-4. **assets.service.ts**: Add `handleButtonClickEvent()`; add `processLockButtonsShadow()`/`processLockButtonShadowDelta()` for LOCK_BUTTON shadow; add `processLocksShadow()`/`processLockShadowDelta()` for LOCK shadow; update `processCamerasShadowDelta()` to enrich `assetId` + `category`; remove `syncButtonAssociations()`
-5. **assets.dao.ts**: Update `getZbLockByName()` filter to include `LOCK_BUTTON`
+2. **handler.ts**: Add `action` event routing; add `lockButtons` and `locks` classic shadow routing
+3. **assets.service.ts**: Add `handleButtonClickEvent()`; add `processLockButtonsShadow()`/`processLockButtonShadowDelta()` for LOCK_BUTTON shadow; add `processLocksShadow()`/`processLockShadowDelta()` for LOCK shadow; update `processCamerasShadowDelta()` to enrich `assetId` + `category`; remove `syncButtonAssociations()`
+4. **assets.dao.ts**: Update `getZbLockByName()` filter to include `LOCK_BUTTON`
 
 ### Python (ggp-func-py-gocheckin) — No Changes
 
@@ -445,20 +434,73 @@ py_handler already handles `trigger_detection` with `lock_asset_id`. Exit button
 ## Verification
 
 ### Entry Button Flow
-1. Pair GreenPower_2 → discovered as `LOCK_BUTTON` with `withKeypad=true`
-2. Cloud associates button as **entry** button with MAG002 → syncs LOCK_BUTTON named shadow
-3. Edge: shadow delta → writes `companionOf` + `buttonType=ENTRY` to local LOCK_BUTTON record
-4. Edge: `processCamerasShadowDelta()` queries LOCK_BUTTON records → finds ENTRY button → enriches `withKeypad=true`
-5. Press entry button → `handleButtonClickEvent()` → `companionOf` → parent lock → `lock.cameras` → `trigger_detection`
-6. py_handler starts detection, timer expires naturally
-7. Face match → unlock parent LOCK
+1. Pair GreenPower_2 → discovered as `LOCK_BUTTON`
+2. Cloud associates button as **entry** button with MAG001 → syncs LOCK_BUTTON named shadow
+3. Edge: classic shadow `lockButtons` delta → `processLockButtonShadowDelta()` → writes `companionOf` + `buttonType=ENTRY` to local LOCK_BUTTON record
+4. Press entry button → `handleButtonClickEvent()` → `companionOf` → parent lock → `lock.cameras` → `trigger_detection`
+5. py_handler starts detection, timer expires naturally
+6. Face match → unlock parent LOCK
 
 ### Exit Button Flow (camera not required)
-1. Pair GreenPower_2 → discovered as `LOCK_BUTTON` with `withKeypad=true`
-2. Cloud associates button as **exit** button with MAG002 → syncs LOCK_BUTTON named shadow
-3. Edge: shadow delta → writes `companionOf` + `buttonType=EXIT` to local LOCK_BUTTON record
+1. Pair GreenPower_2 → discovered as `LOCK_BUTTON`
+2. Cloud associates button as **exit** button with MAG001 → syncs LOCK_BUTTON named shadow
+3. Edge: classic shadow `lockButtons` delta → `processLockButtonShadowDelta()` → writes `companionOf` + `buttonType=EXIT` to local LOCK_BUTTON record
 4. Press exit button → `handleButtonClickEvent()` → `companionOf` → `unlockZbLock()` directly
 5. Door unlocks immediately — no camera, no detection
+
+---
+
+## 2026-02-22: Cloud Association — Stale Shadow Investigation & Resolution
+
+### Initial Observation
+
+After deploying the `withKeypad` removal changes and re-syncing all shadows, a DynamoDB scan showed `entryButtons`/`exitButtons` arrays on camera lock entries and empty LOCK_BUTTON named shadows. This initially appeared to be a cloud implementation gap — `updatePlacedLockButtonShadow()` seemed unimplemented.
+
+### Root Cause: Stale IoT Shadow Data
+
+The issue was **stale shadow data**, not a missing cloud implementation. IoT shadows are stateful documents — old fields persist until explicitly overwritten by a new `updateDesiredShadow()` call. The camera named shadow retained `entryButtons`/`exitButtons` from a previous cloud deployment that used a different association approach. Simply deploying new backend code does not clean up existing shadows.
+
+### Resolution
+
+After re-discovering the Zigbee devices (new button IDs) and re-saving the layout from the cloud UI, all shadows and local records are correct:
+
+**LOCK_BUTTON named shadows — `companionOf`/`buttonType` populated:**
+```json
+// neoseed_Core / 0x00000000632afb2f (MAG001_ENTRY)
+{ "state": { "desired": { "companionOf": "0xe4b323fffeb4b614", "buttonType": "ENTRY" },
+             "reported": { "companionOf": "0xe4b323fffeb4b614", "buttonType": "ENTRY" } } }
+
+// neoseed_Core / 0x00000000a60beb16 (MAG001_EXIT)
+{ "state": { "desired": { "companionOf": "0xe4b323fffeb4b614", "buttonType": "EXIT" },
+             "reported": { "companionOf": "0xe4b323fffeb4b614", "buttonType": "EXIT" } } }
+```
+
+**Camera named shadow — lock entries clean (no `entryButtons`/`exitButtons`):**
+```json
+"locks": {
+    "0xe4b323fffeb4b614": { "assetName": "MAG001" },
+    "0x98a316fffe8e7d80": { "assetName": "DC010" }
+}
+```
+
+**Local DynamoDB — all records correct:**
+
+| Record | Key Fields |
+|---|---|
+| LOCK_BUTTON MAG001_ENTRY | `companionOf: 0xe4b323fffeb4b614`, `buttonType: ENTRY` |
+| LOCK_BUTTON MAG001_EXIT | `companionOf: 0xe4b323fffeb4b614`, `buttonType: EXIT` |
+| LOCK MAG001 | `roomCode: adwJwZ`, `cameras: [ea9a49f2-...]` |
+| KEYPAD_LOCK DC010 | `roomCode: adwJwZ`, `cameras: [ea9a49f2-...]` |
+| CAMERA Dahua | `locks: { MAG001: { assetId, category: LOCK }, DC010: { assetId, category: KEYPAD_LOCK } }` |
+
+### Lesson Learned
+
+When debugging shadow-based sync issues, always consider that IoT named shadows may contain **stale data from previous deployments**. To clean up:
+1. Delete the stale named shadows (`aws iot-data delete-thing-shadow`)
+2. Delete local DDB records for affected assets
+3. Re-discover devices (Zigbee) and re-save layout (cloud UI)
+
+The cloud's `companionOf` model (`LOCK_BUTTON_COMPANION.md`) is fully implemented and working end-to-end.
 
 ---
 
@@ -467,9 +509,8 @@ py_handler already handles `trigger_detection` with `lock_asset_id`. Exit button
 | File | Repo | Action |
 |------|------|--------|
 | `packages/src/functions/assets/assets.models.ts` | ts | Add `companionOf`, `buttonType` to `Z2mLock`; add `LockButtonEvent`, `ButtonType`. Remove `entryButtons`/`exitButtons`. |
-| `function.conf` | ts | Add LOCK_BUTTON to ZB_CAT_WITH_KEYPAD |
 | `packages/src/handler.ts` | ts | Add `action` event routing; add LOCK_BUTTON named shadow delta routing |
 | `packages/src/functions/assets/assets.service.ts` | ts | Add `handleButtonClickEvent()`; update lock enrichment; remove `syncButtonAssociations()` |
-| `packages/src/functions/assets/assets.dao.ts` | ts | Update `getZbLockByName()` filter; add `hasEntryButtonsForLock()` |
+| `packages/src/functions/assets/assets.dao.ts` | ts | Update `getZbLockByName()` filter to include `LOCK_BUTTON` |
 | Cloud API/UI | cloud | Set `companionOf`/`buttonType` on LOCK_BUTTON records; sync via named shadow |
 | py_handler.py | py | No changes needed |
