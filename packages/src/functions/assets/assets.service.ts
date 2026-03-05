@@ -4,7 +4,6 @@ const ZB_CATS = process.env.ZB_CATS.split(",");
 import { MemberDetectedItem, Z2mRemoved, Z2mRenamed, Z2mLock, Z2mEvent, PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras, ClassicShadowSpaces, ClassicShadowSpace, LockOccupancyEvent, LockButtonEvent, ButtonType } from './assets.models';
 import { AssetsDao } from './assets.dao';
 import { IotService } from '../iot/iot.service';
-import { InitializationService } from '../initialization/initialization.service';
 
 import ShortUniqueId from 'short-unique-id';
 // import { MotionDetector, Options } from 'node-onvif-events';
@@ -15,12 +14,10 @@ export class AssetsService {
   private assetsDao: AssetsDao;
   private uid;
   private iotService: IotService;
-  private initializationService: InitializationService;
 
   public constructor() {
     this.assetsDao = new AssetsDao();
     this.iotService = new IotService();
-    this.initializationService = new InitializationService();
 
     this.uid = new ShortUniqueId();
   }
@@ -476,11 +473,6 @@ export class AssetsService {
 
   public async refreshScanner(): Promise<any> {
     console.log('assets.service refreshScanner in');
-
-    // Ensure env vars are loaded
-    if (!process.env.HOST_ID || !process.env.PROPERTY_CODE) {
-      await this.initializationService.intializeEnvVar();
-    }
 
     // Get existing scanner from DB (to preserve UUID)
     const crtScanner: ScannerItem = await this.assetsDao.getScannerById(process.env.AWS_IOT_THING_NAME);

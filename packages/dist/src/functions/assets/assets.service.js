@@ -17,7 +17,6 @@ const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
 const ZB_CATS = process.env.ZB_CATS.split(",");
 const assets_dao_1 = require("./assets.dao");
 const iot_service_1 = require("../iot/iot.service");
-const initialization_service_1 = require("../initialization/initialization.service");
 const short_unique_id_1 = __importDefault(require("short-unique-id"));
 // import { MotionDetector, Options } from 'node-onvif-events';
 const node_onvif_1 = __importDefault(require("node-onvif"));
@@ -25,7 +24,6 @@ class AssetsService {
     constructor() {
         this.assetsDao = new assets_dao_1.AssetsDao();
         this.iotService = new iot_service_1.IotService();
-        this.initializationService = new initialization_service_1.InitializationService();
         this.uid = new short_unique_id_1.default();
     }
     getHost() {
@@ -407,10 +405,6 @@ class AssetsService {
     refreshScanner() {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service refreshScanner in');
-            // Ensure env vars are loaded
-            if (!process.env.HOST_ID || !process.env.PROPERTY_CODE) {
-                yield this.initializationService.intializeEnvVar();
-            }
             // Get existing scanner from DB (to preserve UUID)
             const crtScanner = yield this.assetsDao.getScannerById(process.env.AWS_IOT_THING_NAME);
             // Build scanner item from local sources
