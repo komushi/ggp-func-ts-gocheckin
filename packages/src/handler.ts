@@ -29,10 +29,6 @@ exports.function_handler = async function (event, context) {
 
 		await processClassicShadow(event);
 
-	} else if (context.clientContext.Custom.subject == `gocheckin/scanner_detected`) {
-		console.log('scanner_detected event: ' + JSON.stringify(event));
-
-		await assetsService.refreshScanner(event);
 	} else if (context.clientContext.Custom.subject == `gocheckin/member_detected`) {
 		console.log('member_detected event: ' + JSON.stringify(event));
 
@@ -174,13 +170,18 @@ const processClassicShadow = async function (event) {
 	console.log('processClassicShadow out');
 };
 
-
-
+// Initialize at startup
 setTimeout(async () => {
 	await initializationService.intializeEnvVar();
 }, 1000);
 
 
+// Register scanner at startup
+setTimeout(async () => {
+	await assetsService.refreshScanner();
+}, 2000);
+
+// Periodic re-initialization backup (handles redeployment scenarios)
 setInterval(async () => {
 	if (!process.env.HOST_ID || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
 		await initializationService.intializeEnvVar();

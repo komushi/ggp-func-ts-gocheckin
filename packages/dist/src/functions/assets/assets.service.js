@@ -17,15 +17,15 @@ const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
 const ZB_CATS = process.env.ZB_CATS.split(",");
 const assets_dao_1 = require("./assets.dao");
 const iot_service_1 = require("../iot/iot.service");
+const initialization_service_1 = require("../initialization/initialization.service");
 const short_unique_id_1 = __importDefault(require("short-unique-id"));
 // import { MotionDetector, Options } from 'node-onvif-events';
 const node_onvif_1 = __importDefault(require("node-onvif"));
 class AssetsService {
-    // private lastMotionTime: number | null = null;
-    // private timer: NodeJS.Timeout | null = null;
     constructor() {
         this.assetsDao = new assets_dao_1.AssetsDao();
         this.iotService = new iot_service_1.IotService();
+        this.initializationService = new initialization_service_1.InitializationService();
         this.uid = new short_unique_id_1.default();
     }
     getHost() {
@@ -404,28 +404,31 @@ class AssetsService {
             return;
         });
     }
-    refreshScanner(scannerItem) {
+    refreshScanner() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service refreshScanner in: ' + JSON.stringify(scannerItem));
-            const crtScanner = yield this.assetsDao.getScannerById(scannerItem.assetId);
-            if (crtScanner) {
-                scannerItem.hostId = process.env.HOST_ID;
-                scannerItem.propertyCode = process.env.PROPERTY_CODE;
-                scannerItem.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
-                scannerItem.category = 'SCANNER';
-                scannerItem.coreName = process.env.AWS_IOT_THING_NAME;
-                scannerItem.uuid = crtScanner.uuid;
-                scannerItem.lastUpdateOn = (new Date).toISOString();
+            console.log('assets.service refreshScanner in');
+            // Ensure env vars are loaded
+            if (!process.env.HOST_ID || !process.env.PROPERTY_CODE) {
+                yield this.initializationService.intializeEnvVar();
             }
-            else {
-                scannerItem.hostId = process.env.HOST_ID;
-                scannerItem.propertyCode = process.env.PROPERTY_CODE;
-                scannerItem.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
-                scannerItem.category = 'SCANNER';
-                scannerItem.coreName = process.env.AWS_IOT_THING_NAME;
-                scannerItem.uuid = this.uid.randomUUID(6);
-                scannerItem.lastUpdateOn = (new Date).toISOString();
-            }
+            // Get existing scanner from DB (to preserve UUID)
+            const crtScanner = yield this.assetsDao.getScannerById(process.env.AWS_IOT_THING_NAME);
+            // Build scanner item from local sources
+            const scannerItem = {
+                assetId: process.env.AWS_IOT_THING_NAME,
+                assetName: process.env.AWS_IOT_THING_NAME,
+                localIp: this.getLocalIpAddress(),
+                hostId: process.env.HOST_ID,
+                propertyCode: process.env.PROPERTY_CODE,
+                hostPropertyCode: `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`,
+                category: 'SCANNER',
+                coreName: process.env.AWS_IOT_THING_NAME,
+                uuid: crtScanner ? crtScanner.uuid : this.uid.randomUUID(6),
+                longitude: '',
+                latitude: '',
+                lastUpdateOn: (new Date).toISOString()
+            };
+            console.log('assets.service refreshScanner scannerItem: ' + JSON.stringify(scannerItem));
             yield this.assetsDao.createScanner(scannerItem);
             yield this.iotService.publish({
                 topic: `gocheckin/${process.env.AWS_IOT_THING_NAME}/scanner_detected`,
@@ -434,6 +437,18 @@ class AssetsService {
             console.log('assets.service refreshScanner out');
             return;
         });
+    }
+    getLocalIpAddress() {
+        const os = require('os');
+        const interfaces = os.networkInterfaces();
+        for (const name of Object.keys(interfaces)) {
+            for (const iface of interfaces[name]) {
+                if (iface.family === 'IPv4' && !iface.internal) {
+                    return iface.address;
+                }
+            }
+        }
+        return '127.0.0.1';
     }
     discoverZigbee(z2mEvent) {
         return __awaiter(this, void 0, void 0, function* () {

@@ -4,6 +4,7 @@ const ZB_CATS = process.env.ZB_CATS.split(",");
 import { MemberDetectedItem, Z2mRemoved, Z2mRenamed, Z2mLock, Z2mEvent, PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras, ClassicShadowSpaces, ClassicShadowSpace, LockOccupancyEvent, LockButtonEvent, ButtonType } from './assets.models';
 import { AssetsDao } from './assets.dao';
 import { IotService } from '../iot/iot.service';
+import { InitializationService } from '../initialization/initialization.service';
 
 import ShortUniqueId from 'short-unique-id';
 // import { MotionDetector, Options } from 'node-onvif-events';
@@ -14,12 +15,12 @@ export class AssetsService {
   private assetsDao: AssetsDao;
   private uid;
   private iotService: IotService;
-  // private lastMotionTime: number | null = null;
-  // private timer: NodeJS.Timeout | null = null;
+  private initializationService: InitializationService;
 
   public constructor() {
     this.assetsDao = new AssetsDao();
     this.iotService = new IotService();
+    this.initializationService = new InitializationService();
 
     this.uid = new ShortUniqueId();
   }
@@ -473,29 +474,34 @@ export class AssetsService {
     return;
   }
 
-  public async refreshScanner(scannerItem: ScannerItem): Promise<any> {
-    console.log('assets.service refreshScanner in: ' + JSON.stringify(scannerItem));
+  public async refreshScanner(): Promise<any> {
+    console.log('assets.service refreshScanner in');
 
-    const crtScanner: ScannerItem = await this.assetsDao.getScannerById(scannerItem.assetId);
-
-    if (crtScanner) {
-      scannerItem.hostId = process.env.HOST_ID;
-      scannerItem.propertyCode = process.env.PROPERTY_CODE;
-      scannerItem.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
-      scannerItem.category = 'SCANNER';
-      scannerItem.coreName = process.env.AWS_IOT_THING_NAME;
-      scannerItem.uuid = crtScanner.uuid;
-      scannerItem.lastUpdateOn = (new Date).toISOString();
-
-    } else {
-      scannerItem.hostId = process.env.HOST_ID;
-      scannerItem.propertyCode = process.env.PROPERTY_CODE;
-      scannerItem.hostPropertyCode = `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`;
-      scannerItem.category = 'SCANNER';
-      scannerItem.coreName = process.env.AWS_IOT_THING_NAME;
-      scannerItem.uuid = this.uid.randomUUID(6);
-      scannerItem.lastUpdateOn = (new Date).toISOString();
+    // Ensure env vars are loaded
+    if (!process.env.HOST_ID || !process.env.PROPERTY_CODE) {
+      await this.initializationService.intializeEnvVar();
     }
+
+    // Get existing scanner from DB (to preserve UUID)
+    const crtScanner: ScannerItem = await this.assetsDao.getScannerById(process.env.AWS_IOT_THING_NAME);
+
+    // Build scanner item from local sources
+    const scannerItem: ScannerItem = {
+      assetId: process.env.AWS_IOT_THING_NAME,
+      assetName: process.env.AWS_IOT_THING_NAME,
+      localIp: this.getLocalIpAddress(),
+      hostId: process.env.HOST_ID,
+      propertyCode: process.env.PROPERTY_CODE,
+      hostPropertyCode: `${process.env.HOST_ID}-${process.env.PROPERTY_CODE}`,
+      category: 'SCANNER',
+      coreName: process.env.AWS_IOT_THING_NAME,
+      uuid: crtScanner ? crtScanner.uuid : this.uid.randomUUID(6),
+      longitude: '',
+      latitude: '',
+      lastUpdateOn: (new Date).toISOString()
+    };
+
+    console.log('assets.service refreshScanner scannerItem: ' + JSON.stringify(scannerItem));
 
     await this.assetsDao.createScanner(scannerItem);
 
@@ -507,6 +513,19 @@ export class AssetsService {
     console.log('assets.service refreshScanner out');
 
     return;
+  }
+
+  private getLocalIpAddress(): string {
+    const os = require('os');
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name]) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          return iface.address;
+        }
+      }
+    }
+    return '127.0.0.1';
   }
 
   public async discoverZigbee(z2mEvent: Z2mEvent): Promise<any> {
