@@ -5,6 +5,7 @@ const TBL_RESERVATION = process.env.TBL_RESERVATION;
 const TBL_MEMBER = process.env.TBL_MEMBER;
 const TBL_HOST = process.env.TBL_HOST;
 const TBL_ASSET = process.env.TBL_ASSET;
+const TBL_LISTING = process.env.TBL_LISTING;
 const IDX_HOST_PROPERTYCODE = process.env.IDX_HOST_PROPERTYCODE;
 const IDX_EQUIPMENT_ID = process.env.IDX_EQUIPMENT_ID;
 const IDX_EQUIPMENT_NAME = process.env.IDX_EQUIPMENT_NAME;
@@ -59,6 +60,10 @@ export class InitializationDao {
 
     const assetDeleteCmd = new DeleteTableCommand({
       TableName: TBL_ASSET
+    });
+
+    const listingDeleteCmd = new DeleteTableCommand({
+      TableName: TBL_LISTING
     });
 
     const hostCmd = new CreateTableCommand({
@@ -200,6 +205,22 @@ export class InitializationDao {
           }
         }
       ]
+    });
+
+    const listingCmd = new CreateTableCommand({
+      TableName: TBL_LISTING,
+      KeySchema: [
+        { AttributeName: 'hostId', KeyType: 'HASH' },
+        { AttributeName: 'listingId', KeyType: 'RANGE' }
+      ],
+      AttributeDefinitions: [
+        { AttributeName: 'hostId', AttributeType: 'S' },
+        { AttributeName: 'listingId', AttributeType: 'S' }
+      ],
+      ProvisionedThroughput: {
+        ReadCapacityUnits: 5,
+        WriteCapacityUnits: 5
+      }
     });
 
     const deleteResults = await Promise.allSettled([
