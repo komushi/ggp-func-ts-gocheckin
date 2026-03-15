@@ -13,10 +13,12 @@ const initialization_service_1 = require("./functions/initialization/initializat
 const reservations_service_1 = require("./functions/reservations/reservations.service");
 const iot_service_1 = require("./functions/iot/iot.service");
 const assets_service_1 = require("./functions/assets/assets.service");
+const listings_service_1 = require("./functions/listings/listings.service");
 const initializationService = new initialization_service_1.InitializationService();
 const iotService = new iot_service_1.IotService();
 const assetsService = new assets_service_1.AssetsService();
 const reservationsService = new reservations_service_1.ReservationsService();
+const listingsService = new listings_service_1.ListingsService();
 const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/`);
 const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/([^\/]+)$`);
 exports.function_handler = function (event, context) {
@@ -138,18 +140,18 @@ const processClassicShadow = function (event) {
                 });
             }
         }
-        if (event.state.spaces) {
-            if (getShadowResult.state.desired.spaces) {
-                yield assetsService.processSpacesShadow(event.state.spaces, getShadowResult.state.desired.spaces).catch(err => {
-                    console.error('processSpacesShadow error:' + err.message);
-                    throw err;
-                });
-            }
-        }
         if (event.state.reservations) {
             if (getShadowResult.state.desired.reservations) {
                 yield reservationsService.processShadow(event.state.reservations, getShadowResult.state.desired.reservations).catch(err => {
                     console.error('processShadow error:' + err.message);
+                    throw err;
+                });
+            }
+        }
+        if (event.state.listings) {
+            if (getShadowResult.state.desired.listings) {
+                yield listingsService.processListingsShadow(event.state.listings, getShadowResult.state.desired.listings).catch(err => {
+                    console.error('processListingsShadow error:' + err.message);
                     throw err;
                 });
             }

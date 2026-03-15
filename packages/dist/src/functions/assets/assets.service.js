@@ -62,26 +62,6 @@ class AssetsService {
             return propertyItem;
         });
     }
-    processSpacesShadowDelta(uuid) {
-        return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service processSpacesShadowDelta in: ' + JSON.stringify({ uuid }));
-            // await this.assetsDao.updateSpace(existingCamera);
-            console.log('assets.service processSpacesShadowDelta out');
-            return;
-        });
-    }
-    processSpacesShadow(deltaShadowSpaces, desiredShadowSpaces) {
-        return __awaiter(this, void 0, void 0, function* () {
-            console.log('assets.service processSpacesShadow in: ' + JSON.stringify({ deltaShadowSpaces, desiredShadowSpaces }));
-            const newSpaceUUIDs = Object.keys(desiredShadowSpaces)
-                .filter(uuid => desiredShadowSpaces[uuid].action == 'UPDATE');
-            const removedSpaceUUIDs = Object.keys(desiredShadowSpaces)
-                .filter(uuid => desiredShadowSpaces[uuid].action == 'REMOVE');
-            yield this.assetsDao.refreshSpaces(process.env.HOST_ID, newSpaceUUIDs, removedSpaceUUIDs);
-            console.log('assets.service processSpacesShadow out');
-            return;
-        });
-    }
     processCamerasShadowDelta(uuid) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service processCamerasShadowDelta in: ' + JSON.stringify({ uuid }));

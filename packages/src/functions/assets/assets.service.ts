@@ -1,7 +1,7 @@
 const AWS_IOT_THING_NAME = process.env.AWS_IOT_THING_NAME;
 const ZB_CATS = process.env.ZB_CATS.split(",");
 
-import { MemberDetectedItem, Z2mRemoved, Z2mRenamed, Z2mLock, Z2mEvent, PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras, ClassicShadowSpaces, ClassicShadowSpace, LockOccupancyEvent, LockButtonEvent, ButtonType } from './assets.models';
+import { MemberDetectedItem, Z2mRemoved, Z2mRenamed, Z2mLock, Z2mEvent, PropertyItem, NamedShadowCamera, ScannerItem, ClassicShadowCamera, ClassicShadowCameras, LockOccupancyEvent, LockButtonEvent, ButtonType } from './assets.models';
 import { AssetsDao } from './assets.dao';
 import { IotService } from '../iot/iot.service';
 
@@ -69,32 +69,6 @@ export class AssetsService {
     return propertyItem;
   }
 
-  private async processSpacesShadowDelta(uuid: string): Promise<any> {
-    console.log('assets.service processSpacesShadowDelta in: ' + JSON.stringify({ uuid }));
-
-
-    // await this.assetsDao.updateSpace(existingCamera);
-
-    console.log('assets.service processSpacesShadowDelta out');
-
-    return;
-  }
-
-  public async processSpacesShadow(deltaShadowSpaces: ClassicShadowSpaces, desiredShadowSpaces: ClassicShadowSpaces): Promise<any> {
-    console.log('assets.service processSpacesShadow in: ' + JSON.stringify({ deltaShadowSpaces, desiredShadowSpaces }));
-
-    const newSpaceUUIDs = Object.keys(desiredShadowSpaces)
-      .filter(uuid => desiredShadowSpaces[uuid].action == 'UPDATE');
-
-    const removedSpaceUUIDs = Object.keys(desiredShadowSpaces)
-      .filter(uuid => desiredShadowSpaces[uuid].action == 'REMOVE');
-
-    await this.assetsDao.refreshSpaces(process.env.HOST_ID, newSpaceUUIDs, removedSpaceUUIDs);
-
-    console.log('assets.service processSpacesShadow out');
-
-    return;
-  }
 
   private async processCamerasShadowDelta(uuid: string): Promise<any> {
     console.log('assets.service processCamerasShadowDelta in: ' + JSON.stringify({ uuid }));

@@ -2,11 +2,13 @@ import { InitializationService } from './functions/initialization/initialization
 import { ReservationsService } from './functions/reservations/reservations.service';
 import { IotService } from './functions/iot/iot.service';
 import { AssetsService } from './functions/assets/assets.service';
+import { ListingsService } from './functions/listings/listings.service';
 
 const initializationService = new InitializationService();
 const iotService = new IotService();
 const assetsService = new AssetsService();
 const reservationsService = new ReservationsService();
+const listingsService = new ListingsService();
 
 const z2mResponsePattern = new RegExp(`^zigbee2mqtt\/bridge\/response\/`);
 const z2mDevicePattern = new RegExp(`^zigbee2mqtt\/([^\/]+)$`);
@@ -144,19 +146,22 @@ const processClassicShadow = async function (event) {
 		}
 	}
 
-	if (event.state.spaces) {
-		if (getShadowResult.state.desired.spaces) {
-			await assetsService.processSpacesShadow(event.state.spaces, getShadowResult.state.desired.spaces).catch(err => {
-				console.error('processSpacesShadow error:' + err.message);
+	if (event.state.reservations) {
+		if (getShadowResult.state.desired.reservations) {
+			await reservationsService.processShadow(event.state.reservations, getShadowResult.state.desired.reservations).catch(err => {
+				console.error('processShadow error:' + err.message);
 				throw err;
 			});
 		}
 	}
 
-	if (event.state.reservations) {
-		if (getShadowResult.state.desired.reservations) {
-			await reservationsService.processShadow(event.state.reservations, getShadowResult.state.desired.reservations).catch(err => {
-				console.error('processShadow error:' + err.message);
+	if (event.state.listings) {
+		if (getShadowResult.state.desired.listings) {
+			await listingsService.processListingsShadow(
+				event.state.listings,
+				getShadowResult.state.desired.listings
+			).catch(err => {
+				console.error('processListingsShadow error:' + err.message);
 				throw err;
 			});
 		}
