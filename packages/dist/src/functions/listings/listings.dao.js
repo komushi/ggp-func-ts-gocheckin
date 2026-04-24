@@ -56,6 +56,23 @@ class ListingsDao {
         });
     }
     /**
+     * Delete listing spaces from local DDB
+     */
+    deleteListingSpaces(hostId, listingId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log('listings.dao deleteListingSpaces in:', { hostId, listingId });
+            const param = {
+                TableName: TBL_LISTING,
+                Key: {
+                    hostId,
+                    listingId
+                }
+            };
+            yield this.ddbDocClient.send(new lib_dynamodb_1.DeleteCommand(param));
+            console.log('listings.dao deleteListingSpaces out');
+        });
+    }
+    /**
      * Fetch spaces for a listing from local DDB
      */
     getListingSpaces(hostId, listingId) {

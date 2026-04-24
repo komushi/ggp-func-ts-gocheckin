@@ -1,5 +1,5 @@
 import { DynamoDBClientConfig, DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, GetCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { ListingSpaces, Space } from './listings.models';
 
 const TBL_LISTING = process.env.TBL_LISTING;
@@ -53,6 +53,25 @@ export class ListingsDao {
     await this.ddbDocClient.send(new PutCommand(param));
 
     console.log('listings.dao upsertListingSpaces out');
+  }
+
+  /**
+   * Delete listing spaces from local DDB
+   */
+  public async deleteListingSpaces(hostId: string, listingId: string): Promise<any> {
+    console.log('listings.dao deleteListingSpaces in:', { hostId, listingId });
+
+    const param = {
+      TableName: TBL_LISTING,
+      Key: {
+        hostId,
+        listingId
+      }
+    };
+
+    await this.ddbDocClient.send(new DeleteCommand(param));
+
+    console.log('listings.dao deleteListingSpaces out');
   }
 
   /**
