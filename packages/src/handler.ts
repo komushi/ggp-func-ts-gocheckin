@@ -181,11 +181,6 @@ setTimeout(async () => {
 }, 1000);
 
 
-// Register scanner at startup
-setTimeout(async () => {
-	await assetsService.refreshScanner();
-}, 2000);
-
 // Periodic re-initialization backup (handles redeployment scenarios)
 setInterval(async () => {
 	if (!process.env.HOST_ID || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {

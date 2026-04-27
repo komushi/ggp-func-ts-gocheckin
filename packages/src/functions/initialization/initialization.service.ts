@@ -71,6 +71,10 @@ export class InitializationService {
 		console.log('after intializeEnvVar PROPERTY_CODE:' + process.env.PROPERTY_CODE);
 		console.log('after intializeEnvVar CRED_PROVIDER_HOST:' + process.env.CRED_PROVIDER_HOST);
 
+		if (process.env.HOST_ID && process.env.PROPERTY_CODE) {
+			await this.assetsService.refreshScanner();
+		}
+
 		console.log('initialization.service intializeEnvVar out');
 
 		return;

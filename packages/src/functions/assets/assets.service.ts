@@ -448,6 +448,11 @@ export class AssetsService {
   public async refreshScanner(): Promise<any> {
     console.log('assets.service refreshScanner in');
 
+    if (!process.env.HOST_ID || !process.env.PROPERTY_CODE) {
+      console.warn('assets.service refreshScanner skipped: HOST_ID or PROPERTY_CODE not set');
+      return;
+    }
+
     // Get existing scanner from DB (to preserve UUID)
     const crtScanner: ScannerItem = await this.assetsDao.getScannerById(process.env.AWS_IOT_THING_NAME);
 
