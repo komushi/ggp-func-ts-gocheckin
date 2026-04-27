@@ -385,6 +385,10 @@ class AssetsService {
     refreshScanner() {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('assets.service refreshScanner in');
+            if (!process.env.HOST_ID || !process.env.PROPERTY_CODE) {
+                console.warn('assets.service refreshScanner skipped: HOST_ID or PROPERTY_CODE not set');
+                return;
+            }
             // Get existing scanner from DB (to preserve UUID)
             const crtScanner = yield this.assetsDao.getScannerById(process.env.AWS_IOT_THING_NAME);
             // Build scanner item from local sources

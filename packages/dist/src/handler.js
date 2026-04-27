@@ -167,10 +167,6 @@ const processClassicShadow = function (event) {
 setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
     yield initializationService.intializeEnvVar();
 }), 1000);
-// Register scanner at startup
-setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
-    yield assetsService.refreshScanner();
-}), 2000);
 // Periodic re-initialization backup (handles redeployment scenarios)
 setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
     if (!process.env.HOST_ID || !process.env.IDENTTITY_ID || !process.env.CRED_PROVIDER_HOST || !process.env.PROPERTY_CODE) {
