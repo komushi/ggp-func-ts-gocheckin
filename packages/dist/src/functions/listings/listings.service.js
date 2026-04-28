@@ -26,7 +26,7 @@ class ListingsService {
     processListingsShadow(deltaShadowListings, desiredShadowListings) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('listings.service processListingsShadow in: ' + JSON.stringify({ deltaShadowListings, desiredShadowListings }));
-            const promises = Object.keys(desiredShadowListings).map((shadowName) => __awaiter(this, void 0, void 0, function* () {
+            const promises = Object.keys(deltaShadowListings).map((shadowName) => __awaiter(this, void 0, void 0, function* () {
                 const classicShadowListing = desiredShadowListings[shadowName];
                 if (classicShadowListing) {
                     try {
@@ -81,7 +81,8 @@ class ListingsService {
                 console.log('listings.service processShadowDelta missing lastRequestOn, skipping');
                 return;
             }
-            if (classicShadowListing.lastRequestOn === delta.lastRequestOn) {
+            if (classicShadowListing.lastRequestOn !== delta.lastRequestOn) {
+                console.log('listings.service processShadowDelta lastRequestOn mismatch for ' + shadowName + ', skipping');
                 return;
             }
             // upsert local ddb listing

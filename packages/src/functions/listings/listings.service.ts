@@ -25,7 +25,7 @@ export class ListingsService {
   ): Promise<any> {
     console.log('listings.service processListingsShadow in: ' + JSON.stringify({ deltaShadowListings, desiredShadowListings }));
 
-    const promises = Object.keys(desiredShadowListings).map(async (shadowName: string) => {
+    const promises = Object.keys(deltaShadowListings).map(async (shadowName: string) => {
       const classicShadowListing: ClassicShadowListing = desiredShadowListings[shadowName];
       if (classicShadowListing) {
         try {
@@ -89,7 +89,8 @@ export class ListingsService {
       return;
     }
 
-    if (classicShadowListing.lastRequestOn === delta.lastRequestOn) {
+    if (classicShadowListing.lastRequestOn !== delta.lastRequestOn) {
+      console.log('listings.service processShadowDelta lastRequestOn mismatch for ' + shadowName + ', skipping');
       return;
     }
 
