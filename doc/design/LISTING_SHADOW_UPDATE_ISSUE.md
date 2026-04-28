@@ -2,7 +2,7 @@
 
 ## Problem
 
-When the cloud pushes a `lastRequestOn` update for a listing via the classic shadow delta, the listing data is **never** synced to the local DynamoDB table.
+When the cloud pushes a `lastRequestOn` update for a listing via the classic shadow delta, the listing data is **never** synced to the local DynamoDB table. The root cause spans both cloud side and edge side: listings and reservations follow different patterns end-to-end, and the listing pattern is broken.
 
 ## Observed Behavior (from log)
 
@@ -33,18 +33,16 @@ The listing data in DynamoDB is never updated.
 
 ## Root Causes
 
-### Cause 1: Iterating desired keys instead of delta keys
+### Cause 1: Edge side iterates desired keys instead of delta keys
 
 ```typescript
-// listings.service.ts — processes ALL desired listings
+// listings.service.ts — processes ALL desired listings on every delta
 const promises = Object.keys(desiredShadowListings).map(async (shadowName) => {
 ```
 
-The classic shadow delta contained only `listing:1225618287786473681`, but `desiredShadowListings` contained two listings. Both were processed, including `listing:1225414147364900825` which had not changed.
+The classic shadow delta contained only `listing:1225618287786473681`, but `desiredShadowListings` contained two listings. Both were processed unnecessarily.
 
-This is inefficient but not the cause of the skip — both listings were still evaluated for update.
-
-### Cause 2: Inverted comparison logic (the real bug)
+### Cause 2: Edge side comparison logic is inverted (the real bug)
 
 ```typescript
 // listings.service.ts — skips when timestamps MATCH
@@ -53,13 +51,11 @@ if (classicShadowListing.lastRequestOn === delta.lastRequestOn) {
 }
 ```
 
-`delta` here is `getShadowResult.state.desired` from the **named shadow**.
+`delta` is `getShadowResult.state.desired` from the **named shadow**. The cloud sets the same `lastRequestOn` on both the classic shadow and the named shadow simultaneously. So this check is always true → the listing is always skipped.
 
-The cloud pushes the **same** `lastRequestOn` to both the classic shadow desired state and the named shadow desired state simultaneously. By the time the device fetches the named shadow, its `desired.lastRequestOn` already equals the classic shadow's `lastRequestOn`. The `===` check is always true → the listing is always skipped.
+**Confirmed by the log**: no `upsertListingSpaces` call ever appears — the comparison fires and returns early on every invocation.
 
-**This is confirmed by the log**: the named shadow fetch produced no upsert — the comparison fired and returned early on every call.
-
-Compare with the reservation pattern, which works correctly:
+The reservation edge code uses the opposite check and works correctly:
 
 ```typescript
 // reservations.service.ts — skips when timestamps DIFFER
@@ -68,37 +64,42 @@ if (classicShadowReservation.lastRequestOn != delta.lastRequestOn) {
 }
 ```
 
-Reservations process when classic and named shadow timestamps **match**, which is exactly the condition that always holds (cloud sets both to the same value). Listings do the opposite — they process only when timestamps differ, which never happens.
+### Cause 3: Cloud side listing logic is not aligned with reservation logic
+
+The cloud side has separate implementations for listing shadow updates and reservation shadow updates. These are not written to the same pattern. Fixing only the edge side in isolation would leave the two flows inconsistent and make future maintenance harder.
 
 ---
 
-## Shadow State
+## Solution: End-to-End Alignment
 
-### Classic Shadow (desired)
-Contains `action` + `lastRequestOn` for each listing. Updated by the cloud at the same time as the named shadow.
+The reservation flow works correctly today. Both listings and reservations should follow an identical end-to-end pattern. The fix must be coordinated across cloud side and edge side together.
 
-### Named Shadow — Listing (e.g. `listing:1225618287786473681`)
-```json
-{
-  "state": {
-    "desired": {
-      "listingId": "1225618287786473681",
-      "propertyCode": "WIP",
-      "spaces": [{ "uuid": "adwJwZ", "assetName": "101", "category": "SPACE" }],
-      "lastRequestOn": "2026-04-28T02:03:19.496Z"
-    }
-  }
-}
+### The canonical pattern (from reservations, which works)
+
+```
+Cloud side:
+  1. Update named shadow desired  → full data + lastRequestOn = "T"
+  2. Update classic shadow desired → lastRequestOn = "T"  (same value)
+
+Edge side (on classic shadow delta received):
+  3. Iterate delta keys only
+  4. For each key: fetch named shadow desired
+  5. Skip if classic lastRequestOn != named lastRequestOn  (i.e. process if equal)
+  6. Upsert to DynamoDB
+  7. Update named shadow reported
 ```
 
-The cloud sets `desired.lastRequestOn` here to the **same value** as in the classic shadow before the device receives the delta. There is no window where the named shadow has a stale timestamp.
+### Cloud side change (listing → align with reservation)
 
----
+Refactor the cloud listing shadow update logic to follow the same structure as the reservation shadow update:
+- Ensure the named shadow desired state is updated with the full listing data and `lastRequestOn` before (or atomically with) the classic shadow update
+- The `lastRequestOn` written to the classic shadow must match the one written to the named shadow
 
-## Fix
+### Edge side change (listing → align with reservation)
 
-### Fix 1: Iterate delta keys only (align with reservation)
+Two changes in `listings.service.ts`:
 
+**1. Iterate delta keys only**
 ```typescript
 // Before
 const promises = Object.keys(desiredShadowListings).map(async (shadowName: string) => {
@@ -109,15 +110,14 @@ const promises = Object.keys(deltaShadowListings).map(async (shadowName: string)
   const classicShadowListing: ClassicShadowListing = desiredShadowListings[shadowName];
 ```
 
-### Fix 2: Invert the comparison (align with reservation)
-
+**2. Invert the comparison**
 ```typescript
-// Before — skips when equal (always true → never processes)
+// Before — skips when equal → always skips → never processes
 if (classicShadowListing.lastRequestOn === delta.lastRequestOn) {
   return;
 }
 
-// After — skips when different (never true → always processes the changed listing)
+// After — skips when different → processes when cloud has set both to same value
 if (classicShadowListing.lastRequestOn != delta.lastRequestOn) {
   return;
 }
@@ -125,10 +125,12 @@ if (classicShadowListing.lastRequestOn != delta.lastRequestOn) {
 
 ---
 
-## Before / After Comparison
+## End State: Listings and Reservations Fully Aligned
 
-| Aspect | Reservation (works) | Listing (broken) | Listing (fixed) |
-|--------|---------------------|------------------|-----------------|
-| Iteration | `Object.keys(deltaShadow...)` — delta keys only | `Object.keys(desiredShadow...)` — ALL desired keys | `Object.keys(deltaShadow...)` — delta keys only |
-| Skip condition | `classic != named` → skip | `classic === named` → skip | `classic != named` → skip |
-| Result when cloud sets both to same TS | Processes ✅ | Skips ❌ | Processes ✅ |
+| Aspect | Reservations | Listings (after fix) |
+|--------|-------------|----------------------|
+| Cloud: named shadow desired | Set with full data + `lastRequestOn` | Set with full data + `lastRequestOn` |
+| Cloud: classic shadow desired | `lastRequestOn` = same value | `lastRequestOn` = same value |
+| Edge: iteration | `Object.keys(deltaShadow...)` | `Object.keys(deltaShadow...)` |
+| Edge: skip condition | `classic != named` → skip | `classic != named` → skip |
+| Edge: process condition | `classic == named` → process | `classic == named` → process |
